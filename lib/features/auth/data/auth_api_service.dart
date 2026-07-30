@@ -1,3 +1,5 @@
+
+
 import '../../../core/network/api_endpoints.dart';
 import '../../../core/network/api_service.dart';
 import 'models/user_model.dart';
@@ -38,5 +40,9 @@ class AuthApiService {
 
   Future<void> unregisterFcmToken({required String fcmToken}) async {
     await api.post(ApiEndpoints.unregisterFcmToken, {'fcmToken': fcmToken});
+  }
+
+  Future<void> forgotPassword(String email) async{
+    await api.post(ApiEndpoints.forgotPassword, {'email': email});
   }
 }

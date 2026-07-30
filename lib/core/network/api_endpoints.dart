@@ -9,7 +9,7 @@ class ApiEndpoints {
   static const String unregisterFcmToken = 'auth/unregister-fcm-token';
 
   // ───────── USER / EMPLOYEE ─────────
-  static const String userDetails = 'employees/single';
+  static const String userDetails = 'auth/me';
 
   // ───────── ATTENDANCE ─────────
   static const String checkIn = 'attendance/checkin';

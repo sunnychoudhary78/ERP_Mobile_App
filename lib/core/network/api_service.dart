@@ -67,6 +67,8 @@ class ApiService {
     }
   }
 
+  
+
   Future<dynamic> deleteNoBody(String endpoint) async {
     final path = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
     try {

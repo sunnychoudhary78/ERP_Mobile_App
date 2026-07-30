@@ -131,7 +131,9 @@ class AuthNotifier extends Notifier<AuthState> {
         isInitializing: false,
         errorMessage: message.contains('SUBSCRIPTION_EXPIRED')
             ? null
-            : (message.isEmpty ? 'Unable to login. Please try again.' : message),
+            : (message.isEmpty
+                  ? 'Unable to login. Please try again.'
+                  : message),
       );
 
       if (e.toString().contains('SUBSCRIPTION_EXPIRED')) {
@@ -192,6 +194,8 @@ class AuthNotifier extends Notifier<AuthState> {
     });
   }
 
+
+
   void resetSubscriptionExpired() {
     state = state.copyWith(isSubscriptionExpired: false, isInitializing: false);
 
@@ -217,5 +221,12 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> registerFcmTokenIfNeeded() async {
     await _registerFcmIfAvailable();
+  }
+
+
+  
+
+  Future<void> forgotPassword(String email) async {
+    await _authApi.forgotPassword(email);
   }
 }
