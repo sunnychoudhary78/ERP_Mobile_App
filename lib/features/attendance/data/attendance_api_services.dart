@@ -9,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/network/api_endpoints.dart';
 import '../../../core/network/api_service.dart';
 
-
 class AttendanceApiService {
   final ApiService api;
 
@@ -22,33 +21,34 @@ class AttendanceApiService {
       return AttendanceConfig.fromJson(
         Map<String, dynamic>.from(response as Map),
       );
-
-  
     } catch (_) {
-    
       return const AttendanceConfig();
     }
   }
 
-  
   Future<AttendanceSession?> fetchTodayStatus() async {
     final today = _formatDate(DateTime.now());
     final response = await api.get(
       ApiEndpoints.checkIn,
       queryParams: {'from': today, 'to': today},
     );
-    debugPrint('Today status response: $response');
+    debugPrint("========== TODAY STATUS ==========");
+    debugPrint('Today status response:------>>>>>>>>>>>> $response');
 
     final list = _extractList(response);
     if (list.isEmpty) return null;
 
-    final sessions = list
-        .map((e) => AttendanceSession.fromJson(Map<String, dynamic>.from(e)))
-        .toList()
-      ..sort(
-        (a, b) => (b.checkInTime ?? DateTime(0))
-            .compareTo(a.checkInTime ?? DateTime(0)),
-      );
+    final sessions =
+        list
+            .map(
+              (e) => AttendanceSession.fromJson(Map<String, dynamic>.from(e)),
+            )
+            .toList()
+          ..sort(
+            (a, b) => (b.checkInTime ?? DateTime(0)).compareTo(
+              a.checkInTime ?? DateTime(0),
+            ),
+          );
 
     return sessions.first;
   }

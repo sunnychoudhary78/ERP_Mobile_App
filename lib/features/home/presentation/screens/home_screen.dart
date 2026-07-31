@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../notifications/presentation/providers/notifications_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -55,10 +56,8 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Home'),
         actions: [
-          IconButton(
-            tooltip: 'Notifications',
-            onPressed: () => Navigator.pushNamed(context, '/notifications'),
-            icon: const Icon(Icons.notifications_outlined),
+          _NotificationBellButton(
+            unreadCount: ref.watch(unreadCountProvider),
           ),
           IconButton(
             tooltip: 'Logout',
@@ -209,6 +208,61 @@ class HomeScreen extends ConsumerWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Bell icon with a small dynamic unread-count badge.
+/// The count comes straight from [unreadCountProvider], so it updates
+/// automatically (drops to 0, hides itself) the moment the user reads
+/// or deletes notifications on the Notifications screen — no manual
+/// refresh needed here.
+class _NotificationBellButton extends StatelessWidget {
+  final int unreadCount;
+
+  const _NotificationBellButton({required this.unreadCount});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUnread = unreadCount > 0;
+
+    return IconButton(
+      tooltip: 'Notifications',
+      onPressed: () => Navigator.pushNamed(context, '/notifications'),
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            hasUnread
+                ? Icons.notifications_rounded
+                : Icons.notifications_outlined,
+          ),
+          if (hasUnread)
+            Positioned(
+              top: -4,
+              right: -6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.danger,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.surface, width: 1.5),
+                ),
+                child: Text(
+                  unreadCount > 99 ? '99+' : '$unreadCount',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
