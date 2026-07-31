@@ -10,6 +10,7 @@ class ApiEndpoints {
 
   // ───────── USER / EMPLOYEE ─────────
   static const String userDetails = 'auth/me';
+  static const String employeeLeaveBalance = 'employees/leave-balance';
 
   // ───────── ATTENDANCE ─────────
   static const String checkIn = 'attendance/checkin';
@@ -19,11 +20,24 @@ class ApiEndpoints {
 
   // ───────── LEAVE ─────────
   static const String leaveRequests = 'leave-requests';
-  static const String leaveBalances = 'leave-balances';
+  static const String leaveRequestsUserAll = 'leave-requests/user/all';
+  static const String leaveRequestsManagerAll =
+      'leave-requests/manager/requests/all';
   static const String leaveTypes = 'leave-types';
+
+  /// Legacy catalog path — mobile leave balance uses [employeeLeaveBalance].
+  static const String leaveBalances = 'leave-balances';
+
+  static String leaveRequestById(String id) => 'leave-requests/$id';
+  static String leaveRequestWithdraw(String id) =>
+      'leave-requests/$id/withdraw';
+  static String leaveRequestStatus(String id) => 'leave-requests/$id/status';
 
   // ───────── NOTIFICATIONS ─────────
   static const String notifications = 'notifications';
+  static const String notificationsMy = 'notifications/my';
+
+  static String notificationMarkRead(String id) => 'notifications/$id/read';
 
   // ───────── INVENTORY (existing backend) ─────────
   static const String items = 'items';
