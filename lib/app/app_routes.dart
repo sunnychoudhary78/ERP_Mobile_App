@@ -5,6 +5,7 @@ import '../features/approvals/presentation/screens/approvals_inbox_screen.dart';
 import '../features/attendance/presentation/screens/punch_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/crm/activities/presentation/screens/activities_screen.dart';
+import '../features/crm/approvals/presentation/screens/crm_approvals_screen.dart';
 import '../features/crm/contacts/presentation/screens/contact_detail_screen.dart';
 import '../features/crm/contacts/presentation/screens/contact_form_screen.dart';
 import '../features/crm/contacts/presentation/screens/contacts_list_screen.dart';
@@ -52,6 +53,7 @@ class AppRoutes {
     '/crm/customers/detail': (_) => const CustomerDetailScreen(),
     '/crm/pipeline': (_) => const PipelineScreen(),
     '/crm/activities': (_) => const ActivitiesScreen(),
+    '/crm/approvals': (_) => const CrmApprovalsScreen(),
     '/crm/quotes': (_) => const QuotesListScreen(),
     '/crm/quotes/detail': (_) => const QuoteDetailScreen(),
     '/crm/quotes/form': (_) => const QuoteFormScreen(),

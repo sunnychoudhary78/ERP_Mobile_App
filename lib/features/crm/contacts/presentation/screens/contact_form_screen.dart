@@ -1,16 +1,37 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/placeholder_screen.dart';
-
+/// Contacts are derived from leads — create via lead form.
 class ContactFormScreen extends StatelessWidget {
   const ContactFormScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const PlaceholderScreen(
-      title: 'Create / Edit Contact',
-      subtitle: 'TODO: Create / update contact form.',
-      featurePath: 'lib/features/crm/contacts/',
+    return Scaffold(
+      appBar: AppBar(title: const Text('Add Contact')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Contacts come from leads (no separate create API).',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'TODO (UI): redirect junior to Add Lead, or edit lead contact fields via updateLead.',
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => Navigator.pushReplacementNamed(
+                context,
+                '/crm/leads/form',
+              ),
+              child: const Text('Go to Add Lead'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

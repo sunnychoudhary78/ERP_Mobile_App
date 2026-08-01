@@ -45,17 +45,48 @@ class ApiEndpoints {
   static const String inventoryLowStock = 'inventory/low-stock';
   static const String inventoryWarehouseStock = 'inventory/warehouse-stock';
   static const String warehouses = 'warehouse';
+  static const String customers = 'customers';
+
+  static String customerById(String id) => 'customers/$id';
 
   // ───────── PRODUCTION (existing backend) ─────────
   static const String workOrders = 'production/work-orders';
 
-  // ───────── CRM (placeholder — backend module pending) ─────────
-  static const String crmLeads = 'crm/leads';
-  static const String crmContacts = 'crm/contacts';
-  static const String crmCustomers = 'crm/customers';
-  static const String crmPipeline = 'crm/pipeline';
-  static const String crmActivities = 'crm/activities';
-  static const String crmQuotes = 'crm/quotes';
-  static const String crmVisits = 'crm/visits';
-  static const String crmApprovals = 'crm/approvals';
+  // ───────── SALES CRM (/api/sales — requires sales module backend) ─────────
+  static const String salesWorkspace = 'sales/workspace';
+  static const String salesConfig = 'sales/config';
+  static const String salesLeads = 'sales/leads';
+  static const String salesQuotes = 'sales/quotes';
+  static const String salesVisits = 'sales/visits';
+  static const String salesTeam = 'sales/team';
+  static const String salesReportsSummary = 'sales/reports/summary';
+  static const String salesCustomersMatch = 'sales/customers/match';
+
+  static String salesLeadById(String id) => 'sales/leads/$id';
+  static String salesLeadQualify(String id) => 'sales/leads/$id/qualify';
+  static String salesLeadFollowUps(String id) => 'sales/leads/$id/follow-ups';
+  static String salesLeadWon(String id) => 'sales/leads/$id/won';
+  static String salesLeadLost(String id) => 'sales/leads/$id/lost';
+  static String salesLeadQuotes(String id) => 'sales/leads/$id/quotes';
+  static String salesLeadLinkCustomer(String id) =>
+      'sales/leads/$id/link-customer';
+  static String salesLeadEnsureCustomer(String id) =>
+      'sales/leads/$id/ensure-customer';
+  static String salesLeadRequestWonApproval(String id) =>
+      'sales/leads/$id/request-won-approval';
+  static String salesLeadApproveWon(String id) => 'sales/leads/$id/approve-won';
+  static String salesLeadRejectWon(String id) => 'sales/leads/$id/reject-won';
+  static String salesLeadBills(String id) => 'sales/leads/$id/bills';
+  static String salesLeadBillSend(String leadId, String billId) =>
+      'sales/leads/$leadId/bills/$billId/send';
+  static String salesLeadBillPayment(String leadId, String billId) =>
+      'sales/leads/$leadId/bills/$billId/payment';
+
+  static String salesQuoteById(String id) => 'sales/quotes/$id';
+  static String salesQuoteApprove(String id) => 'sales/quotes/$id/approve';
+  static String salesQuoteReject(String id) => 'sales/quotes/$id/reject';
+  static String salesQuoteSend(String id) => 'sales/quotes/$id/send';
+
+  static String salesActivityComplete(String id) =>
+      'sales/activities/$id/complete';
 }

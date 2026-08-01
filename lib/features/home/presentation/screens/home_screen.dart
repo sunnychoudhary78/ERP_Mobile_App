@@ -19,10 +19,11 @@ class HomeScreen extends ConsumerWidget {
     ]),
     LinkSection('CRM', [
       QuickLink('Leads', '/crm/leads', Icons.leaderboard_outlined),
+      QuickLink('Pipeline', '/crm/pipeline', Icons.view_kanban_outlined),
+      QuickLink('Follow-ups', '/crm/activities', Icons.timeline_outlined),
+      QuickLink('Approvals', '/crm/approvals', Icons.fact_check_outlined),
       QuickLink('Contacts', '/crm/contacts', Icons.contacts_outlined),
       QuickLink('Customers', '/crm/customers', Icons.business_outlined),
-      QuickLink('Pipeline', '/crm/pipeline', Icons.view_kanban_outlined),
-      QuickLink('Activities', '/crm/activities', Icons.timeline_outlined),
       QuickLink('Quotes', '/crm/quotes', Icons.request_quote_outlined),
     ]),
     LinkSection('Field & inventory', [
