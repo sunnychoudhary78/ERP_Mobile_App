@@ -3,6 +3,7 @@ import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/leave/presentation/screens/leave_apply_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/leave_balance_provider.dart';
 
@@ -174,27 +175,53 @@ class LeaveBalanceScreen extends ConsumerWidget {
 
 // ---------- Overview card (total + donut + legend) ----------
 
+// Assuming AppColors and AppTheme are imported from your theme file
+// import 'path/to/theme.dart';
 
 class OverviewCard extends StatelessWidget {
   const OverviewCard({
     super.key,
     required this.balances,
     required this.total,
+    this.onViewDetails,
   });
 
   final List<dynamic> balances;
   final double total;
+  final VoidCallback? onViewDetails;
+
+  /// Helper to derive consistent accent colors for legend/chart segments
+  Color _getSegmentColor(String name, int index) {
+    const palette = [
+      Color(0xFF2563EB), // Blue
+      Color(0xFFEF4444), // Red
+      Color(0xFF10B981), // Green
+      Color(0xFF8B5CF6), // Purple
+      Color(0xFFF59E0B), // Amber
+    ];
+    return palette[index % palette.length];
+  }
+
+  String _abbreviate(String name, String fallbackId) {
+    final text = name.isNotEmpty ? name : fallbackId;
+    if (text.length <= 4) return text.toUpperCase();
+    final words = text.split(' ');
+    if (words.length > 1) {
+      return words.map((w) => w.isNotEmpty ? w[0] : '').join().toUpperCase();
+    }
+    return text.substring(0, math.min(3, text.length)).toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColors.text.withOpacity(0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -202,183 +229,209 @@ class OverviewCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
-          const Text(
+          // Card Header
+          Text(
             'Leave Balance Overview',
-            style: TextStyle(
+            style: GoogleFonts.dmSans(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0F172A),
+              color: AppColors.text,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Main Balanced Section
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 1. Total Count (Left)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Total Available',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    total.toStringAsFixed(total % 1 == 0 ? 0 : 1),
-                    style: const TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary, // Ensure AppColors.primary is defined in your project
-                      height: 1.1,
-                    ),
-                  ),
-                  const Text(
-                    'Days',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () {},
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+          // Main Layout Row
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 1. Total Count (Left)
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Total Available',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.muted,
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(20),
+                      const SizedBox(height: 4),
+                      Text(
+                        total.toStringAsFixed(total % 1 == 0 ? 0 : 1),
+                        style: GoogleFonts.dmSans(
+                          fontSize: 38,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                          height: 1.0,
+                        ),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 12,
-                            color: Color(0xFF2563EB),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'View Details',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF2563EB),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Days',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // View Details Button Card
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: onViewDetails ?? () {},
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(width: 16),
-
-              // 2. Legend List (Middle - Fills remaining space)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: List.generate(balances.length, (i) {
-                    final b = balances[i];
-                    final String rawName = (b.name ?? '').toString();
-                    final String typeId = (b.leaveTypeId ?? '').toString();
-                    final name = rawName.isEmpty ? typeId : rawName;
-                    
-                    // Safe numeric extraction
-                    final num avail = b.available ?? 0;
-                    final double availDouble = avail.toDouble();
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3.0),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
                             decoration: BoxDecoration(
-                              color: leaveTypeColor(name, i),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              abbreviate(name, typeId),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF475569),
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.border.withOpacity(0.4),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            availDouble.toStringAsFixed(
-                              availDouble % 1 == 0 ? 0 : 1,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 14,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'View Details',
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
                             ),
-                            style: const TextStyle(
-                              fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Vertical Divider Separator
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: VerticalDivider(
+                    color: AppColors.border.withOpacity(0.5),
+                    thickness: 1,
+                    width: 1,
+                  ),
+                ),
+
+                // 2. Donut Chart (Center)
+                SizedBox(
+                  width: 110,
+                  height: 110,
+                  child: CustomPaint(
+                    painter: _DonutPainter(
+                      balances: balances,
+                      total: total,
+                      getColor: _getSegmentColor,
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            total.toStringAsFixed(total % 1 == 0 ? 0 : 1),
+                            style: GoogleFonts.dmSans(
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.text,
+                            ),
+                          ),
+                          Text(
+                            'Total',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.muted,
                             ),
                           ),
                         ],
                       ),
-                    );
-                  }),
-                ),
-              ),
-
-              const SizedBox(width: 16),
-
-              // 3. Donut Chart (Far Right)
-              SizedBox(
-                width: 90,
-                height: 90,
-                child: CustomPaint(
-                  painter: _DonutPainter(balances: balances, total: total),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          total.toStringAsFixed(total % 1 == 0 ? 0 : 1),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        const Text(
-                          'Total',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(width: 20),
+
+                // 3. Legend List (Far Right)
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: List.generate(balances.length, (i) {
+                      final b = balances[i];
+                      final String rawName = (b.name ?? '').toString();
+                      final String typeId = (b.leaveTypeId ?? '').toString();
+                      final name = rawName.isEmpty ? typeId : rawName;
+
+                      final num avail = b.available ?? 0;
+                      final double availDouble = avail.toDouble();
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _getSegmentColor(name, i),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _abbreviate(name, typeId),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              availDouble.toStringAsFixed(
+                                availDouble % 1 == 0 ? 0 : 1,
+                              ),
+                              style: GoogleFonts.dmSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -387,10 +440,15 @@ class OverviewCard extends StatelessWidget {
 }
 
 class _DonutPainter extends CustomPainter {
-  _DonutPainter({required this.balances, required this.total});
+  _DonutPainter({
+    required this.balances,
+    required this.total,
+    required this.getColor,
+  });
 
   final List<dynamic> balances;
   final double total;
+  final Color Function(String name, int index) getColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -399,7 +457,7 @@ class _DonutPainter extends CustomPainter {
 
     if (total <= 0) {
       final paintBg = Paint()
-        ..color = const Color(0xFFE2E8F0)
+        ..color = AppColors.border
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth;
       canvas.drawArc(
@@ -413,7 +471,6 @@ class _DonutPainter extends CustomPainter {
     }
 
     double startAngle = -math.pi / 2;
-    const gapAngle = 0.14; // Gap between segments
 
     for (var i = 0; i < balances.length; i++) {
       final b = balances[i];
@@ -427,18 +484,15 @@ class _DonutPainter extends CustomPainter {
       final name = rawName.isEmpty ? typeId : rawName;
 
       final paint = Paint()
-        ..color = leaveTypeColor(name, i)
+        ..color = getColor(name, i)
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
-
-      final actualSweep = math.max(0.01, sweep - gapAngle);
-      final adjustedStart = startAngle + (gapAngle / 2);
+        ..strokeCap = StrokeCap.butt;
 
       canvas.drawArc(
         rect.deflate(strokeWidth / 2),
-        adjustedStart,
-        actualSweep,
+        startAngle,
+        sweep,
         false,
         paint,
       );
@@ -450,6 +504,10 @@ class _DonutPainter extends CustomPainter {
   bool shouldRepaint(covariant _DonutPainter oldDelegate) =>
       oldDelegate.balances != balances || oldDelegate.total != total;
 }
+
+
+
+
 // ---------- Leave type grid card ----------
 
 class _LeaveTypeCard extends StatelessWidget {
