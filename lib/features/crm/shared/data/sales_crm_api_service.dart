@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_service.dart';
 import 'models/inventory_customer_model.dart';
@@ -21,11 +25,20 @@ class SalesCrmApiService {
 
   Future<SalesWorkspace> getWorkspace() async {
     final response = await api.get(ApiEndpoints.salesWorkspace);
-    return SalesWorkspace.fromApiResponse(response);
+
+    debugPrint("=== API Response get space ===");
+    debugPrint('LEADS RAW: ${jsonEncode(response['data']['leads'])}');
+    debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
+    debugPrint('WORKSPACE: ${jsonEncode(response['data']['workspace'])}');
+    debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
+    debugPrint(response.toString());
+    return SalesWorkspace.fromApiResponse(response['data']['workspace']);
   }
 
   Future<Map<String, dynamic>?> getConfig() async {
     final response = await api.get(ApiEndpoints.salesConfig);
+    debugPrint("=== API Response Config ===");
+    debugPrint(response.toString());
     final map = _asMap(response);
     if (map['config'] is Map) {
       return Map<String, dynamic>.from(map['config'] as Map);
@@ -35,14 +48,27 @@ class SalesCrmApiService {
 
   Future<SalesLead> createLead(Map<String, dynamic> payload) async {
     final response = await api.post(ApiEndpoints.salesLeads, payload);
+
+    debugPrint("=== API Response Leads ===");
+    debugPrint(response.toString());
     final map = _asMap(response);
+
+    debugPrint("=== Response Map ===");
+
+
     final lead = map['lead'] is Map ? map['lead'] : map;
+
+    debugPrint("=== Lead Data ===");
+    debugPrint(lead);
+
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
   }
 
-  Future<SalesLead> updateLead(String leadId, Map<String, dynamic> patch) async {
-    final response =
-        await api.patch(ApiEndpoints.salesLeadById(leadId), patch);
+  Future<SalesLead> updateLead(
+    String leadId,
+    Map<String, dynamic> patch,
+  ) async {
+    final response = await api.patch(ApiEndpoints.salesLeadById(leadId), patch);
     final map = _asMap(response);
     final lead = map['lead'] is Map ? map['lead'] : map;
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
@@ -52,8 +78,10 @@ class SalesCrmApiService {
     String leadId,
     Map<String, dynamic> payload,
   ) async {
-    final response =
-        await api.patch(ApiEndpoints.salesLeadQualify(leadId), payload);
+    final response = await api.patch(
+      ApiEndpoints.salesLeadQualify(leadId),
+      payload,
+    );
     final map = _asMap(response);
     final lead = map['lead'] is Map ? map['lead'] : map;
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
@@ -63,8 +91,10 @@ class SalesCrmApiService {
     String leadId,
     Map<String, dynamic> payload,
   ) async {
-    final response =
-        await api.post(ApiEndpoints.salesLeadQuotes(leadId), payload);
+    final response = await api.post(
+      ApiEndpoints.salesLeadQuotes(leadId),
+      payload,
+    );
     final map = _asMap(response);
     final quote = map['quote'] is Map ? map['quote'] : map;
     return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
@@ -74,8 +104,10 @@ class SalesCrmApiService {
     String quoteId,
     Map<String, dynamic> payload,
   ) async {
-    final response =
-        await api.patch(ApiEndpoints.salesQuoteById(quoteId), payload);
+    final response = await api.patch(
+      ApiEndpoints.salesQuoteById(quoteId),
+      payload,
+    );
     final map = _asMap(response);
     final quote = map['quote'] is Map ? map['quote'] : map;
     return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
@@ -95,18 +127,16 @@ class SalesCrmApiService {
   }
 
   Future<SalesQuote> rejectQuote(String quoteId, String reason) async {
-    final response = await api.post(
-      ApiEndpoints.salesQuoteReject(quoteId),
-      {'reason': reason},
-    );
+    final response = await api.post(ApiEndpoints.salesQuoteReject(quoteId), {
+      'reason': reason,
+    });
     final map = _asMap(response);
     final quote = map['quote'] is Map ? map['quote'] : map;
     return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
   }
 
   Future<SalesQuote> sendQuote(String quoteId) async {
-    final response =
-        await api.post(ApiEndpoints.salesQuoteSend(quoteId), {});
+    final response = await api.post(ApiEndpoints.salesQuoteSend(quoteId), {});
     final map = _asMap(response);
     final quote = map['quote'] is Map ? map['quote'] : map;
     return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
@@ -137,18 +167,19 @@ class SalesCrmApiService {
   }
 
   Future<SalesLead> markLost(String leadId, String reason) async {
-    final response = await api.post(
-      ApiEndpoints.salesLeadLost(leadId),
-      {'reason': reason},
-    );
+    final response = await api.post(ApiEndpoints.salesLeadLost(leadId), {
+      'reason': reason,
+    });
     final map = _asMap(response);
     final lead = map['lead'] is Map ? map['lead'] : map;
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
   }
 
   Future<SalesLead> requestWonApproval(String leadId) async {
-    final response =
-        await api.post(ApiEndpoints.salesLeadRequestWonApproval(leadId), {});
+    final response = await api.post(
+      ApiEndpoints.salesLeadRequestWonApproval(leadId),
+      {},
+    );
     final map = _asMap(response);
     final lead = map['lead'] is Map ? map['lead'] : map;
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
@@ -158,17 +189,13 @@ class SalesCrmApiService {
     String leadId, [
     Map<String, dynamic>? payload,
   ]) async {
-    return api.post(
-      ApiEndpoints.salesLeadApproveWon(leadId),
-      payload ?? {},
-    );
+    return api.post(ApiEndpoints.salesLeadApproveWon(leadId), payload ?? {});
   }
 
   Future<SalesLead> rejectWon(String leadId, String reason) async {
-    final response = await api.post(
-      ApiEndpoints.salesLeadRejectWon(leadId),
-      {'reason': reason},
-    );
+    final response = await api.post(ApiEndpoints.salesLeadRejectWon(leadId), {
+      'reason': reason,
+    });
     final map = _asMap(response);
     final lead = map['lead'] is Map ? map['lead'] : map;
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
@@ -212,10 +239,13 @@ class SalesCrmApiService {
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
   }
 
-  Future<({String? customerId, SalesLead? lead, bool created})>
-      ensureCustomer(String leadId) async {
-    final response =
-        await api.post(ApiEndpoints.salesLeadEnsureCustomer(leadId), {});
+  Future<({String? customerId, SalesLead? lead, bool created})> ensureCustomer(
+    String leadId,
+  ) async {
+    final response = await api.post(
+      ApiEndpoints.salesLeadEnsureCustomer(leadId),
+      {},
+    );
     final map = _asMap(response);
     final data = map['data'] is Map
         ? Map<String, dynamic>.from(map['data'] as Map)
@@ -237,8 +267,10 @@ class SalesCrmApiService {
     String leadId,
     Map<String, dynamic> payload,
   ) async {
-    final response =
-        await api.post(ApiEndpoints.salesLeadBills(leadId), payload);
+    final response = await api.post(
+      ApiEndpoints.salesLeadBills(leadId),
+      payload,
+    );
     final map = _asMap(response);
     final bill = map['bill'] is Map ? map['bill'] : map;
     return SalesBill.fromJson(Map<String, dynamic>.from(bill as Map));

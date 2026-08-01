@@ -67,6 +67,7 @@ class SalesLead {
   }
 
   factory SalesLead.fromJson(Map<String, dynamic> json) {
+    
     return SalesLead(
       id: json['id']?.toString() ?? '',
       dbId: json['_id']?.toString(),
@@ -102,5 +103,7 @@ class SalesLead {
       createdAt: json['createdAt']?.toString(),
       updatedAt: json['updatedAt']?.toString(),
     );
+
+    
   }
 }
