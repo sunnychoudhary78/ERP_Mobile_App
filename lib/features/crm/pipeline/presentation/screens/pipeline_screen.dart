@@ -31,15 +31,15 @@ class PipelineScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        onPressed: () => Navigator.pushNamed(context, '/crm/leads/new'),
-        child: const Icon(Icons.add_rounded),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   backgroundColor: AppColors.primary,
+      //   foregroundColor: Colors.white,
+      //   shape: RoundedRectangleBorder(
+      //     borderRadius: BorderRadius.circular(16),
+      //   ),
+      //   onPressed: () => Navigator.pushNamed(context, '/crm/leads/new'),
+      //   child: const Icon(Icons.add_rounded),
+      // ),
       body: CrmAsyncBody(
         async: async,
         onRetry: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
@@ -87,7 +87,7 @@ class _PipelineSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalLeads = stages.values.fold<int>(0, (a, b) => a + b.length);
+    //final totalLeads = stages.values.fold<int>(0, (a, b) => a + b.length);
     final totalValue = stages.values
         .expand((l) => l)
         .fold<double>(0, (sum, lead) => sum + _valueOf(lead));
@@ -127,57 +127,65 @@ class _StatCard extends StatelessWidget {
     required this.label,
     required this.value,
     this.highlighted = false,
+    this.onTap,
   });
 
   final String label;
   final String value;
   final bool highlighted;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minWidth: 140),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: highlighted ? AppColors.primary : AppColors.card,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        border: highlighted
-            ? null
-            : Border.all(color: AppColors.border),
-        boxShadow: highlighted
-            ? [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minWidth: 140),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: highlighted ? AppColors.primary : AppColors.card,
+            borderRadius: BorderRadius.circular(18),
+            border: highlighted ? null : Border.all(color: AppColors.border),
+            boxShadow: highlighted
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: highlighted
+                      ? Colors.white.withOpacity(0.75)
+                      : AppColors.muted,
                 ),
-              ]
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: highlighted
-                  ? Colors.white.withOpacity(0.75)
-                  : AppColors.muted,
-            ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: highlighted ? Colors.white : AppColors.text,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: highlighted ? Colors.white : AppColors.text,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -422,7 +430,7 @@ String _daysAgo(dynamic lead) {
 
 String _formatCurrency(double value) {
   if (value >= 100000) {
-    return '\$${(value / 1000).toStringAsFixed(0)}K';
+    return '₹${(value / 1000).toStringAsFixed(0)}K';
   }
   final s = value.toStringAsFixed(0);
   final buf = StringBuffer();
@@ -430,5 +438,5 @@ String _formatCurrency(double value) {
     if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
     buf.write(s[i]);
   }
-  return '\$$buf';
+  return '₹$buf';
 }
