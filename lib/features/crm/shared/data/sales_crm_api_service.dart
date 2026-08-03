@@ -27,17 +27,17 @@ class SalesCrmApiService {
     final response = await api.get(ApiEndpoints.salesWorkspace);
 
     debugPrint("=== API Response get space ===");
-    debugPrint('LEADS RAW: ${jsonEncode(response['data']['leads'])}');
+    // debugPrint('LEADS RAW: ${jsonEncode(response['data']['leads'])}');
+    // debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
     debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
-    debugPrint('WORKSPACE: ${jsonEncode(response['data']['workspace'])}');
-    debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
-    debugPrint(response.toString());
+  debugPrint('WORKSPACE: ${jsonEncode(response['data']['workspace'])}');
+    //debugPrint('compaingBilling: ${jsonEncode(response['data']['companyBilling'])}');
+   // debugPrint(response.toString());
     return SalesWorkspace.fromApiResponse(response['data']['workspace']);
   }
 
   Future<Map<String, dynamic>?> getConfig() async {
     final response = await api.get(ApiEndpoints.salesConfig);
-    debugPrint("=== API Response Config ===");
     debugPrint(response.toString());
     final map = _asMap(response);
     if (map['config'] is Map) {
@@ -49,17 +49,17 @@ class SalesCrmApiService {
   Future<SalesLead> createLead(Map<String, dynamic> payload) async {
     final response = await api.post(ApiEndpoints.salesLeads, payload);
 
-    debugPrint("=== API Response Leads ===");
-    debugPrint(response.toString());
+    // debugPrint("=== API Response Leads ===");
+    // debugPrint(response.toString());
     final map = _asMap(response);
 
-    debugPrint("=== Response Map ===");
+    // debugPrint("=== Response Map ===");
 
 
     final lead = map['lead'] is Map ? map['lead'] : map;
 
-    debugPrint("=== Lead Data ===");
-    debugPrint(lead);
+    // debugPrint("=== Lead Data ===");
+    // debugPrint(lead);
 
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
   }

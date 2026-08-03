@@ -1,3 +1,26 @@
+
+// Represents one entry inside a lead's `timeline` array, e.g.
+// {"at":"2026-08-03","text":"Follow-up stage started","type":"note"}
+class SalesLeadTimelineEntry {
+  final String at;
+  final String text;
+  final String type;
+
+  const SalesLeadTimelineEntry({
+    required this.at,
+    required this.text,
+    required this.type,
+  });
+
+  factory SalesLeadTimelineEntry.fromJson(Map<String, dynamic> json) {
+    return SalesLeadTimelineEntry(
+      at: json['at']?.toString() ?? '',
+      text: json['text']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+    );
+  }
+}
+
 class SalesLead {
   final String id;
   final String? dbId;
@@ -18,6 +41,8 @@ class SalesLead {
   final int? score;
   final String requirements;
   final List<dynamic> requirementLines;
+  final List<SalesLeadTimelineEntry> timeline;
+  final String repeatFrequency;
   final String? lostReason;
   final String? quoteId;
   final String? billId;
@@ -49,6 +74,8 @@ class SalesLead {
     this.score,
     required this.requirements,
     required this.requirementLines,
+    this.timeline = const [],
+    this.repeatFrequency = '',
     this.lostReason,
     this.quoteId,
     this.billId,
@@ -67,7 +94,6 @@ class SalesLead {
   }
 
   factory SalesLead.fromJson(Map<String, dynamic> json) {
-    
     return SalesLead(
       id: json['id']?.toString() ?? '',
       dbId: json['_id']?.toString(),
@@ -90,6 +116,14 @@ class SalesLead {
       requirementLines: json['requirementLines'] is List
           ? List<dynamic>.from(json['requirementLines'] as List)
           : const [],
+      timeline: json['timeline'] is List
+          ? (json['timeline'] as List)
+              .whereType<Map>()
+              .map((e) => SalesLeadTimelineEntry.fromJson(
+                  Map<String, dynamic>.from(e)))
+              .toList()
+          : const [],
+      repeatFrequency: json['repeatFrequency']?.toString() ?? '',
       lostReason: json['lostReason']?.toString(),
       quoteId: json['quoteId']?.toString(),
       billId: json['billId']?.toString(),
@@ -103,7 +137,5 @@ class SalesLead {
       createdAt: json['createdAt']?.toString(),
       updatedAt: json['updatedAt']?.toString(),
     );
-
-    
   }
 }

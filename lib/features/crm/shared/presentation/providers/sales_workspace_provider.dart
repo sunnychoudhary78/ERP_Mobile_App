@@ -13,7 +13,7 @@ final salesCrmApiProvider = Provider<SalesCrmApiService>((ref) {
   return SalesCrmApiService(ref.read(apiServiceProvider));
 });
 
-final salesWorkspaceProvider = AsyncNotifierProvider.autoDispose<
+final   salesWorkspaceProvider = AsyncNotifierProvider.autoDispose<
     SalesWorkspaceNotifier, SalesWorkspace>(
   SalesWorkspaceNotifier.new,
 );
