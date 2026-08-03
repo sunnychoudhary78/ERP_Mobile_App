@@ -133,7 +133,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
 
                 // Title & Count
                
-                // const SizedBox(height: 16),
+                // 
 
                 // Empty State or List of Cards
                 if (filteredContacts.isEmpty)
