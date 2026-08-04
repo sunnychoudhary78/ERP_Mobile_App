@@ -52,6 +52,7 @@ class ApiEndpoints {
   // ───────── PRODUCTION (existing backend) ─────────
   static const String workOrders = 'production/work-orders';
 
+
   // ───────── SALES CRM (/api/sales — requires sales module backend) ─────────
   static const String salesWorkspace = 'sales/workspace';
   static const String salesConfig = 'sales/config';

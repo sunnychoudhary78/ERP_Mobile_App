@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:erp_app/features/crm/shared/data/models/sales_product_model.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_endpoints.dart';
@@ -30,9 +31,9 @@ class SalesCrmApiService {
     // debugPrint('LEADS RAW: ${jsonEncode(response['data']['leads'])}');
     // debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
     debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
-  debugPrint('WORKSPACE: ${jsonEncode(response['data']['workspace'])}');
+    debugPrint('WORKSPACE: ${jsonEncode(response['data']['workspace'])}');
     //debugPrint('compaingBilling: ${jsonEncode(response['data']['companyBilling'])}');
-   // debugPrint(response.toString());
+    // debugPrint(response.toString());
     return SalesWorkspace.fromApiResponse(response['data']['workspace']);
   }
 
@@ -54,7 +55,6 @@ class SalesCrmApiService {
     final map = _asMap(response);
 
     // debugPrint("=== Response Map ===");
-
 
     final lead = map['lead'] is Map ? map['lead'] : map;
 
@@ -303,6 +303,9 @@ class SalesCrmApiService {
       } else {
         list = const [];
       }
+
+      debugPrint("=== API Response fetchCustomers ===");
+      debugPrint('CUSTOMERS RAW: ${jsonEncode(list)}');
     } else if (response is List) {
       list = response;
     } else {
@@ -321,5 +324,28 @@ class SalesCrmApiService {
     if (map['team'] is List) return map['team'] as List;
     if (response is List) return response;
     return const [];
+  }
+
+  Future<List<InventoryProductItem>> fetchItems({
+    int page = 1,
+    int limit = 25,
+    String? search,
+  }) async {
+    final response = await api.get(
+      ApiEndpoints.items,
+      queryParams: {
+        'page': page,
+        'limit': limit,
+        if (search != null && search.isNotEmpty) 'search': search,
+      },
+    );
+
+    final map = _asMap(response);
+
+    final List list = (map['data']?['items'] as List?) ?? [];
+
+    return list
+        .map((e) => InventoryProductItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 }

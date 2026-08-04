@@ -1,3 +1,4 @@
+import 'package:erp_app/features/crm/shared/data/models/sales_product_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/providers/network_providers.dart';
@@ -238,3 +239,25 @@ final crmQuoteByIdProvider =
         orElse: () => null,
       );
 });
+
+// ─── Products (inventory items, for the quote-form product picker) ──────
+
+final crmProductsProvider = AsyncNotifierProvider.autoDispose<
+    CrmProductsNotifier, List<InventoryProductItem>>(
+  CrmProductsNotifier.new,
+);
+
+class CrmProductsNotifier extends AsyncNotifier<List<InventoryProductItem>> {
+  @override
+  Future<List<InventoryProductItem>> build() async {
+    ref.watch(authProvider);
+    return ref.read(salesCrmApiProvider).fetchItems();
+  }
+
+  Future<void> refresh({String? search}) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(salesCrmApiProvider).fetchItems(search: search),
+    );
+  }
+}
