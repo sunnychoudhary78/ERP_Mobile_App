@@ -1,4 +1,7 @@
 
+import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart';
+import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
+import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../core/screens/subscription_expired_screen.dart';
@@ -60,6 +63,9 @@ class AppRoutes {
     '/crm/quotes/form': (_) => const QuoteFormScreen(),
     '/crm/visits': (_) => const VisitCheckInScreen(),
     '/crm/tracking': (_) => const VisitTrackingScreen(),
+    '/crm/crm_sales_screen': (_) => const CrmSalesScreen(),
+    '/crm/hrms_sales_screen': (_) => const HrmsScreen(),
+    '/crm/inventory_sales_screen': (_) => const InventorySalesScreen(),
 
 
     // Inventory / Production

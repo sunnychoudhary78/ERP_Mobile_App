@@ -1,8 +1,11 @@
-import 'package:erp_app/core/widgets/app_drawer.dart';
+import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart';
+import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
+import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_drawer.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 
@@ -30,36 +33,39 @@ class HomeScreen extends ConsumerWidget {
       QuickLink('Visits', '/crm/visits', Icons.location_on_outlined),
       QuickLink('Team tracking', '/crm/tracking', Icons.map_outlined),
       QuickLink('Stock lookup', '/stock-lookup', Icons.inventory_2_outlined),
-      QuickLink('Work orders', '/work-orders', Icons.precision_manufacturing_outlined),
+      QuickLink(
+        'Work orders',
+        '/work-orders',
+        Icons.precision_manufacturing_outlined,
+      ),
     ]),
   ];
 
-  // Flat list used by the drawer (all links in one place).
-  // static List<QuickLink> get _allLinks =>
-  //     _sections.expand((s) => s.links).toList();
+  static const double _sectionGap = 20;
+  static const double _itemGap = 12;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(authProvider).profile;
+    final homeData = ref.watch(homeDataProvider);
+
     final fullName = profile?.associatesName ?? 'there';
     final firstName = fullName.split(' ').first;
     final initials = fullName.trim().isEmpty
         ? '?'
         : fullName
-            .trim()
-            .split(RegExp(r'\s+'))
-            .take(2)
-            .map((e) => e[0].toUpperCase())
-            .join();
+              .trim()
+              .split(RegExp(r'\s+'))
+              .take(2)
+              .map((e) => e[0].toUpperCase())
+              .join();
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text('Dashboard'),
         actions: [
-          _NotificationBellButton(
-            unreadCount: ref.watch(unreadCountProvider),
-          ),
+          _NotificationBellButton(unreadCount: ref.watch(unreadCountProvider)),
           IconButton(
             tooltip: 'Logout',
             onPressed: () async {
@@ -80,145 +86,541 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          // TODO: hook up refresh (attendance / approvals / stock counts)
+          await ref.refresh(homeDataProvider.future);
         },
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-          children: [
-            // Greeting header card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primary.withValues(alpha: 0.75),
+        child: homeData.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Error: $err')),
+          data: (data) => ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+            children: [
+              // Greeting Banner with integrated Quick Stats
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primaryDark,
+                      AppColors.primaryDark.withValues(alpha: 0.85),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryDark.withValues(alpha: 0.2),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hi, $firstName',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.white.withValues(alpha: 0.18),
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Here\'s what needs your attention today.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: Colors.white.withValues(alpha: 0.25),
-                    child: Text(
-                      initials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
                       ),
                     ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome back, $firstName',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            "Here's your operational status.",
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: _sectionGap),
+
+              // Quick Actions Grid (4-Column Layout)
+              _SectionLabel('QUICK ACTIONS'),
+              const SizedBox(height: _itemGap),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 4,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                children: [
+                  _QuickActionButton(
+                    icon: Icons.fingerprint_rounded,
+                    label: 'Punch',
+                    color: Colors.blue,
+                    onTap: () => Navigator.pushNamed(context, '/punch'),
+                  ),
+                  _QuickActionButton(
+                    icon: Icons.event_available_outlined,
+                    label: 'Apply Leave',
+                    color: Colors.orange,
+                    onTap: () => Navigator.pushNamed(context, '/leave-apply'),
+                  ),
+                  _QuickActionButton(
+                    icon: Icons.leaderboard_outlined,
+                    label: 'Leads',
+                    color: Colors.purple,
+                    onTap: () => Navigator.pushNamed(context, '/crm/leads'),
+                  ),
+                  _QuickActionButton(
+                    icon: Icons.location_on_outlined,
+                    label: 'Visits',
+                    color: Colors.teal,
+                    onTap: () => Navigator.pushNamed(context, '/crm/visits'),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 18),
+              const SizedBox(height: _sectionGap),
 
-            // Status cards row
-            SizedBox(
-              height: 118,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: 3,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  const cards = [
-                    _StatusCard(
-                      title: 'Today punch',
-                      value: '—',
-                      hint: 'Wire attendance summary here',
-                      icon: Icons.fingerprint_rounded,
+              // Pulse Metrics Horizontal Cards
+              _SectionLabel('METRICS & STATS'),
+              const SizedBox(height: _itemGap),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _PulseMetricCard(
+                        icon: Icons.check_circle_rounded,
+                        iconColor: AppColors.success,
+                        title: 'Punch status',
+                        value: data.punchTime,
+                        badgeText: data.punchBadgeText,
+                        badgeColor: data.isLoggedIn
+                            ? AppColors.success
+                            : AppColors.danger,
+                        onTap: () => Navigator.pushNamed(context, '/punch'),
+                      ),
                     ),
-                    _StatusCard(
-                      title: 'Pending approvals',
-                      value: '—',
-                      hint: 'Wire approvals count here',
-                      icon: Icons.approval_outlined,
+                    const SizedBox(width: _itemGap),
+                    Expanded(
+                      child: _PulseMetricCard(
+                        icon: Icons.pending_actions_rounded,
+                        iconColor: AppColors.danger,
+                        title: 'Pending',
+                        value: data.pendingCount,
+                        badgeText: data.pendingBadgeText,
+                        badgeColor: AppColors.danger,
+                        onTap: () => Navigator.pushNamed(context, '/approvals'),
+                      ),
                     ),
-                    _StatusCard(
-                      title: 'Low stock alerts',
-                      value: '—',
-                      hint: 'Wire inventory/low-stock count here',
-                      icon: Icons.inventory_2_outlined,
-                    ),
-                  ];
-                  return SizedBox(width: 200, child: cards[index]);
-                },
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 26),
+              const SizedBox(height: _itemGap),
 
-            // Quick links grouped by section, as a grid
-            for (final section in _sections) ...[
-              Text(
-                section.title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+              // Next Activity / Follow-Up Card
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
+                  ],
+                ),
+                child: ListTile(
+                  onTap: () => Navigator.pushNamed(context, data.followUpRoute),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.calendar_today_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text(
+                    'NEXT SCHEDULED TASK',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.muted,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      data.nextFollowUpTitle,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: AppColors.text,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  trailing: data.nextFollowUpTime.isEmpty
+                      ? const Icon(Icons.chevron_right, color: AppColors.muted)
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              data.nextFollowUpTime,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: AppColors.muted,
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: _sectionGap),
+
+              // Modules Section (2-Column Grid Layout)
+              // Module Hub Header
+              _SectionLabel('MODULE HUB'),
+              const SizedBox(height: _itemGap),
+
+              // Horizontal 2-Column Row (like Contacts / Customers in image)
+              Row(
+                children: [
+                  Expanded(
+                    child: _ModuleCompactTile(
+                      title: 'CRM & Sales',
+                      icon: Icons.bar_chart_rounded,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CrmSalesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ModuleCompactTile(
+                      title: 'HRMS',
+                      icon: Icons.badge_outlined,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HrmsScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: section.links.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 2.6,
-                ),
-                itemBuilder: (context, i) {
-                  final link = section.links[i];
-                  return _QuickLinkTile(link: link);
+
+              // Full Width Tile (like Follow-ups in image)
+              _ModuleCompactTile(
+                title: 'Operations',
+                icon: Icons.inventory_2_outlined,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const InventorySalesScreen(),
+                    ),
+                  );
                 },
               ),
-              const SizedBox(height: 22),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Bell icon with a small dynamic unread-count badge.
-/// The count comes straight from [unreadCountProvider], so it updates
-/// automatically (drops to 0, hides itself) the moment the user reads
-/// or deletes notifications on the Notifications screen — no manual
-/// refresh needed here.
+// ---------------------------------------------------------------------------
+// Helper Widgets
+// ---------------------------------------------------------------------------
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: AppColors.muted,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.text,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PulseMetricCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String value;
+  final String badgeText;
+  final Color badgeColor;
+  final VoidCallback onTap;
+
+  const _PulseMetricCard({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.value,
+    required this.badgeText,
+    required this.badgeColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, size: 16, color: iconColor),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryDark,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (badgeText.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  badgeText,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                    letterSpacing: 0.4,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModuleCompactTile extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ModuleCompactTile({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFAFAFA),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFEFEF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppColors.primaryDark,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppColors.text,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _NotificationBellButton extends StatelessWidget {
   final int unreadCount;
 
@@ -269,57 +671,6 @@ class _NotificationBellButton extends StatelessWidget {
   }
 }
 
-class _QuickLinkTile extends StatelessWidget {
-  final QuickLink link;
-
-  const _QuickLinkTile({required this.link});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => Navigator.pushNamed(context, link.route),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(link.icon, color: AppColors.primary, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  link.label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
-
 class LinkSection {
   final String title;
   final List<QuickLink> links;
@@ -335,74 +686,6 @@ class QuickLink {
   const QuickLink(this.label, this.route, this.icon);
 }
 
-class _StatusCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String hint;
-  final IconData icon;
-
-  const _StatusCard({
-    required this.title,
-    required this.value,
-    required this.hint,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: AppColors.primary),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            hint,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontSize: 11,
-                ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Shows a modern, animated "Log out?" confirmation dialog.
-/// Returns `true` if the user confirmed, `false`/`null` otherwise.
 Future<bool?> showLogoutConfirmationDialog(BuildContext context) {
   return showGeneralDialog<bool>(
     context: context,
@@ -414,7 +697,10 @@ Future<bool?> showLogoutConfirmationDialog(BuildContext context) {
       return const _LogoutDialog();
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutBack,
+      );
       return FadeTransition(
         opacity: animation,
         child: ScaleTransition(
@@ -433,7 +719,7 @@ class _LogoutDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 44, vertical: 24),
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
         decoration: BoxDecoration(
@@ -453,11 +739,11 @@ class _LogoutDialog extends StatelessWidget {
             Container(
               width: 64,
               height: 64,
-              decoration: BoxDecoration(
-                color: AppColors.border,
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.logout_rounded,
                 color: AppColors.primary,
                 size: 30,
@@ -466,18 +752,18 @@ class _LogoutDialog extends StatelessWidget {
             const SizedBox(height: 18),
             Text(
               'Log out?',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
               'You\'ll need to sign in again to access your account.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.muted,
-                    height: 1.4,
-                  ),
+                color: AppColors.muted,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -489,7 +775,10 @@ class _LogoutDialog extends StatelessWidget {
                       onPressed: () => Navigator.of(context).pop(false),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.black87,
-                        side: BorderSide(color: AppColors.border, width: 1.4),
+                        side: const BorderSide(
+                          color: AppColors.border,
+                          width: 1.4,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -513,10 +802,6 @@ class _LogoutDialog extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
-                      ).copyWith(
-                        overlayColor: WidgetStateProperty.all(
-                          Colors.white.withValues(alpha: 0.1),
-                        ),
                       ),
                       child: const Text(
                         'Yes, logout',
@@ -536,3 +821,40 @@ class _LogoutDialog extends StatelessWidget {
     );
   }
 }
+
+class HomeDashboardData {
+  final String punchTime;
+  final String punchBadgeText;
+  final bool isLoggedIn;
+  final String pendingCount;
+  final String pendingBadgeText;
+  final String nextFollowUpTitle;
+  final String nextFollowUpTime;
+  final String followUpRoute;
+
+  const HomeDashboardData({
+    required this.punchTime,
+    required this.punchBadgeText,
+    required this.isLoggedIn,
+    required this.pendingCount,
+    required this.pendingBadgeText,
+    required this.nextFollowUpTitle,
+    required this.nextFollowUpTime,
+    required this.followUpRoute,
+  });
+}
+
+final homeDataProvider = FutureProvider.autoDispose<HomeDashboardData>((
+  ref,
+) async {
+  return const HomeDashboardData(
+    punchTime: '-',
+    punchBadgeText: 'LOGGED IN',
+    isLoggedIn: true,
+    pendingCount: '-',
+    pendingBadgeText: '',
+    nextFollowUpTitle: 'No follow-ups scheduled',
+    nextFollowUpTime: '',
+    followUpRoute: '/crm/activities',
+  );
+});
