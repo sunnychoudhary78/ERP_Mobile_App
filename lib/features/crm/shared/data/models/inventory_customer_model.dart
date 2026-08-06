@@ -5,6 +5,7 @@ class InventoryCustomer {
   final String? phone;
   final String? address;
   final String? status;
+  final String? gstNumber;
 
   const InventoryCustomer({
     required this.id,
@@ -13,6 +14,7 @@ class InventoryCustomer {
     this.phone,
     this.address,
     this.status,
+    this.gstNumber,
   });
 
   factory InventoryCustomer.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class InventoryCustomer {
       phone: json['phone']?.toString(),
       address: json['address']?.toString(),
       status: json['status']?.toString(),
+      gstNumber: json['gstNumber']?.toString(),
     );
   }
 }

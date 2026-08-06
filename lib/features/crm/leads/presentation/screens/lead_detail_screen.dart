@@ -60,55 +60,63 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     ),
                   ),
                 )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 1. Lead Header Card (Title & Lead ID)
-                      _buildHeaderCard(
-                        title: lead.companyName.isNotEmpty
-                            ? lead.companyName
-                            : (lead.contactName.isNotEmpty ? lead.contactName : 'Testing Lead'),
-                        leadId: leadId ?? 'N/A',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 2. Details / Timeline Tab Switcher
-                      _buildTabBar(),
-                      const SizedBox(height: 20),
-
-                      if (_selectedTabIndex == 0) ...[
-                        // 3. Lifecycle Section
-                        _buildSectionHeader('LIFECYCLE'),
-                        const SizedBox(height: 10),
-                        _buildLifecycleStepper(lead.lifecycleStage ?? 'Qualify'),
-                        const SizedBox(height: 24),
-
-                        // 4. Lead Information / Snapshot
-                        _buildSectionHeader('LEAD INFORMATION'),
-                        const SizedBox(height: 10),
-                        _buildSnapshotCard(
-                          lead.clientType,
-                          lead.lifecycleStage ?? '',
-                          lead.status,
-                          lead.repeatFrequency,
+              // Wrap body in SafeArea so buttons don't clip under system navigation bars
+              : SafeArea(
+                  child: SingleChildScrollView(
+                    // Added extra bottom padding (32.0) to prevent edge cutoffs
+                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 1. Lead Header Card (Title & Lead ID)
+                        _buildHeaderCard(
+                          title: lead.companyName.isNotEmpty
+                              ? lead.companyName
+                              : (lead.contactName.isNotEmpty ? lead.contactName : 'Testing Lead'),
+                          leadId: leadId ?? 'N/A',
                         ),
                         const SizedBox(height: 16),
 
-                        // 5. Contact Details Card
-                        _buildContactCard(lead),
-                        const SizedBox(height: 24),
+                        // 2. Details / Timeline Tab Switcher
+                        _buildTabBar(),
+                        const SizedBox(height: 20),
 
-                        // 6. Next Steps Section
-                        _buildSectionHeader('NEXT STEPS'),
-                        const SizedBox(height: 12),
-                        _buildNextStepsActions(),
-                      ] else ...[
-                        // Timeline Section (built from lead.timeline)
-                        _buildTimelineList(lead),
+                        if (_selectedTabIndex == 0) ...[
+                          // 3. Lifecycle Section
+                          _buildSectionHeader('LIFECYCLE'),
+                          const SizedBox(height: 10),
+                          _buildLifecycleStepper(lead.lifecycleStage ?? ''),
+                          const SizedBox(height: 24),
+
+                          // 4. Lead Information / Snapshot
+                          _buildSectionHeader('LEAD INFORMATION'),
+                          const SizedBox(height: 10),
+                          _buildSnapshotCard(
+                            lead.clientType,
+                            lead.lifecycleStage ?? '',
+                            lead.status,
+                            lead.repeatFrequency,
+                          ),
+                          const SizedBox(height: 16),
+
+                          // 5. Contact Details Card
+                          _buildContactCard(lead),
+                          const SizedBox(height: 16),
+
+                          // 5b. Lead Details Card
+                          _buildLeadDetailsCard(lead),
+                          const SizedBox(height: 24),
+
+                          // 6. Next Steps Section
+                          _buildSectionHeader('NEXT STEPS'),
+                          const SizedBox(height: 12),
+                          _buildNextStepsActions(leadId),
+                        ] else ...[
+                          // Timeline Section
+                          _buildTimelineList(lead),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
     );
@@ -240,11 +248,31 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     );
   }
 
-  // Normalizes lifecycle/status strings so backend values (e.g. "follow_up",
-  // "In follow-up") match display labels (e.g. "Follow-up") regardless of
-  // underscores, hyphens, spaces or casing.
   String _normalizeStage(String value) =>
       value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+  static const Map<String, String> _stageAliasMap = {
+    'new': 'Lead entered',
+    'leadentered': 'Lead entered',
+    'created': 'Lead entered',
+    'clienttype': 'Client type',
+    'qualify': 'Qualify',
+    'qualified': 'Qualify',
+    'followup': 'Follow-up',
+    'infollowup': 'Follow-up',
+    'contacted': 'Follow-up',
+    'quoted': 'Quotation',
+    'quotation': 'Quotation',
+    'quote': 'Quotation',
+    'proposal': 'Quotation',
+    'negotiation': 'Negotiation',
+    'negotiating': 'Negotiation',
+    'won': 'Won / Lost',
+    'lost': 'Won / Lost',
+    'closedwon': 'Won / Lost',
+    'closedlost': 'Won / Lost',
+    'wonlost': 'Won / Lost',
+  };
 
   // Lifecycle Horizontal Stepper
   Widget _buildLifecycleStepper(String currentStage) {
@@ -259,14 +287,15 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     ];
 
     final normalizedCurrent = _normalizeStage(currentStage);
-    final currentIndex =
-        stages.indexWhere((s) => _normalizeStage(s) == normalizedCurrent);
+    final mappedStage = _stageAliasMap[normalizedCurrent];
+    final currentIndex = mappedStage != null
+        ? stages.indexOf(mappedStage)
+        : stages.indexWhere((s) => _normalizeStage(s) == normalizedCurrent);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: List.generate(stages.length * 2 - 1, (i) {
-          // Even indices are stage chips, odd indices are arrow separators.
           if (i.isOdd) {
             final beforeIndex = i ~/ 2;
             final arrowPassed =
@@ -321,9 +350,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     );
   }
 
-  // Safely reads a field ('at' / 'text' / 'type') off a timeline entry,
-  // whether it comes through as a Map<String, dynamic> (raw JSON) or a
-  // typed model object with matching getters.
   String _timelineField(dynamic entry, String key) {
     try {
       if (entry is Map) {
@@ -341,8 +367,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     return '';
   }
 
-  // Timeline Tab Content — renders lead.timeline (newest first) as a
-  // vertical dot/line timeline, mirroring the web Timeline tab.
+  // Improved Timeline layout using Stack + Row to avoid height overflow blocks
   Widget _buildTimelineList(dynamic lead) {
     final List<dynamic> rawTimeline =
         (lead.timeline as List?)?.toList() ?? const [];
@@ -372,12 +397,25 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         final at = _timelineField(entry, 'at');
         final type = _timelineField(entry, 'type').toUpperCase();
 
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Column(
+        return Stack(
+          children: [
+            // Vertical connecting line
+            if (!isLast)
+              Positioned(
+                top: 16,
+                bottom: 0,
+                left: 5,
+                child: Container(
+                  width: 2,
+                  color: AppColors.border,
+                ),
+              ),
+            Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Timeline Node Dot
                   Container(
                     width: 12,
                     height: 12,
@@ -389,98 +427,81 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                           : AppColors.primary.withOpacity(0.35),
                     ),
                   ),
-                  if (!isLast)
-                    Expanded(
-                      child: Container(
-                        width: 2,
-                        color: AppColors.border,
+                  const SizedBox(width: 14),
+                  // Timeline Content Card
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border.withOpacity(0.5)),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: isLast ? 0 : 20),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(14),
-                      border:
-                          Border.all(color: AppColors.border.withOpacity(0.5)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          text.isNotEmpty ? text : 'Activity',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.text,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          at,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        if (type.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            text.isNotEmpty ? text : 'Activity',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.text,
                             ),
-                            child: Text(
-                              type,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.muted,
-                                letterSpacing: 0.5,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            at,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (type.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                type,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.muted,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         );
       }),
     );
   }
 
-  // Formats a raw backend value like "follow_up" or "in_follow_up" into a
-  // display label like "FOLLOW UP".
   String _formatSnapshotLabel(String value) {
     if (value.trim().isEmpty) return '';
     return value.replaceAll(RegExp(r'[_\-]+'), ' ').trim().toUpperCase();
   }
 
-  // Snapshot Status Card — pills are derived directly from this lead's own
-  // data (clientType, lifecycleStage, status, repeatFrequency), so each
-  // lead shows its own snapshot instead of matching against a fixed list.
   Widget _buildSnapshotCard(
     String clientType,
     String lifecycleStage,
     String status,
     String repeatFrequency,
   ) {
-    // Each pill: (label, isActive). The current `status` is the live/active
-    // state and gets the highlighted style; the rest are plain context tags.
     final pills = <String, bool>{};
 
     final clientTypeLabel = _formatSnapshotLabel(clientType);
@@ -553,7 +574,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     );
   }
 
-  // Contact Information Details Card
   Widget _buildContactCard(dynamic lead) {
     return Container(
       width: double.infinity,
@@ -588,6 +608,87 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     );
   }
 
+  Widget _buildLeadDetailsCard(dynamic lead) {
+    final rows = <MapEntry<String, String>>[];
+
+    final double value = lead.value;
+    if (value > 0) {
+      rows.add(MapEntry('Value', '₹${value.toStringAsFixed(0)}'));
+    }
+
+    final int? score = lead.score;
+    if (score != null) {
+      rows.add(MapEntry('Score', score.toString()));
+    }
+
+    final String source = lead.source.toString();
+    if (source.isNotEmpty) {
+      rows.add(MapEntry('Source', source));
+    }
+
+    final String requirements = lead.requirements.toString();
+    if (requirements.isNotEmpty) {
+      rows.add(MapEntry('Requirements', requirements));
+    }
+
+    final String gstNumber = lead.gstNumber.toString();
+    if (gstNumber.isNotEmpty) {
+      rows.add(MapEntry('GST Number', gstNumber));
+    }
+
+    final String? quoteId = lead.quoteId;
+    if (quoteId != null && quoteId.isNotEmpty) {
+      rows.add(MapEntry('Quote', quoteId));
+    }
+
+    final String? nextFollowUpAt = lead.nextFollowUpAt;
+    if (nextFollowUpAt != null && nextFollowUpAt.isNotEmpty) {
+      rows.add(MapEntry('Next follow-up', nextFollowUpAt));
+    }
+
+    final String? lastFollowUpAt = lead.lastFollowUpAt;
+    if (lastFollowUpAt != null && lastFollowUpAt.isNotEmpty) {
+      rows.add(MapEntry('Last follow-up', lastFollowUpAt));
+    }
+
+    final String? lostReason = lead.lostReason;
+    if (lostReason != null && lostReason.isNotEmpty) {
+      rows.add(MapEntry('Lost reason', lostReason));
+    }
+
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'DETAILS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppColors.muted,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (int i = 0; i < rows.length; i++) ...[
+            _buildDetailRow(rows[i].key, rows[i].value),
+            if (i != rows.length - 1)
+              const Divider(height: 24, color: AppColors.surface, thickness: 1.5),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildDetailRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -617,7 +718,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   }
 
   // Bottom Quick Action Buttons
-  Widget _buildNextStepsActions() {
+  Widget _buildNextStepsActions(String? leadId) {
     return Column(
       children: [
         Row(
@@ -631,7 +732,13 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/crm/activities',
+                    arguments: leadId,
+                  );
+                },
                 child: const Text('Start follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
               ),
             ),
@@ -663,7 +770,11 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {},
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  '/crm/quotes/form',
+                  arguments: leadId,
+                ),
                 child: const Text('Create quotation', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/features/crm/activities/presentation/screens/follow_up_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,15 +44,16 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
           ),
         ],
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   backgroundColor: AppColors.primary,
-      //   foregroundColor: Colors.white,
-      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      //   onPressed: () {
-      //     // TODO: Log from leads / Add action
-      //   },
-      //   child: const Icon(Icons.add, size: 28),
-      // ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        onPressed: () {
+          // TODO: Log from leads / Add action
+           _showLeadSelectionDialog(context);
+        },
+        child: const Icon(Icons.add, size: 28),
+      ),
       body: CrmAsyncBody(
         async: async,
         onRetry: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
@@ -186,6 +188,141 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       ),
     );
   }
+
+  void _showLeadSelectionDialog(BuildContext context) {
+  final async = ref.watch(crmLeadsProvider);
+  
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) => Consumer(
+      builder: (context, ref, child) {
+        final leadsAsync = ref.watch(crmLeadsProvider);
+        return leadsAsync.when(
+          data: (leads) {
+            if (leads.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(
+                  child: Text('No leads available to log follow-ups.'),
+                ),
+              );
+            }
+            return DraggableScrollableSheet(
+              initialChildSize: 0.6,
+              minChildSize: 0.3,
+              maxChildSize: 0.9,
+              expand: false,
+              builder: (context, scrollController) => Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.card,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      border: Border(bottom: BorderSide(color: AppColors.border)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Select Lead',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: leads.length,
+                      itemBuilder: (context, index) {
+                        final lead = leads[index];
+                        final name = lead.companyName.isNotEmpty 
+                            ? lead.companyName 
+                            : lead.contactName;
+                        
+                        return Card(
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          color: AppColors.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: const BorderSide(color: AppColors.border),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.primary.withOpacity(0.1),
+                              child: const Icon(
+                                Icons.person_outline,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            title: Text(
+                              name.isEmpty ? 'Unnamed Lead' : name,
+                              style: const TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            subtitle: Text(
+                              lead.email.isNotEmpty ? lead.email : lead.phone,
+                              style: const TextStyle(color: AppColors.muted),
+                            ),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              color: AppColors.muted,
+                              size: 16,
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FollowUpScreen(
+                                    leadId: lead.id,
+                                    leadName: name.isEmpty ? 'Unnamed Lead' : name,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.danger, size: 48),
+                const SizedBox(height: 12),
+                Text(
+                  error.toString().replaceFirst('Exception: ', ''),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
 
   // Card matching Mobile & Theme Layout
   Widget _buildActivityCard(BuildContext context, dynamic activity) {

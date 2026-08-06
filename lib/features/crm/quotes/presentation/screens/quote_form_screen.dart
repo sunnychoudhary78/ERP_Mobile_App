@@ -5,8 +5,6 @@ import 'package:erp_app/core/theme/app_theme.dart';
 
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
 
-/// Full quote-create form: customer details, commercial terms, transport,
-/// dynamic product line items, and a live subtotal/GST/grand-total summary.
 class QuoteFormScreen extends ConsumerStatefulWidget {
   const QuoteFormScreen({super.key});
 
@@ -14,7 +12,6 @@ class QuoteFormScreen extends ConsumerStatefulWidget {
   ConsumerState<QuoteFormScreen> createState() => _QuoteFormScreenState();
 }
 
-/// One editable product row in the Products section.
 class _QuoteLineItem {
   String? product;
   final TextEditingController item = TextEditingController();
@@ -58,24 +55,19 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _leadId = TextEditingController();
 
-  // Customer Details
+  bool _leadPrefilled = false;
   final _clientEmail = TextEditingController();
   final _address = TextEditingController();
   final _gstNumber = TextEditingController();
   final _gstRate = TextEditingController(text: '18');
 
-  // Commercial Terms
   String? _paymentTerms = _paymentTermsOptions.first;
   String? _deliveryFreight = _deliveryFreightOptions.first;
   String? _dispatchMode = _dispatchModeOptions.first;
 
-  // Transport Details
   final _transportDetails = TextEditingController();
-
-  // Products
   final List<_QuoteLineItem> _lineItems = [_QuoteLineItem()];
 
-  // Footer
   final _validForDays = TextEditingController(text: '30');
   final _notes = TextEditingController();
 
@@ -131,6 +123,17 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
     super.dispose();
   }
 
+  void _maybePrefillFromLead(dynamic lead) {
+    if (lead == null || _leadPrefilled) return;
+    _leadPrefilled = true;
+    _clientEmail.text = (lead.email ?? '').toString();
+    _address.text = (lead.address ?? '').toString();
+    final gst = (lead.gstNumber ?? '').toString();
+    if (gst.isNotEmpty && gst != 'null') {
+      _gstNumber.text = gst;
+    }
+  }
+
   double get _subtotal =>
       _lineItems.fold<double>(0, (sum, line) => sum + line.amount);
 
@@ -144,7 +147,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
   }
 
   void _removeLineItem(int index) {
-    if (_lineItems.length == 1) return; // keep at least one row
+    if (_lineItems.length == 1) return;
     setState(() {
       _lineItems.removeAt(index).dispose();
     });
@@ -197,6 +200,9 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(crmProductsProvider);
+    final leadId = _leadId.text.trim();
+    final lead = leadId.isEmpty ? null : ref.watch(crmLeadByIdProvider(leadId));
+    _maybePrefillFromLead(lead);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -215,11 +221,13 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
             _sectionCard(
               title: 'Customer Details',
               children: [
+                _leadCustomerHeader(lead),
                 _label('Client email'),
                 _textField(
                   controller: _clientEmail,
                   hint: 'name@company.com',
                   keyboardType: TextInputType.emailAddress,
+                  enabled: false,
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
@@ -228,12 +236,14 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                   controller: _address,
                   hint: 'Delivery / billing address',
                   maxLines: 2,
+                  enabled: false,
                 ),
                 _label('Customer GSTIN'),
                 _textField(
                   controller: _gstNumber,
                   hint: '29AAAAA0000A1Z5',
                   textCapitalization: TextCapitalization.characters,
+                  enabled: false,
                 ),
                 _label('GST rate (%)'),
                 _textField(
@@ -276,13 +286,14 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                 _label('Transport details (optional)'),
                 _textField(
                   controller: _transportDetails,
-                  hint: 'Transporter name, vehicle, pickup point, '
-                      'delivery address note...',
+                  hint: 'Transporter name, vehicle, pickup point...',
                   maxLines: 3,
                 ),
               ],
             ),
             const SizedBox(height: 16),
+
+            // PRODUCT SECTION WITH WORKING ADD BUTTON & WEB-MATCHED UI
             _sectionCard(
               title: 'Products',
               titleRequired: true,
@@ -290,10 +301,11 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
               children: [
                 for (var i = 0; i < _lineItems.length; i++) ...[
                   _productCard(i, productsAsync),
-                  if (i != _lineItems.length - 1) const SizedBox(height: 12),
+                  if (i != _lineItems.length - 1) const SizedBox(height: 16),
                 ],
               ],
             ),
+
             const SizedBox(height: 16),
             _sectionCard(
               children: [
@@ -377,7 +389,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
     );
   }
 
-  // ── Reusable pieces ──────────────────────────────────────────────
+  // ── UI Components ──────────────────────────────────────────────
 
   Widget _sectionCard({
     String? title,
@@ -399,29 +411,32 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
         children: [
           if (title != null) ...[
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (titleIcon != null) ...[
-                  Icon(titleIcon, size: 18, color: AppColors.text),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        color: AppColors.text,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    if (titleIcon != null) ...[
+                      Icon(titleIcon, size: 18, color: AppColors.text),
+                      const SizedBox(width: 8),
+                    ],
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: AppColors.text,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        children: [
+                          TextSpan(text: title),
+                          if (titleRequired)
+                            const TextSpan(
+                              text: ' *',
+                              style: TextStyle(color: AppColors.danger),
+                            ),
+                        ],
                       ),
-                      children: [
-                        TextSpan(text: title),
-                        if (titleRequired)
-                          const TextSpan(
-                            text: ' *',
-                            style: TextStyle(color: AppColors.danger),
-                          ),
-                      ],
                     ),
-                  ),
+                  ],
                 ),
                 if (trailing != null) trailing,
               ],
@@ -434,21 +449,26 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
     );
   }
 
+  // Add Product Button
   Widget _addButton() {
-    return OutlinedButton.icon(
+    return ElevatedButton.icon(
       onPressed: _addLineItem,
       icon: const Icon(Icons.add, size: 16, color: AppColors.primaryDark),
       label: const Text(
-        'Add',
-        style: TextStyle(color: AppColors.primaryDark),
-      ),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        side: const BorderSide(color: AppColors.primaryDark),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+        'Add product',
+        style: TextStyle(
+          color: AppColors.primaryDark,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
         ),
-        minimumSize: Size.zero,
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primaryDark.withOpacity(0.08),
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
@@ -456,7 +476,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
 
   Widget _label(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6, top: 12),
+      padding: const EdgeInsets.only(bottom: 6, top: 10),
       child: Text(
         text,
         style: const TextStyle(
@@ -553,6 +573,58 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
     );
   }
 
+  Widget _leadCustomerHeader(dynamic lead) {
+    String name = 'No lead linked';
+    if (lead != null) {
+      final company = (lead.companyName ?? '').toString();
+      final contact = (lead.contactName ?? '').toString();
+      name = company.isNotEmpty ? company : (contact.isNotEmpty ? contact : 'N/A');
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDark.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryDark,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.business_outlined,
+                size: 18, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Create quotation',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  name,
+                  style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Web exact-matching Product Line Card
   Widget _productCard(
     int index,
     AsyncValue<List<InventoryProductItem>> productsAsync,
@@ -573,84 +645,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Spacer(),
-              InkWell(
-                onTap: () => _removeLineItem(index),
-                borderRadius: BorderRadius.circular(20),
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(Icons.close, size: 18, color: AppColors.muted),
-                ),
-              ),
-            ],
-          ),
-          _label('Product'),
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: SizedBox(
-                height: 18,
-                width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          else if (hasError)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Could not load products',
-                      style: TextStyle(color: AppColors.danger, fontSize: 13),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () =>
-                        ref.read(crmProductsProvider.notifier).refresh(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            )
-          else
-            _dropdown(
-              value: line.product,
-              items: productNames,
-              hint: 'Pick product',
-              onChanged: (v) {
-                setState(() {
-                  line.product = v;
-                  // Auto-fill the item description with the picked product
-                  // name; qty/rate/HSN still need to be entered manually
-                  // since InventoryProductItem doesn't carry price/HSN.
-                  if (v != null && line.item.text.trim().isEmpty) {
-                    line.item.text = v;
-                  }
-                });
-              },
-            ),
-          _label('Item *'),
-          _textField(
-            controller: line.item,
-            hint: 'Description',
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Required' : null,
-          ),
-          _label('HSN / SAC'),
-          _textField(controller: line.hsn, hint: '8471'),
-          _label('Unit'),
-          _textField(controller: line.unit, hint: 'Nos, Kg, Roll...'),
-          _label('Article No.'),
-          _textField(controller: line.articleNo, hint: 'SKU / code'),
-          _label('Type'),
-          _textField(controller: line.type, hint: 'Variant / grade'),
-          const Padding(
-            padding: EdgeInsets.only(top: 14, bottom: 10),
-            child: Divider(height: 1, color: AppColors.border),
-          ),
+          // Row 1: Product Dropdown & Item Description
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -658,7 +653,182 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _label('Qty *'),
+                    _label('Product'),
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else if (hasError)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Could not load products',
+                                style: TextStyle(color: AppColors.danger, fontSize: 13),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  ref.read(crmProductsProvider.notifier).refresh(),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      _dropdown(
+                        value: line.product,
+                        items: productNames,
+                        hint: 'Pick product',
+                        onChanged: (v) {
+                          setState(() {
+                            line.product = v;
+                            if (v == null) return;
+
+                            InventoryProductItem? selected;
+                            for (final p in products) {
+                              if (p.name == v) {
+                                selected = p;
+                                break;
+                              }
+                            }
+                            if (selected == null) return;
+
+                            line.item.text = selected.name;
+                            line.hsn.text = selected.hsn;
+                            line.unit.text = selected.unit;
+                            line.articleNo.text = selected.articleNo;
+                            line.type.text = selected.type;
+                            if (selected.rate > 0) {
+                              line.rate.text = selected.rate % 1 == 0
+                                  ? selected.rate.toStringAsFixed(0)
+                                  : selected.rate.toString();
+                            }
+                            if (line.qty.text.trim().isEmpty) {
+                              line.qty.text = '1';
+                            }
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
+                        children: [
+                          TextSpan(text: 'Item'),
+                          TextSpan(
+                            text: ' *',
+                            style: TextStyle(color: AppColors.danger),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    _textField(
+                      controller: line.item,
+                      hint: 'Description',
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Required' : null,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Row 2: HSN / SAC & Unit
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _label('HSN / SAC'),
+                    _textField(controller: line.hsn, hint: '8471'),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _label('Unit'),
+                    _textField(controller: line.unit, hint: 'Nos, Kg, Roll...'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Row 3: Article No. & Type
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _label('Article No.'),
+                    _textField(controller: line.articleNo, hint: 'SKU / code'),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _label('Type'),
+                    _textField(controller: line.type, hint: 'Variant / grade'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Row 4: Qty, Rate, Amt & Delete Icon
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
+                        children: [
+                          TextSpan(text: 'Qty'),
+                          TextSpan(
+                            text: ' *',
+                            style: TextStyle(color: AppColors.danger),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     _textField(
                       controller: line.qty,
                       hint: '1',
@@ -670,12 +840,28 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _label('Rate (₹) *'),
+                    RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
+                        children: [
+                          TextSpan(text: 'Rate (₹)'),
+                          TextSpan(
+                            text: ' *',
+                            style: TextStyle(color: AppColors.danger),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     _textField(
                       controller: line.rate,
                       hint: '0',
@@ -687,7 +873,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -695,11 +881,12 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                     _label('Amt'),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
+                        horizontal: 10,
                         vertical: 12,
                       ),
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppColors.border.withOpacity(0.25),
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: AppColors.border),
                       ),
@@ -715,22 +902,31 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              const Text(
-                'Total  ',
-                style: TextStyle(color: AppColors.muted, fontSize: 13),
-              ),
-              Text(
-                '₹${line.amount.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+              const SizedBox(width: 6),
+              // Delete Button matching Web UI Trash icon
+              Container(
+                margin: const EdgeInsets.only(bottom: 2),
+                child: IconButton(
+                  onPressed: _lineItems.length > 1
+                      ? () => _removeLineItem(index)
+                      : null,
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: _lineItems.length > 1
+                        ? AppColors.danger
+                        : AppColors.muted.withOpacity(0.5),
+                  ),
+                  style: IconButton.styleFrom(
+                    padding: const EdgeInsets.all(10),
+                    side: BorderSide(
+                      color: _lineItems.length > 1
+                          ? AppColors.danger.withOpacity(0.3)
+                          : AppColors.border,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
               ),
             ],

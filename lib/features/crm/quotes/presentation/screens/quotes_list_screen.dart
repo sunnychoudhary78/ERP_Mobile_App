@@ -108,12 +108,12 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/crm/quotes/form'),
-        backgroundColor: AppColors.primaryDark,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () => Navigator.pushNamed(context, '/crm/quotes/form'),
+      //   backgroundColor: AppColors.primaryDark,
+      //   shape: const CircleBorder(),
+      //   child: const Icon(Icons.add, color: Colors.white),
+      // ),
       body: CrmAsyncBody(
         async: async,
         onRetry: () => ref.read(salesWorkspaceProvider.notifier).refresh(),

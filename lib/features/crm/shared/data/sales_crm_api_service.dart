@@ -290,6 +290,9 @@ class SalesCrmApiService {
       },
     );
 
+    debugPrint("=== API Response fetchCustomers ===");
+    debugPrint('CUSTOMERS RAW: ${jsonEncode(response)}');
+
     List list;
     if (response is Map) {
       final map = Map<String, dynamic>.from(response);
@@ -339,6 +342,9 @@ class SalesCrmApiService {
         if (search != null && search.isNotEmpty) 'search': search,
       },
     );
+
+    debugPrint("=== API Response fetchItems ===");
+    debugPrint('ITEMS RAW: ${jsonEncode(response)}');
 
     final map = _asMap(response);
 

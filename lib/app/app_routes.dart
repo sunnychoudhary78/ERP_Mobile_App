@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import '../core/screens/subscription_expired_screen.dart';
@@ -59,6 +60,7 @@ class AppRoutes {
     '/crm/quotes/form': (_) => const QuoteFormScreen(),
     '/crm/visits': (_) => const VisitCheckInScreen(),
     '/crm/tracking': (_) => const VisitTrackingScreen(),
+
 
     // Inventory / Production
     '/stock-lookup': (_) => const StockLookupScreen(),

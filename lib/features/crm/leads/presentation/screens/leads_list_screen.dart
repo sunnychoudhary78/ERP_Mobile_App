@@ -300,6 +300,7 @@ class _LeadCard extends StatelessWidget {
     final contact = phone.isNotEmpty ? phone : email;
     final contactIcon =
         phone.isNotEmpty ? Icons.call_outlined : Icons.email_outlined;
+        
 
     return Material(
       color: AppColors.card,

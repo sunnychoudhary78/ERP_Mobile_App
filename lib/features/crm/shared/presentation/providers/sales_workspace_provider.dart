@@ -241,7 +241,6 @@ final crmQuoteByIdProvider =
 });
 
 // ─── Products (inventory items, for the quote-form product picker) ──────
-
 final crmProductsProvider = AsyncNotifierProvider.autoDispose<
     CrmProductsNotifier, List<InventoryProductItem>>(
   CrmProductsNotifier.new,

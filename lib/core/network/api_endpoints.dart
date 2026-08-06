@@ -62,6 +62,7 @@ class ApiEndpoints {
   static const String salesTeam = 'sales/team';
   static const String salesReportsSummary = 'sales/reports/summary';
   static const String salesCustomersMatch = 'sales/customers/match';
+  static const String salesCustomers = 'customers';
 
   static String salesLeadById(String id) => 'sales/leads/$id';
   static String salesLeadQualify(String id) => 'sales/leads/$id/qualify';
@@ -90,4 +91,5 @@ class ApiEndpoints {
 
   static String salesActivityComplete(String id) =>
       'sales/activities/$id/complete';
+
 }
