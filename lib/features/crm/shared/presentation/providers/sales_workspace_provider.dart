@@ -106,8 +106,52 @@ class SalesWorkspaceNotifier extends AsyncNotifier<SalesWorkspace> {
   Future<void> linkCustomer(String leadId, String customerId) =>
       _mutate(() => _api.linkCustomer(leadId, customerId));
 
-  Future<void> ensureCustomer(String leadId) =>
+  Future<({String? customerId, SalesLead? lead, bool created})> ensureCustomer(
+    String leadId,
+  ) =>
       _mutate(() => _api.ensureCustomer(leadId));
+}
+
+/// Team members for lead assignment (`GET sales/team`).
+final crmTeamProvider = FutureProvider.autoDispose<List<CrmTeamMember>>((
+  ref,
+) async {
+  ref.watch(authProvider);
+  final raw = await ref.read(salesCrmApiProvider).getTeamStats();
+  return raw
+      .whereType<Map>()
+      .map((e) => CrmTeamMember.fromJson(Map<String, dynamic>.from(e)))
+      .where((m) => m.id.isNotEmpty)
+      .toList();
+});
+
+class CrmTeamMember {
+  final String id;
+  final String name;
+  final String? email;
+
+  const CrmTeamMember({required this.id, required this.name, this.email});
+
+  factory CrmTeamMember.fromJson(Map<String, dynamic> json) {
+    final id = (json['userId'] ??
+            json['id'] ??
+            json['_id'] ??
+            json['ownerId'] ??
+            '')
+        .toString();
+    final name = (json['name'] ??
+            json['ownerName'] ??
+            json['fullName'] ??
+            json['userName'] ??
+            json['email'] ??
+            'Unknown')
+        .toString();
+    return CrmTeamMember(
+      id: id,
+      name: name,
+      email: json['email']?.toString(),
+    );
+  }
 }
 
 // ─── Derived selectors ───────────────────────────────────────────

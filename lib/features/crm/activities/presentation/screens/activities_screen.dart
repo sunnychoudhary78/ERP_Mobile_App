@@ -29,6 +29,33 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     'Tasks',
   ];
 
+  bool _handledDeepLink = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_handledDeepLink) return;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    final leadId = args is String ? args : null;
+    if (leadId == null || leadId.isEmpty) return;
+    _handledDeepLink = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final lead = ref.read(crmLeadByIdProvider(leadId));
+      final name = lead == null
+          ? 'Lead'
+          : (lead.companyName.isNotEmpty
+              ? lead.companyName
+              : (lead.contactName.isNotEmpty ? lead.contactName : 'Lead'));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FollowUpScreen(leadId: leadId, leadName: name),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(crmActivitiesProvider);
@@ -49,8 +76,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onPressed: () {
-          // TODO: Log from leads / Add action
-           _showLeadSelectionDialog(context);
+          _showLeadSelectionDialog(context);
         },
         child: const Icon(Icons.add, size: 28),
       ),
@@ -190,8 +216,6 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   }
 
   void _showLeadSelectionDialog(BuildContext context) {
-  final async = ref.watch(crmLeadsProvider);
-  
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,

@@ -17,29 +17,53 @@ class _LeadStatusStyle {
 
   static _LeadStatusStyle forStatus(String status) {
     switch (status.toLowerCase()) {
+      case 'open':
       case 'new':
         return _LeadStatusStyle(
           AppColors.primary,
           AppColors.primary,
           Colors.white,
         );
+      case 'qualified':
+        return _LeadStatusStyle(
+          AppColors.accent,
+          AppColors.accent.withOpacity(0.14),
+          AppColors.primaryDark,
+        );
+      case 'in follow-up':
+      case 'in follow up':
       case 'contacted':
         return _LeadStatusStyle(
           AppColors.danger,
           AppColors.danger.withOpacity(0.12),
           AppColors.danger,
         );
+      case 'quoted':
       case 'proposal':
         return _LeadStatusStyle(
           AppColors.accent,
           AppColors.accent.withOpacity(0.14),
           AppColors.primaryDark,
         );
+      case 'pending approval':
       case 'negotiation':
         return _LeadStatusStyle(
           AppColors.success,
           AppColors.success.withOpacity(0.12),
           AppColors.success,
+        );
+      case 'converted':
+      case 'won':
+        return _LeadStatusStyle(
+          AppColors.success,
+          AppColors.success.withOpacity(0.12),
+          AppColors.success,
+        );
+      case 'lost':
+        return _LeadStatusStyle(
+          AppColors.muted,
+          AppColors.border.withOpacity(0.5),
+          AppColors.muted,
         );
       default:
         return _LeadStatusStyle(
@@ -49,6 +73,26 @@ class _LeadStatusStyle {
         );
     }
   }
+}
+
+String _relativeTime(String? iso) {
+  if (iso == null || iso.isEmpty) return '—';
+  final dt = DateTime.tryParse(iso);
+  if (dt == null) return '—';
+  final diff = DateTime.now().difference(dt.toLocal());
+  if (diff.inMinutes < 1) return 'Just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return '${diff.inHours}h ago';
+  if (diff.inDays < 7) return '${diff.inDays}d ago';
+  return '${(diff.inDays / 7).floor()}w ago';
+}
+
+String _formatDealValue(double value) {
+  if (value <= 0) return '';
+  if (value >= 100000) {
+    return '₹${(value / 1000).toStringAsFixed(0)}K';
+  }
+  return '₹${value.toStringAsFixed(0)}';
 }
 
 class LeadsListScreen extends ConsumerStatefulWidget {
@@ -63,7 +107,16 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
   String _query = '';
   String _filter = 'All';
 
-  static const _filters = ['All', 'New', 'Contacted', 'Proposal', 'Negotiation'];
+  static const _filters = [
+    'All',
+    'Open',
+    'Qualified',
+    'In follow-up',
+    'Quoted',
+    'Pending approval',
+    'Lost',
+    'Converted',
+  ];
 
   @override
   void dispose() {
@@ -159,6 +212,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final l = filtered[index];
+                          final deal = _formatDealValue(l.value);
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 14),
                             child: _LeadCard(
@@ -170,9 +224,10 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
                               status: l.status,
                               phone: l.phone,
                               email: l.email,
-                              // TODO: hook up real fields once available on the model
-                              // dealValue: l.dealValue,
-                              // timeAgo: l.updatedAt,
+                              dealValue: deal.isEmpty ? null : deal,
+                              timeAgo: _relativeTime(
+                                l.updatedAt ?? l.lastFollowUpAt,
+                              ),
                               onTap: () => Navigator.pushNamed(
                                 context,
                                 '/crm/leads/detail',

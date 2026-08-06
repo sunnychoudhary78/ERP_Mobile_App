@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/data/models/sales_lead_model.dart';
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
 
 class LeadFormScreen extends ConsumerStatefulWidget {
@@ -14,6 +15,12 @@ class _RequirementLine {
   final _description = TextEditingController();
   final _qty = TextEditingController();
   final _rate = TextEditingController();
+
+  _RequirementLine({String? description, String? qty, String? rate}) {
+    if (description != null) _description.text = description;
+    if (qty != null) _qty.text = qty;
+    if (rate != null) _rate.text = rate;
+  }
 
   Map<String, dynamic> toJson() => {
     'description': _description.text.trim(),
@@ -50,6 +57,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
 
   bool _submitting = false;
   String? _error;
+  String? _leadId;
+  bool _prefilled = false;
 
   static const _sourceOptions = [
     'Phone',
@@ -60,7 +69,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     'Social Media',
     'Other',
   ];
-  static const _clientTypeOptions = ['New', 'Existing'];
+  static const _clientTypeOptions = ['New', 'Returning'];
   static const _temperatureOptions = ['Hot', 'Warm', 'Cold', 'Later'];
   static const _repeatFreqOptions = [
     'Once',
@@ -69,6 +78,61 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     'Quarterly',
     'Yearly',
   ];
+
+  bool get _isEdit => _leadId != null && _leadId!.isNotEmpty;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String && args.isNotEmpty) {
+      _leadId = args;
+    } else if (args is Map && args['leadId'] != null) {
+      _leadId = args['leadId'].toString();
+    }
+    if (_isEdit && !_prefilled) {
+      final lead = ref.read(crmLeadByIdProvider(_leadId!));
+      if (lead != null) {
+        _prefill(lead);
+        _prefilled = true;
+      }
+    }
+  }
+
+  void _prefill(SalesLead lead) {
+    _company.text = lead.companyName;
+    _contact.text = lead.contactName;
+    _phone.text = lead.phone;
+    _email.text = lead.email;
+    _address.text = lead.address;
+    _gst.text = lead.gstNumber;
+    _requirement.text = lead.requirements;
+    _value.text = lead.value > 0 ? lead.value.toStringAsFixed(0) : '';
+    _source = _sourceOptions.contains(lead.source) ? lead.source : 'Phone';
+    final type = lead.clientType == 'Existing' ? 'Returning' : lead.clientType;
+    _clientType =
+        _clientTypeOptions.contains(type) ? type : 'New';
+    final temp = lead.temperature ?? 'Later';
+    _temperature =
+        _temperatureOptions.contains(temp) ? temp : 'Later';
+    _repeatFreq = _repeatFreqOptions.contains(lead.repeatFrequency)
+        ? lead.repeatFrequency
+        : 'Once';
+    if (lead.requirementLines.isNotEmpty) {
+      _addProducts = true;
+      for (final raw in lead.requirementLines) {
+        if (raw is! Map) continue;
+        final m = Map<String, dynamic>.from(raw);
+        _lines.add(
+          _RequirementLine(
+            description: m['description']?.toString() ?? '',
+            qty: m['qty']?.toString() ?? '',
+            rate: m['rate']?.toString() ?? '',
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -95,6 +159,23 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     });
   }
 
+  Map<String, dynamic> _payload() => {
+        'companyName': _company.text.trim(),
+        'contactName': _contact.text.trim(),
+        'phone': _phone.text.trim(),
+        'email': _email.text.trim(),
+        'address': _address.text.trim(),
+        'gstNumber': _gst.text.trim(),
+        'source': _source,
+        'clientType': _clientType,
+        'temperature': _temperature,
+        'requirements': _requirement.text.trim(),
+        'requirementLines':
+            _addProducts ? _lines.map((l) => l.toJson()).toList() : [],
+        'repeatFrequency': _repeatFreq,
+        'value': double.tryParse(_value.text) ?? 0,
+      };
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -120,23 +201,12 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     });
 
     try {
-      await ref.read(salesWorkspaceProvider.notifier).createLead({
-        'companyName': _company.text.trim(),
-        'contactName': _contact.text.trim(),
-        'phone': _phone.text.trim(),
-        'email': _email.text.trim(),
-        'address': _address.text.trim(),
-        'gstNumber': _gst.text.trim(),
-        'source': _source,
-        'clientType': _clientType,
-        'temperature': _temperature,
-        'requirements': _requirement.text.trim(),
-        'requirementLines': _addProducts
-            ? _lines.map((l) => l.toJson()).toList()
-            : [],
-        'repeatFrequency': _repeatFreq,
-        'value': double.tryParse(_value.text) ?? 0,
-      });
+      final notifier = ref.read(salesWorkspaceProvider.notifier);
+      if (_isEdit) {
+        await notifier.updateLead(_leadId!, _payload());
+      } else {
+        await notifier.createLead(_payload());
+      }
 
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -151,8 +221,23 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     final scheme = Theme.of(context).colorScheme;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
+    // Retry prefill once workspace data arrives for edit mode.
+    if (_isEdit && !_prefilled) {
+      final lead = ref.watch(crmLeadByIdProvider(_leadId!));
+      if (lead != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_prefilled && mounted) {
+            setState(() {
+              _prefill(lead);
+              _prefilled = true;
+            });
+          }
+        });
+      }
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Lead')),
+      appBar: AppBar(title: Text(_isEdit ? 'Edit Lead' : 'Add Lead')),
       // KEY FIX: no bottomNavigationBar. Button ab Column ke andar fixed
       // footer hai, jo keyboard ke hisaab se khud adjust hota hai.
       body: SafeArea(
@@ -233,7 +318,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                               final ok = RegExp(
                                 r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$',
                               ).hasMatch(v.trim().toUpperCase());
-                              return ok ? 'Enter a valid GSTIN' : null;
+                              return ok ? null : 'Enter a valid GSTIN';
                             },
                           ),
                         ]),
@@ -426,9 +511,9 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'Save lead',
-                              style: TextStyle(
+                          : Text(
+                              _isEdit ? 'Update lead' : 'Save lead',
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),

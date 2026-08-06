@@ -19,7 +19,7 @@ class ContactFormScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'TODO (UI): redirect junior to Add Lead, or edit lead contact fields via updateLead.',
+              'Use Add Lead to create a contact, or edit an existing lead.',
             ),
             const SizedBox(height: 16),
             FilledButton(

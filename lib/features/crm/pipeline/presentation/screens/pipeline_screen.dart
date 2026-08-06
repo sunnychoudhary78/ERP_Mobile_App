@@ -10,7 +10,20 @@ import '../../../shared/presentation/widgets/crm_async_body.dart';
 class PipelineScreen extends ConsumerWidget {
   const PipelineScreen({super.key});
 
-  static const _stageOrder = ['Qualified', 'Proposal', 'Negotiation', 'Won'];
+  static const _stageOrder = [
+    'qualify',
+    'Qualified',
+    'follow_up',
+    'quotation',
+    'quoted',
+    'Quoted',
+    'negotiation',
+    'Negotiation',
+    'won',
+    'Won',
+    'lost',
+    'Lost',
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,15 +44,15 @@ class PipelineScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   backgroundColor: AppColors.primary,
-      //   foregroundColor: Colors.white,
-      //   shape: RoundedRectangleBorder(
-      //     borderRadius: BorderRadius.circular(16),
-      //   ),
-      //   onPressed: () => Navigator.pushNamed(context, '/crm/leads/new'),
-      //   child: const Icon(Icons.add_rounded),
-      // ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        onPressed: () => Navigator.pushNamed(context, '/crm/leads/form'),
+        child: const Icon(Icons.add_rounded),
+      ),
       body: CrmAsyncBody(
         async: async,
         onRetry: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
@@ -411,7 +424,7 @@ _Badge _statusBadge(String status) {
 
 double _valueOf(dynamic lead) {
   try {
-    return (lead.estimatedValue as num?)?.toDouble() ?? 0;
+    return (lead.value as num?)?.toDouble() ?? 0;
   } catch (_) {
     return 0;
   }
@@ -419,9 +432,11 @@ double _valueOf(dynamic lead) {
 
 String _daysAgo(dynamic lead) {
   try {
-    final DateTime? last = lead.lastActivity as DateTime?;
+    final raw = (lead.updatedAt ?? lead.lastFollowUpAt)?.toString();
+    if (raw == null || raw.isEmpty) return '—';
+    final last = DateTime.tryParse(raw);
     if (last == null) return '—';
-    final days = DateTime.now().difference(last).inDays;
+    final days = DateTime.now().difference(last.toLocal()).inDays;
     return days <= 0 ? 'Today' : '$days day${days == 1 ? '' : 's'}';
   } catch (_) {
     return '—';

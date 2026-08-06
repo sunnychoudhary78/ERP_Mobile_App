@@ -1,7 +1,9 @@
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/features/crm/activities/presentation/screens/follow_up_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/data/models/sales_lead_model.dart';
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
 
 class LeadDetailScreen extends ConsumerStatefulWidget {
@@ -13,6 +15,446 @@ class LeadDetailScreen extends ConsumerStatefulWidget {
 
 class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   int _selectedTabIndex = 0;
+  bool _actionBusy = false;
+
+  String _leadDisplayName(SalesLead lead) {
+    if (lead.companyName.isNotEmpty) return lead.companyName;
+    if (lead.contactName.isNotEmpty) return lead.contactName;
+    return lead.id;
+  }
+
+  bool _isClosed(SalesLead lead) {
+    final s = lead.status.toLowerCase();
+    final stage = (lead.lifecycleStage ?? '').toLowerCase();
+    return s == 'lost' ||
+        s == 'converted' ||
+        stage == 'lost' ||
+        stage == 'won';
+  }
+
+  void _snack(String message, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: error ? AppColors.danger : null,
+      ),
+    );
+  }
+
+  Future<void> _runAction(Future<void> Function() action) async {
+    if (_actionBusy) return;
+    setState(() => _actionBusy = true);
+    try {
+      await action();
+    } catch (e) {
+      _snack(e.toString().replaceFirst('Exception: ', ''), error: true);
+    } finally {
+      if (mounted) setState(() => _actionBusy = false);
+    }
+  }
+
+  void _openFollowUp(String leadId, SalesLead lead) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FollowUpScreen(
+          leadId: leadId,
+          leadName: _leadDisplayName(lead),
+        ),
+      ),
+    );
+  }
+
+  void _openEdit(String leadId) {
+    Navigator.pushNamed(context, '/crm/leads/form', arguments: leadId);
+  }
+
+  Future<void> _markLost(String leadId) async {
+    final reasonController = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Close as lost'),
+        content: TextField(
+          controller: reasonController,
+          decoration: const InputDecoration(
+            labelText: 'Reason',
+            hintText: 'Why was this lead lost?',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final text = reasonController.text.trim();
+              if (text.isEmpty) return;
+              Navigator.pop(ctx, text);
+            },
+            child: const Text('Mark lost'),
+          ),
+        ],
+      ),
+    );
+    reasonController.dispose();
+    if (reason == null || reason.isEmpty) return;
+
+    await _runAction(() async {
+      await ref.read(salesWorkspaceProvider.notifier).markLost(leadId, reason);
+      _snack('Lead marked as lost');
+    });
+  }
+
+  Future<void> _qualify(String leadId, SalesLead lead) async {
+    String temperature = lead.temperature ?? 'Warm';
+    final reqController = TextEditingController(text: lead.requirements);
+    final valueController = TextEditingController(
+      text: lead.value > 0 ? lead.value.toStringAsFixed(0) : '',
+    );
+    const temps = ['Hot', 'Warm', 'Cold', 'Later'];
+
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setSheet) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Qualify lead',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: temps.contains(temperature) ? temperature : 'Warm',
+                    decoration: const InputDecoration(
+                      labelText: 'Temperature',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: temps
+                        .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                        .toList(),
+                    onChanged: (v) => setSheet(() => temperature = v!),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: reqController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Requirements',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: valueController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Value (₹)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Qualify'),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    final payload = <String, dynamic>{
+      'temperature': temperature,
+      'requirements': reqController.text.trim(),
+      'value': double.tryParse(valueController.text) ?? lead.value,
+    };
+    reqController.dispose();
+    valueController.dispose();
+    if (confirmed != true) return;
+
+    await _runAction(() async {
+      await ref.read(salesWorkspaceProvider.notifier).qualifyLead(leadId, payload);
+      _snack('Lead qualified');
+    });
+  }
+
+  Future<void> _assign(String leadId) async {
+    final selected = await showModalBottomSheet<CrmTeamMember>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return Consumer(
+          builder: (ctx, sheetRef, _) {
+            final async = sheetRef.watch(crmTeamProvider);
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Assign to rep',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: MediaQuery.of(ctx).size.height * 0.45,
+                      child: async.when(
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (e, _) => Center(
+                          child: Text(
+                            e.toString().replaceFirst('Exception: ', ''),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        data: (members) {
+                          if (members.isEmpty) {
+                            return const Center(
+                              child: Text('No team members found.'),
+                            );
+                          }
+                          return ListView.separated(
+                            itemCount: members.length,
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 1),
+                            itemBuilder: (_, i) {
+                              final m = members[i];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      AppColors.primary.withOpacity(0.12),
+                                  child: Text(
+                                    m.name.isNotEmpty
+                                        ? m.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(m.name),
+                                subtitle: m.email != null
+                                    ? Text(m.email!)
+                                    : null,
+                                onTap: () => Navigator.pop(ctx, m),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    if (selected == null) return;
+
+    await _runAction(() async {
+      await ref.read(salesWorkspaceProvider.notifier).updateLead(leadId, {
+        'ownerId': selected.id,
+        'ownerName': selected.name,
+      });
+      _snack('Assigned to ${selected.name}');
+    });
+  }
+
+  Future<void> _markWonOrRequest(String leadId, SalesLead lead) async {
+    if (lead.hasPendingWonApproval) {
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Pending approval'),
+          content: const Text(
+            'This lead already has a pending won approval request.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('OK'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Open approvals'),
+            ),
+          ],
+        ),
+      );
+      if (go == true && mounted) {
+        Navigator.pushNamed(context, '/crm/approvals');
+      }
+      return;
+    }
+
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mark as won'),
+        content: const Text(
+          'Mark this lead won now, or request approval first.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'request'),
+            child: const Text('Request approval'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'won'),
+            child: const Text('Mark won'),
+          ),
+        ],
+      ),
+    );
+    if (choice == null) return;
+
+    await _runAction(() async {
+      final notifier = ref.read(salesWorkspaceProvider.notifier);
+      if (choice == 'request') {
+        await notifier.requestWonApproval(leadId);
+        _snack('Won approval requested');
+      } else {
+        try {
+          await notifier.markWon(leadId);
+          _snack('Lead marked as won');
+        } catch (e) {
+          final msg = e.toString().replaceFirst('Exception: ', '');
+          if (!mounted) rethrow;
+          final request = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Could not mark won'),
+              content: Text('$msg\n\nRequest won approval instead?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Request approval'),
+                ),
+              ],
+            ),
+          );
+          if (request == true) {
+            await notifier.requestWonApproval(leadId);
+            _snack('Won approval requested');
+          } else {
+            rethrow;
+          }
+        }
+      }
+    });
+  }
+
+  Future<void> _convertCustomer(String leadId, SalesLead lead) async {
+    if (lead.customerId != null && lead.customerId!.isNotEmpty) {
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Already linked'),
+          content: Text('This lead is linked to customer ${lead.customerId}.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('OK'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('View customer'),
+            ),
+          ],
+        ),
+      );
+      if (go == true && mounted) {
+        Navigator.pushNamed(
+          context,
+          '/crm/customers/detail',
+          arguments: lead.customerId,
+        );
+      }
+      return;
+    }
+
+    await _runAction(() async {
+      final result =
+          await ref.read(salesWorkspaceProvider.notifier).ensureCustomer(leadId);
+      final id = result.customerId;
+      final created = result.created;
+      if (id == null || id.isEmpty) {
+        _snack('Customer linked, but no id returned');
+        return;
+      }
+      _snack(created ? 'Customer created: $id' : 'Customer linked: $id');
+      if (!mounted) return;
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Customer ready'),
+          content: Text(
+            created
+                ? 'Created customer $id from this lead.'
+                : 'Matched existing customer $id.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Stay'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('View customer'),
+            ),
+          ],
+        ),
+      );
+      if (go == true && mounted) {
+        Navigator.pushNamed(context, '/crm/customers/detail', arguments: id);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +481,58 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: AppColors.text),
-            onPressed: () {},
-          ),
+          if (lead != null && leadId != null)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: AppColors.text),
+              enabled: !_actionBusy,
+              onSelected: (value) {
+                switch (value) {
+                  case 'edit':
+                    _openEdit(leadId);
+                    break;
+                  case 'qualify':
+                    _qualify(leadId, lead);
+                    break;
+                  case 'won':
+                    _markWonOrRequest(leadId, lead);
+                    break;
+                  case 'convert':
+                    _convertCustomer(leadId, lead);
+                    break;
+                }
+              },
+              itemBuilder: (ctx) {
+                final closed = _isClosed(lead);
+                return [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Text('Edit lead'),
+                  ),
+                  if (!closed)
+                    const PopupMenuItem(
+                      value: 'qualify',
+                      child: Text('Qualify'),
+                    ),
+                  if (!closed)
+                    PopupMenuItem(
+                      value: 'won',
+                      child: Text(
+                        lead.hasPendingWonApproval
+                            ? 'Won approval status'
+                            : 'Mark won / request approval',
+                      ),
+                    ),
+                  PopupMenuItem(
+                    value: 'convert',
+                    child: Text(
+                      lead.customerId != null && lead.customerId!.isNotEmpty
+                          ? 'View linked customer'
+                          : 'Convert to customer',
+                    ),
+                  ),
+                ];
+              },
+            ),
         ],
       ),
       body: ws.isLoading
@@ -62,7 +552,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 )
               // Wrap body in SafeArea so buttons don't clip under system navigation bars
               : SafeArea(
-                  child: SingleChildScrollView(
+                  child: Stack(
+                    children: [
+                      SingleChildScrollView(
                     // Added extra bottom padding (32.0) to prevent edge cutoffs
                     padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
                     child: Column(
@@ -110,13 +602,22 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                           // 6. Next Steps Section
                           _buildSectionHeader('NEXT STEPS'),
                           const SizedBox(height: 12),
-                          _buildNextStepsActions(leadId),
+                          _buildNextStepsActions(leadId!, lead),
                         ] else ...[
                           // Timeline Section
                           _buildTimelineList(lead),
                         ],
                       ],
                     ),
+                  ),
+                      if (_actionBusy)
+                        const Positioned.fill(
+                          child: ColoredBox(
+                            color: Color(0x33000000),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
     );
@@ -718,7 +1219,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   }
 
   // Bottom Quick Action Buttons
-  Widget _buildNextStepsActions(String? leadId) {
+  Widget _buildNextStepsActions(String leadId, SalesLead lead) {
+    final closed = _isClosed(lead);
     return Column(
       children: [
         Row(
@@ -732,13 +1234,15 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/crm/activities',
-                    arguments: leadId,
-                  );
-                },
+                onPressed: _actionBusy
+                    ? null
+                    : () {
+                        Navigator.pushNamed(
+                          context,
+                          '/crm/activities',
+                          arguments: leadId,
+                        );
+                      },
                 child: const Text('Start follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
               ),
             ),
@@ -752,7 +1256,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {},
+                onPressed: _actionBusy ? null : () => _openFollowUp(leadId, lead),
                 child: const Text('Log follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
               ),
             ),
@@ -770,11 +1274,13 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  '/crm/quotes/form',
-                  arguments: leadId,
-                ),
+                onPressed: _actionBusy
+                    ? null
+                    : () => Navigator.pushNamed(
+                          context,
+                          '/crm/quotes/form',
+                          arguments: leadId,
+                        ),
                 child: const Text('Create quotation', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
               ),
             ),
@@ -789,7 +1295,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {},
+                onPressed: (_actionBusy || closed)
+                    ? null
+                    : () => _markLost(leadId),
                 child: const Text('Close as lost', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
               ),
             ),
@@ -808,7 +1316,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: () {},
+            onPressed: (_actionBusy || closed) ? null : () => _assign(leadId),
             child: const Text('Assign to rep', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ),
