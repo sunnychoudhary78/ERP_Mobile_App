@@ -152,31 +152,31 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Log Follow-up'),
-        actions: [
-          // Match web UI with a "Log another follow-up" style button
-          TextButton(
-            onPressed: _isSubmitting ? null : _submitFollowUp,
-            style: TextButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: _isSubmitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Log Follow-up'),
-          ),
-          const SizedBox(width: 16),
-        ],
+        // actions: [
+        //   // Match web UI with a "Log another follow-up" style button
+        //   TextButton(
+        //     onPressed: _isSubmitting ? null : _submitFollowUp,
+        //     style: TextButton.styleFrom(
+        //       backgroundColor: AppColors.primary,
+        //       foregroundColor: Colors.white,
+        //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.circular(8),
+        //       ),
+        //     ),
+        //     child: _isSubmitting
+        //         ? const SizedBox(
+        //             height: 20,
+        //             width: 20,
+        //             child: CircularProgressIndicator(
+        //               strokeWidth: 2,
+        //               color: Colors.white,
+        //             ),
+        //           )
+        //         : const Text('Log Follow-up'),
+        //   ),
+        //   const SizedBox(width: 16),
+        // ],
         elevation: 0,
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.text,

@@ -304,3 +304,176 @@ class CrmProductsNotifier extends AsyncNotifier<List<InventoryProductItem>> {
     );
   }
 }
+
+// ─── Dashboard stats (mirrors web DashboardSection.jsx client-side calc) ──
+
+/// Computed metrics for the Sales CRM dashboard cards. All numbers are
+/// derived on-device from `workspace.leads` / `activities` / `quotes` —
+/// there is no dedicated dashboard API (see Sales_CRM_Dashboard_API.md §5).
+class CrmDashboardStats {
+  final double pipelineValue;
+  final int openDeals;
+  final double wonValue;
+  final int openLeads;
+  final int overdueActivities;
+  final int pendingApprovals;
+
+  const CrmDashboardStats({
+    this.pipelineValue = 0,
+    this.openDeals = 0,
+    this.wonValue = 0,
+    this.openLeads = 0,
+    this.overdueActivities = 0,
+    this.pendingApprovals = 0,
+  });
+}
+
+final crmDashboardStatsProvider =
+    Provider.autoDispose<AsyncValue<CrmDashboardStats>>((ref) {
+  return ref.watch(salesWorkspaceProvider).whenData((ws) {
+    final openLeadsList = ws.leads.where(
+      (l) => l.lifecycleStage != 'won' && l.lifecycleStage != 'lost',
+    );
+    final wonLeads = ws.leads.where((l) => l.lifecycleStage == 'won');
+
+    final pendingQuoteApprovals =
+        ws.quotes.where((q) => q.hasPendingApproval).length;
+    final pendingWonApprovals =
+        ws.leads.where((l) => l.hasPendingWonApproval).length;
+
+    return CrmDashboardStats(
+      pipelineValue: openLeadsList.fold<double>(
+        0,
+        (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
+      ),
+      openDeals: openLeadsList.length,
+      wonValue: wonLeads.fold<double>(
+        0,
+        (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
+      ),
+      openLeads: ws.leads.where((l) => l.status == 'Open').length,
+      overdueActivities:
+          ws.activities.where((a) => a.status == 'overdue').length,
+      pendingApprovals: pendingQuoteApprovals + pendingWonApprovals,
+    );
+  });
+});
+
+// ─── Next actions (dashboard "NEXT ACTIONS" list) ──────────────────────
+
+/// First 4 leads, same list order the workspace returns — mirrors the web
+/// Dashboard's "Next actions" widget (doc §5: "First 4 leads (recent/list
+/// order)").
+final crmNextActionsProvider =
+    Provider.autoDispose<AsyncValue<List<SalesLead>>>((ref) {
+  return ref
+      .watch(salesWorkspaceProvider)
+      .whenData((ws) => ws.leads.take(4).toList());
+});
+
+// ─── Pipeline funnel (dashboard "PIPELINE FUNNEL" widget) ──────────────
+
+class CrmFunnelStage {
+  final String key;
+  final String label;
+  final int count;
+  final double value;
+
+  const CrmFunnelStage({
+    required this.key,
+    required this.label,
+    required this.count,
+    required this.value,
+  });
+}
+
+class _StageDef {
+  final String key;
+  final String label;
+  const _StageDef(this.key, this.label);
+}
+
+/// Stage order/labels as configured on the web dashboard
+/// (Sales_CRM_Dashboard_API.md §3.3 `pipelineStages` + "Won"). If a company's
+/// `config.pipelineStages` differs, adjust this list to match.
+const List<_StageDef> _kPipelineStageOrder = [
+  _StageDef('qualify', 'Qualify'),
+  _StageDef('follow_up', 'Follow-up'),
+  _StageDef('quoted', 'Quotation'),
+  _StageDef('negotiation', 'Negotiation'),
+  _StageDef('won', 'Won'),
+];
+
+final crmPipelineFunnelProvider =
+    Provider.autoDispose<AsyncValue<List<CrmFunnelStage>>>((ref) {
+  return ref.watch(salesWorkspaceProvider).whenData((ws) {
+    return _kPipelineStageOrder.map((stage) {
+      final stageLeads = ws.leads.where((l) => l.lifecycleStage == stage.key);
+      final value = stageLeads.fold<double>(
+        0,
+        (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
+      );
+      return CrmFunnelStage(
+        key: stage.key,
+        label: stage.label,
+        count: stageLeads.length,
+        value: value,
+      );
+    }).toList();
+  });
+});
+
+// ─── Chart data (source / temperature / won-lost / follow-up type) ─────
+
+class CrmChartsData {
+  final Map<String, int> bySource;
+  final Map<String, int> byTemperature;
+  final int won;
+  final int lost;
+  final Map<String, int> followUpsByType;
+
+  const CrmChartsData({
+    this.bySource = const {},
+    this.byTemperature = const {},
+    this.won = 0,
+    this.lost = 0,
+    this.followUpsByType = const {},
+  });
+
+  double get winRate {
+    final total = won + lost;
+    if (total == 0) return 0;
+    return (won / total) * 100;
+  }
+}
+
+final crmChartsDataProvider =
+    Provider.autoDispose<AsyncValue<CrmChartsData>>((ref) {
+  return ref.watch(salesWorkspaceProvider).whenData((ws) {
+    final bySource = <String, int>{};
+    for (final l in ws.leads) {
+      final key = (l.source?.isNotEmpty ?? false) ? l.source! : 'Unknown';
+      bySource[key] = (bySource[key] ?? 0) + 1;
+    }
+
+    final byTemperature = <String, int>{};
+    for (final l in ws.leads) {
+      final key = (l.temperature?.isNotEmpty ?? false) ? l.temperature! : 'Unset';
+      byTemperature[key] = (byTemperature[key] ?? 0) + 1;
+    }
+
+    final followUpsByType = <String, int>{};
+    for (final a in ws.activities) {
+      final key = (a.type?.isNotEmpty ?? false) ? a.type! : 'Other';
+      followUpsByType[key] = (followUpsByType[key] ?? 0) + 1;
+    }
+
+    return CrmChartsData(
+      bySource: bySource,
+      byTemperature: byTemperature,
+      won: ws.leads.where((l) => l.lifecycleStage == 'won').length,
+      lost: ws.leads.where((l) => l.lifecycleStage == 'lost').length,
+      followUpsByType: followUpsByType,
+    );
+  });
+});

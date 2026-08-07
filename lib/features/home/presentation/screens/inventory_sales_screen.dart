@@ -9,32 +9,12 @@ class InventorySalesScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text('Industrial ERP'),
+        title: const Text('Inventory'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.account_circle_outlined, size: 28),
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            'CRM & Sales Hub',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDark,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Real-time performance and quick actions.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.muted,
-                ),
-          ),
           const SizedBox(height: 18),
 
           // Dynamic Stats Grid

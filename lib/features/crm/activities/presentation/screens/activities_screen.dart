@@ -1,3 +1,4 @@
+// activities_screen.dart
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/crm/activities/presentation/screens/follow_up_screen.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
 import '../../../shared/presentation/widgets/crm_async_body.dart';
-
 
 class ActivitiesScreen extends ConsumerStatefulWidget {
   const ActivitiesScreen({super.key});
@@ -15,11 +15,9 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
-  // Web Filter 1: Status (All, Upcoming, Done)
   String _selectedStatus = 'All';
   final List<String> _statusOptions = ['All', 'Upcoming', 'Done'];
 
-  // Web Filter 2: Type (All types, Calls, Meetings, Emails, Tasks)
   String _selectedType = 'All types';
   final List<String> _typeOptions = [
     'All types',
@@ -63,30 +61,38 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text('Follow-ups'),
+        title: const Text(
+          'Follow-ups',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+        ),
+        elevation: 0,
+        centerTitle: false,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.text,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
             onPressed: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onPressed: () {
-          _showLeadSelectionDialog(context);
-        },
-        child: const Icon(Icons.add, size: 28),
+        elevation: 2,
+        onPressed: () => _showLeadSelectionDialog(context),
+        icon: const Icon(Icons.add, size: 20),
+        label: const Text(
+          'Log Follow-up',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: CrmAsyncBody(
         async: async,
         onRetry: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
         builder: (activities) {
-          // Exact filtering matching Web Logic
           final filteredActivities = activities.where((activity) {
-            // 1. Status Filter
             final status = activity.status.toString().toLowerCase();
             if (_selectedStatus == 'Upcoming' && status != 'pending' && status != 'upcoming') {
               return false;
@@ -95,7 +101,6 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
               return false;
             }
 
-            // 2. Type Filter
             final type = (activity.type ?? '').toString().toLowerCase();
             if (_selectedType == 'Calls' && !type.contains('phone') && !type.contains('call')) {
               return false;
@@ -116,55 +121,119 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
           return RefreshIndicator(
             onRefresh: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               children: [
-                // WEB FILTERS ROW
+                // TOP STATUS SEGMENTED TABS (Sleek Native App Design)
+                Container(
+                  height: 44,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border.withOpacity(0.6)),
+                  ),
+                  child: Row(
+                    children: _statusOptions.map((status) {
+                      final isSelected = _selectedStatus == status;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedStatus = status),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primary : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                color: isSelected ? Colors.white : AppColors.muted,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // SECONDARY TYPE FILTER CHIPS
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _typeOptions.map((type) {
+                      final isSelected = _selectedType == type;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: FilterChip(
+                          showCheckmark: false,
+                          label: Text(type),
+                          selected: isSelected,
+                          selectedColor: AppColors.primary.withOpacity(0.12),
+                          backgroundColor: AppColors.surface,
+                          labelStyle: TextStyle(
+                            fontSize: 14,
+                            color: isSelected ? AppColors.primary : AppColors.text,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: isSelected ? AppColors.primary : AppColors.border,
+                            ),
+                          ),
+                          onSelected: (selected) {
+                            setState(() => _selectedType = type);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // LOGGED COUNTER HEADER
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Filter 1: Status Dropdown (All, Upcoming, Done)
-                    Expanded(
-                      child: _buildDropdown(
-                        value: _selectedStatus,
-                        items: _statusOptions,
-                        onChanged: (val) {
-                          if (val != null) setState(() => _selectedStatus = val);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Filter 2: Type Dropdown (All types, Calls, Meetings, Emails, Tasks)
-                    Expanded(
-                      child: _buildDropdown(
-                        value: _selectedType,
-                        items: _typeOptions,
-                        onChanged: (val) {
-                          if (val != null) setState(() => _selectedType = val);
-                        },
+                    Text(
+                      '${filteredActivities.length} Activity Logged',
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
 
-                // LOGGED COUNTER (Matches Web UI Header)
-                Text(
-                  '${filteredActivities.length} logged',
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
                 const SizedBox(height: 12),
 
                 // ACTIVITIES LIST
                 if (filteredActivities.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 40),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 60),
                     child: Center(
-                      child: Text(
-                        'No follow-ups match selected filters.',
-                        style: TextStyle(color: AppColors.muted),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.event_note_outlined,
+                            size: 48,
+                            color: AppColors.muted.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No follow-ups match selected filters.',
+                            style: TextStyle(color: AppColors.muted, fontSize: 14),
+                          ),
+                        ],
                       ),
                     ),
                   )
@@ -180,208 +249,178 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     );
   }
 
-  // Web-styled Filter Dropdown Box
-  Widget _buildDropdown({
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+  void _showLeadSelectionDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.muted),
-          style: const TextStyle(
-            color: AppColors.text,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          onChanged: onChanged,
-          items: items.map<DropdownMenuItem<String>>((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
-          }).toList(),
-        ),
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final leadsAsync = ref.watch(crmLeadsProvider);
+          return leadsAsync.when(
+            data: (leads) {
+              if (leads.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(
+                    child: Text('No leads available to log follow-ups.'),
+                  ),
+                );
+              }
+              return DraggableScrollableSheet(
+                initialChildSize: 0.6,
+                minChildSize: 0.3,
+                maxChildSize: 0.9,
+                expand: false,
+                builder: (context, scrollController) => Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 10, bottom: 8),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Select Lead',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 20),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: AppColors.border),
+                    Expanded(
+                      child: ListView.separated(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: leads.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final lead = leads[index];
+                          final name = lead.companyName.isNotEmpty
+                              ? lead.companyName
+                              : lead.contactName;
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.card,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: AppColors.primary.withOpacity(0.12),
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : 'L',
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                name.isEmpty ? 'Unnamed Lead' : name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              subtitle: Text(
+                                lead.email.isNotEmpty ? lead.email : lead.phone,
+                                style: const TextStyle(color: AppColors.muted, fontSize: 14),
+                              ),
+                              trailing: const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppColors.muted,
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FollowUpScreen(
+                                      leadId: lead.id,
+                                      leadName: name.isEmpty ? 'Unnamed Lead' : name,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            loading: () => const SizedBox(
+              height: 250,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, stack) => SizedBox(
+              height: 250,
+              child: Center(
+                child: Text(
+                  error.toString().replaceFirst('Exception: ', ''),
+                  style: const TextStyle(color: AppColors.danger),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  void _showLeadSelectionDialog(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) => Consumer(
-      builder: (context, ref, child) {
-        final leadsAsync = ref.watch(crmLeadsProvider);
-        return leadsAsync.when(
-          data: (leads) {
-            if (leads.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(
-                  child: Text('No leads available to log follow-ups.'),
-                ),
-              );
-            }
-            return DraggableScrollableSheet(
-              initialChildSize: 0.6,
-              minChildSize: 0.3,
-              maxChildSize: 0.9,
-              expand: false,
-              builder: (context, scrollController) => Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      border: Border(bottom: BorderSide(color: AppColors.border)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Select Lead',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: leads.length,
-                      itemBuilder: (context, index) {
-                        final lead = leads[index];
-                        final name = lead.companyName.isNotEmpty 
-                            ? lead.companyName 
-                            : lead.contactName;
-                        
-                        return Card(
-                          elevation: 0,
-                          margin: const EdgeInsets.only(bottom: 8),
-                          color: AppColors.surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: const BorderSide(color: AppColors.border),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
-                              child: const Icon(
-                                Icons.person_outline,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            title: Text(
-                              name.isEmpty ? 'Unnamed Lead' : name,
-                              style: const TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            subtitle: Text(
-                              lead.email.isNotEmpty ? lead.email : lead.phone,
-                              style: const TextStyle(color: AppColors.muted),
-                            ),
-                            trailing: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: AppColors.muted,
-                              size: 16,
-                            ),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FollowUpScreen(
-                                    leadId: lead.id,
-                                    leadName: name.isEmpty ? 'Unnamed Lead' : name,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: AppColors.danger, size: 48),
-                const SizedBox(height: 12),
-                Text(
-                  error.toString().replaceFirst('Exception: ', ''),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.muted),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
-  );
-}
-
-  // Card matching Mobile & Theme Layout
   Widget _buildActivityCard(BuildContext context, dynamic activity) {
     final bool isCompleted =
         activity.status.toString().toLowerCase() == 'completed' ||
             activity.status.toString().toLowerCase() == 'done';
-            
+
     final String type = (activity.type ?? 'Phone').toString().toLowerCase();
 
-    // Type Contextual Icon & Colors
     IconData iconData = Icons.phone_outlined;
-    Color iconBgColor = const Color(0xFFD4EFDF);
-    Color iconColor = const Color(0xFF1E8449);
+    Color iconBgColor = AppColors.primary.withOpacity(0.1);
+    Color iconColor = AppColors.primary;
 
     if (type.contains('email')) {
-      iconData = Icons.mail_outline;
-      iconBgColor = const Color(0xFFFADBD8);
-      iconColor = const Color(0xFFC0392B);
+      iconData = Icons.email_outlined;
+      iconBgColor = Colors.orange.withOpacity(0.1);
+      iconColor = Colors.orange;
     } else if (type.contains('meeting')) {
       iconData = Icons.groups_outlined;
-      iconBgColor = const Color(0xFFD6EAF8);
-      iconColor = const Color(0xFF2874A6);
+      iconBgColor = Colors.blue.withOpacity(0.1);
+      iconColor = Colors.blue;
     } else if (type.contains('task')) {
-      iconData = Icons.check_box_outlined;
-      iconBgColor = const Color(0xFFFCF3CF);
-      iconColor = const Color(0xFFB7950B);
+      iconData = Icons.task_alt_outlined;
+      iconBgColor = Colors.purple.withOpacity(0.1);
+      iconColor = Colors.purple;
     }
 
-    return Card(
-      elevation: 0,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      color: AppColors.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border, width: 0.8),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withOpacity(0.8)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -405,14 +444,14 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                         activity.subject.isEmpty ? (activity.type ?? 'Activity') : activity.subject,
                         style: const TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.text,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
-                        '${activity.type ?? 'Activity'} · ${activity.related ?? '—'}',
-                        style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                        '${activity.type ?? 'Activity'} • ${activity.related ?? '—'}',
+                        style: const TextStyle(color: AppColors.muted, fontSize: 14),
                       ),
                     ],
                   ),
@@ -421,13 +460,15 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isCompleted ? const Color(0xFFD4EFDF) : const Color(0xFFFADBD8),
+                    color: isCompleted
+                        ? AppColors.success.withOpacity(0.1)
+                        : AppColors.danger.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     activity.status.toString().toUpperCase(),
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: isCompleted ? AppColors.success : AppColors.danger,
                     ),
@@ -435,27 +476,27 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1, color: AppColors.border),
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Due: ${activity.dueAt ?? '—'}',
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.schedule, size: 14, color: AppColors.muted),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Due: ${activity.dueAt ?? '—'}',
+                      style: const TextStyle(color: AppColors.muted, fontSize: 14),
+                    ),
+                  ],
                 ),
                 if (!isCompleted)
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    icon: const Icon(Icons.check_circle_outline, size: 18, color: AppColors.success),
-                    label: const Text(
-                      'Mark Done',
-                      style: TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                    onPressed: () async {
+                  InkWell(
+                    borderRadius: BorderRadius.circular(6),
+                    onTap: () async {
                       try {
                         await ref.read(salesWorkspaceProvider.notifier).completeActivity(activity.id);
                       } catch (e) {
@@ -468,6 +509,23 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                         }
                       }
                     },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.check_circle_outline, size: 16, color: AppColors.success),
+                          SizedBox(width: 4),
+                          Text(
+                            'Mark Done',
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
               ],
             ),

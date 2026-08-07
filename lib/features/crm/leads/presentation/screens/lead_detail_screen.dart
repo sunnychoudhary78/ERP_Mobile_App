@@ -17,6 +17,33 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   int _selectedTabIndex = 0;
   bool _actionBusy = false;
 
+  // Stage to actions mapping based on your screenshots
+  static const Map<String, List<String>> _stageActions = {
+    // Initial stage - just created
+    'lead_entered': ['edit', 'assign', 'qualify'],
+    
+    // Client type stage - before qualification
+    'client_type': ['edit', 'assign', 'qualify'],
+    
+    // Qualification stage - shown in screenshots 1, 6
+    'qualify': ['edit', 'assign', 'qualify', 'log_followup'],
+    
+    // Follow-up stage - shown in screenshots 2, 3, 4, 7
+    'follow_up': ['edit', 'assign', 'log_followup', 'create_quotation'],
+    
+    // Quotation stage - shown in screenshot 5
+    'quotation': ['edit', 'assign', 'log_followup', 'edit_quotation', 'email_quote', 'download_quote', 'move_negotiation'],
+    
+    // Negotiation stage - shown in screenshot 7
+    'negotiation': ['edit', 'assign', 'log_followup', 'create_quotation', 'move_negotiation'],
+    
+    // Won stage - show bill/sales order actions
+    'won': ['view_customer', 'view_bill', 'download_bill', 'email_bill', 'view_sales_order'],
+    
+    // Lost stage - minimal actions
+    'lost': ['view_customer'],
+  };
+
   String _leadDisplayName(SalesLead lead) {
     if (lead.companyName.isNotEmpty) return lead.companyName;
     if (lead.contactName.isNotEmpty) return lead.contactName;
@@ -30,6 +57,49 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         s == 'converted' ||
         stage == 'lost' ||
         stage == 'won';
+  }
+
+  bool _isWon(SalesLead lead) {
+    final stage = (lead.lifecycleStage ?? '').toLowerCase();
+    return stage == 'won' || stage == 'converted';
+  }
+
+  String _normalizeStage(String value) =>
+      value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+  List<String> _getAllowedActions(SalesLead lead) {
+    if (_isWon(lead)) return _stageActions['won'] ?? ['view_customer'];
+    if (_isClosed(lead)) return _stageActions['lost'] ?? ['view_customer'];
+    
+    final stage = (lead.lifecycleStage ?? '').toLowerCase();
+    final normalized = _normalizeStage(stage);
+    
+    // Map stage aliases to normalized keys
+    final stageMap = {
+      'new': 'lead_entered',
+      'leadentered': 'lead_entered',
+      'created': 'lead_entered',
+      'clienttype': 'client_type',
+      'qualify': 'qualify',
+      'qualified': 'qualify',
+      'followup': 'follow_up',
+      'infollowup': 'follow_up',
+      'contacted': 'follow_up',
+      'quoted': 'quotation',
+      'quotation': 'quotation',
+      'quote': 'quotation',
+      'proposal': 'quotation',
+      'negotiation': 'negotiation',
+      'negotiating': 'negotiation',
+      'won': 'won',
+      'lost': 'lost',
+      'closedwon': 'won',
+      'closedlost': 'lost',
+      'wonlost': 'won',
+    };
+    
+    final mappedStage = stageMap[normalized] ?? 'lead_entered';
+    return _stageActions[mappedStage] ?? ['edit'];
   }
 
   void _snack(String message, {bool error = false}) {
@@ -499,21 +569,43 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                   case 'convert':
                     _convertCustomer(leadId, lead);
                     break;
+                  case 'assign':
+                    _assign(leadId);
+                    break;
+                  case 'lost':
+                    _markLost(leadId);
+                    break;
                 }
               },
               itemBuilder: (ctx) {
-                final closed = _isClosed(lead);
-                return [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Text('Edit lead'),
-                  ),
-                  if (!closed)
+                final allowedActions = _getAllowedActions(lead);
+                final items = <PopupMenuItem<String>>[];
+                
+                // Always show Edit if allowed
+                if (allowedActions.contains('edit')) {
+                  items.add(
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Text('Edit lead'),
+                    ),
+                  );
+                }
+
+                // Show Qualify if allowed and not closed
+                if (allowedActions.contains('qualify') && !_isClosed(lead)) {
+                  items.add(
                     const PopupMenuItem(
                       value: 'qualify',
                       child: Text('Qualify'),
                     ),
-                  if (!closed)
+                  );
+                }
+
+                // Show Won/Approval if not closed and in follow-up or later stages
+                if (!_isClosed(lead) && 
+                    (allowedActions.contains('log_followup') || 
+                     allowedActions.contains('create_quotation'))) {
+                  items.add(
                     PopupMenuItem(
                       value: 'won',
                       child: Text(
@@ -522,15 +614,45 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                             : 'Mark won / request approval',
                       ),
                     ),
-                  PopupMenuItem(
-                    value: 'convert',
-                    child: Text(
-                      lead.customerId != null && lead.customerId!.isNotEmpty
-                          ? 'View linked customer'
-                          : 'Convert to customer',
+                  );
+                }
+
+                // Show Convert/View Customer if allowed or if has customerId
+                if (allowedActions.contains('view_customer') || 
+                    (lead.customerId != null && lead.customerId!.isNotEmpty)) {
+                  items.add(
+                    PopupMenuItem(
+                      value: 'convert',
+                      child: Text(
+                        lead.customerId != null && lead.customerId!.isNotEmpty
+                            ? 'View linked customer'
+                            : 'Convert to customer',
+                      ),
                     ),
-                  ),
-                ];
+                  );
+                }
+
+                // Show Assign if allowed
+                if (allowedActions.contains('assign')) {
+                  items.add(
+                    const PopupMenuItem(
+                      value: 'assign',
+                      child: Text('Assign to rep'),
+                    ),
+                  );
+                }
+
+                // Show Lost if allowed
+                if (allowedActions.contains('lost')) {
+                  items.add(
+                    const PopupMenuItem(
+                      value: 'lost',
+                      child: Text('Close as lost'),
+                    ),
+                  );
+                }
+
+                return items;
               },
             ),
         ],
@@ -550,66 +672,50 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     ),
                   ),
                 )
-              // Wrap body in SafeArea so buttons don't clip under system navigation bars
               : SafeArea(
                   child: Stack(
                     children: [
                       SingleChildScrollView(
-                    // Added extra bottom padding (32.0) to prevent edge cutoffs
-                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. Lead Header Card (Title & Lead ID)
-                        _buildHeaderCard(
-                          title: lead.companyName.isNotEmpty
-                              ? lead.companyName
-                              : (lead.contactName.isNotEmpty ? lead.contactName : 'Testing Lead'),
-                          leadId: leadId ?? 'N/A',
+                        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildHeaderCard(
+                              title: lead.companyName.isNotEmpty
+                                  ? lead.companyName
+                                  : (lead.contactName.isNotEmpty ? lead.contactName : 'Testing Lead'),
+                              leadId: leadId ?? 'N/A',
+                            ),
+                            const SizedBox(height: 16),
+                            _buildTabBar(),
+                            const SizedBox(height: 20),
+                            if (_selectedTabIndex == 0) ...[
+                              _buildSectionHeader('LIFECYCLE'),
+                              const SizedBox(height: 10),
+                              _buildLifecycleStepper(lead.lifecycleStage ?? ''),
+                              const SizedBox(height: 24),
+                              _buildSectionHeader('LEAD INFORMATION'),
+                              const SizedBox(height: 10),
+                              _buildSnapshotCard(
+                                lead.clientType,
+                                lead.lifecycleStage ?? '',
+                                lead.status,
+                                lead.repeatFrequency,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildContactCard(lead),
+                              const SizedBox(height: 16),
+                              _buildLeadDetailsCard(lead),
+                              const SizedBox(height: 24),
+                              _buildSectionHeader('NEXT STEPS'),
+                              const SizedBox(height: 12),
+                              _buildNextStepsActions(leadId!, lead),
+                            ] else ...[
+                              _buildTimelineList(lead),
+                            ],
+                          ],
                         ),
-                        const SizedBox(height: 16),
-
-                        // 2. Details / Timeline Tab Switcher
-                        _buildTabBar(),
-                        const SizedBox(height: 20),
-
-                        if (_selectedTabIndex == 0) ...[
-                          // 3. Lifecycle Section
-                          _buildSectionHeader('LIFECYCLE'),
-                          const SizedBox(height: 10),
-                          _buildLifecycleStepper(lead.lifecycleStage ?? ''),
-                          const SizedBox(height: 24),
-
-                          // 4. Lead Information / Snapshot
-                          _buildSectionHeader('LEAD INFORMATION'),
-                          const SizedBox(height: 10),
-                          _buildSnapshotCard(
-                            lead.clientType,
-                            lead.lifecycleStage ?? '',
-                            lead.status,
-                            lead.repeatFrequency,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 5. Contact Details Card
-                          _buildContactCard(lead),
-                          const SizedBox(height: 16),
-
-                          // 5b. Lead Details Card
-                          _buildLeadDetailsCard(lead),
-                          const SizedBox(height: 24),
-
-                          // 6. Next Steps Section
-                          _buildSectionHeader('NEXT STEPS'),
-                          const SizedBox(height: 12),
-                          _buildNextStepsActions(leadId!, lead),
-                        ] else ...[
-                          // Timeline Section
-                          _buildTimelineList(lead),
-                        ],
-                      ],
-                    ),
-                  ),
+                      ),
                       if (_actionBusy)
                         const Positioned.fill(
                           child: ColoredBox(
@@ -623,7 +729,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     );
   }
 
-  // Top Header Card containing Company/Name & Lead ID
   Widget _buildHeaderCard({required String title, required String leadId}) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -678,7 +783,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     );
   }
 
-  // Segmented Tab Switcher (Details / Timeline)
   Widget _buildTabBar() {
     return Container(
       height: 48,
@@ -736,7 +840,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     );
   }
 
-  // Section Label
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
@@ -748,9 +851,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       ),
     );
   }
-
-  String _normalizeStage(String value) =>
-      value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
   static const Map<String, String> _stageAliasMap = {
     'new': 'Lead entered',
@@ -775,7 +875,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     'wonlost': 'Won / Lost',
   };
 
-  // Lifecycle Horizontal Stepper
   Widget _buildLifecycleStepper(String currentStage) {
     final stages = [
       'Lead entered',
@@ -868,7 +967,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     return '';
   }
 
-  // Improved Timeline layout using Stack + Row to avoid height overflow blocks
   Widget _buildTimelineList(dynamic lead) {
     final List<dynamic> rawTimeline =
         (lead.timeline as List?)?.toList() ?? const [];
@@ -900,7 +998,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
 
         return Stack(
           children: [
-            // Vertical connecting line
             if (!isLast)
               Positioned(
                 top: 16,
@@ -916,7 +1013,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Timeline Node Dot
                   Container(
                     width: 12,
                     height: 12,
@@ -929,7 +1025,6 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  // Timeline Content Card
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -1218,92 +1313,323 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     );
   }
 
-  // Bottom Quick Action Buttons
+  // Updated Next Steps Actions with dynamic visibility based on screenshots
   Widget _buildNextStepsActions(String leadId, SalesLead lead) {
+    final allowedActions = _getAllowedActions(lead);
     final closed = _isClosed(lead);
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _actionBusy
-                    ? null
-                    : () {
-                        Navigator.pushNamed(
-                          context,
-                          '/crm/activities',
-                          arguments: leadId,
-                        );
-                      },
-                child: const Text('Start follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+    final isWon = _isWon(lead);
+    
+    final List<Widget> buttonRows = [];
+    
+    // ============ Row 1: Start Follow-up & Log Follow-up ============
+    final List<Widget> row1Buttons = [];
+    
+    // Start follow-up - only show if not closed and in early stages (lead entered, client type, qualify)
+    if (allowedActions.contains('start_followup')) {
+      row1Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _actionBusy ? null : () => _openFollowUp(leadId, lead),
-                child: const Text('Log follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
+            onPressed: _actionBusy
+                ? null
+                : () {
+                    Navigator.pushNamed(
+                      context,
+                      '/crm/activities',
+                      arguments: leadId,
+                    );
+                  },
+            child: const Text('Start follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _actionBusy
-                    ? null
-                    : () => Navigator.pushNamed(
-                          context,
-                          '/crm/quotes/form',
-                          arguments: leadId,
-                        ),
-                child: const Text('Create quotation', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+      );
+    }
+    
+    // Log follow-up - show from qualify stage onwards
+    if (allowedActions.contains('log_followup') && !isWon) {
+      row1Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.danger,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: (_actionBusy || closed)
-                    ? null
-                    : () => _markLost(leadId),
-                child: const Text('Close as lost', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
+            onPressed: _actionBusy ? null : () => _openFollowUp(leadId, lead),
+            child: const Text('Log follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
         ),
-        const SizedBox(height: 12),
+      );
+    }
+    
+    if (row1Buttons.isNotEmpty) {
+      buttonRows.add(Row(children: row1Buttons));
+      buttonRows.add(const SizedBox(height: 12));
+    }
+    
+    // ============ Row 2: Create Quotation & Close as Lost ============
+    final List<Widget> row2Buttons = [];
+    
+    // Create quotation - show from follow-up stage onwards (except won)
+    if (allowedActions.contains('create_quotation') && !isWon) {
+      row2Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy
+                ? null
+                : () => Navigator.pushNamed(
+                      context,
+                      '/crm/quotes/form',
+                      arguments: leadId,
+                    ),
+            child: const Text('Create quotation', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    // Close as lost - show for all stages except won
+    if (allowedActions.contains('lost') && !closed && !isWon) {
+      row2Buttons.add(
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: (_actionBusy) ? null : () => _markLost(leadId),
+            child: const Text('Close as lost', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    if (row2Buttons.isNotEmpty) {
+      buttonRows.add(Row(children: row2Buttons));
+      buttonRows.add(const SizedBox(height: 12));
+    }
+    
+    // ============ Row 3: Quotation Actions (only in quotation stage) ============
+    final List<Widget> row3Buttons = [];
+    
+    if (allowedActions.contains('edit_quotation')) {
+      row3Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _snack('Edit quotation'),
+            child: const Text('Edit quotation', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    if (allowedActions.contains('email_quote')) {
+      row3Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _snack('Email quote to client'),
+            child: const Text('Email quote', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    if (row3Buttons.isNotEmpty) {
+      buttonRows.add(Row(children: row3Buttons));
+      buttonRows.add(const SizedBox(height: 12));
+    }
+    
+    // ============ Row 4: Download Quote & Move Negotiation ============
+    final List<Widget> row4Buttons = [];
+    
+    if (allowedActions.contains('download_quote')) {
+      row4Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _snack('Download quote PDF'),
+            child: const Text('Download quote', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    if (allowedActions.contains('move_negotiation')) {
+      row4Buttons.add(
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _snack('Move to negotiation'),
+            child: const Text('Move to negotiation', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ),
+      );
+    }
+    
+    if (row4Buttons.isNotEmpty) {
+      buttonRows.add(Row(children: row4Buttons));
+      buttonRows.add(const SizedBox(height: 12));
+    }
+    
+    // ============ Row 5: Close as Won (in quotation/negotiation) ============
+    if (allowedActions.contains('move_negotiation')) {
+      buttonRows.add(
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _markWonOrRequest(leadId, lead),
+            child: const Text('Close as won', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      );
+      buttonRows.add(const SizedBox(height: 12));
+    }
+    
+    // ============ Row 6: Bill/Sales Order Actions (Won stage) ============
+    final List<Widget> row6Buttons = [];
+    
+    if (allowedActions.contains('view_bill')) {
+      row6Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _snack('View bill'),
+            child: const Text('View bill', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    if (allowedActions.contains('download_bill')) {
+      row6Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _snack('Download bill PDF'),
+            child: const Text('Download bill', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    if (row6Buttons.isNotEmpty) {
+      buttonRows.add(Row(children: row6Buttons));
+      buttonRows.add(const SizedBox(height: 12));
+    }
+    
+    // ============ Row 7: Email Bill & View Sales Order ============
+    final List<Widget> row7Buttons = [];
+    
+    if (allowedActions.contains('email_bill')) {
+      row7Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _snack('Email bill to client'),
+            child: const Text('Email bill', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    if (allowedActions.contains('view_sales_order')) {
+      row7Buttons.add(
+        Expanded(
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _snack('View sales order'),
+            child: const Text('Sales order', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      );
+    }
+    
+    if (row7Buttons.isNotEmpty) {
+      buttonRows.add(Row(children: row7Buttons));
+      buttonRows.add(const SizedBox(height: 12));
+    }
+    
+    // ============ Row 8: Assign to rep ============
+    if (allowedActions.contains('assign')) {
+      buttonRows.add(
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -1316,11 +1642,34 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: (_actionBusy || closed) ? null : () => _assign(leadId),
+            onPressed: (_actionBusy) ? null : () => _assign(leadId),
             child: const Text('Assign to rep', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ),
-      ],
+      );
+      buttonRows.add(const SizedBox(height: 12));
+    }
+    
+    // If no actions available, show a message
+    if (buttonRows.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: Text(
+            'No actions available for this stage',
+            style: TextStyle(color: AppColors.muted),
+          ),
+        ),
+      );
+    }
+    
+    // Remove last SizedBox height
+    if (buttonRows.last is SizedBox) {
+      buttonRows.removeLast();
+    }
+    
+    return Column(
+      children: buttonRows,
     );
   }
 }

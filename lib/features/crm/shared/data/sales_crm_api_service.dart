@@ -31,6 +31,7 @@ class SalesCrmApiService {
     // debugPrint('LEADS RAW: ${jsonEncode(response['data']['leads'])}');
     // debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
     debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
+    debugPrint('compantBilling: ${jsonEncode(response['data']['companyBilling'])}');
     debugPrint('WORKSPACE: ${jsonEncode(response['data']['workspace'])}');
     //debugPrint('compaingBilling: ${jsonEncode(response['data']['companyBilling'])}');
     // debugPrint(response.toString());
