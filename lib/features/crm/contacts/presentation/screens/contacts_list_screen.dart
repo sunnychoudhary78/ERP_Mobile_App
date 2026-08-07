@@ -1,8 +1,6 @@
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
 import '../../../shared/presentation/widgets/crm_async_body.dart';
 
@@ -25,23 +23,23 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     super.dispose();
   }
 
-  // Phone Call trigger helper
-  Future<void> _makeCall(String phoneNumber) async {
-    if (phoneNumber.isEmpty) return;
-    final Uri url = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    }
-  }
+  // // Phone Call trigger helper
+  // Future<void> _makeCall(String phoneNumber) async {
+  //   if (phoneNumber.isEmpty) return;
+  //   final Uri url = Uri(scheme: 'tel', path: phoneNumber);
+  //   if (await canLaunchUrl(url)) {
+  //     await launchUrl(url);
+  //   }
+  // }
 
-  // Email trigger helper
-  Future<void> _sendEmail(String email) async {
-    if (email.isEmpty) return;
-    final Uri url = Uri(scheme: 'mailto', path: email);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    }
-  }
+  // // Email trigger helper
+  // Future<void> _sendEmail(String email) async {
+  //   if (email.isEmpty) return;
+  //   final Uri url = Uri(scheme: 'mailto', path: email);
+  //   if (await canLaunchUrl(url)) {
+  //     await launchUrl(url);
+  //   }
+  // }
 
   // Dynamic Avatar background color based on name
   Color _getAvatarColor(String name) {
