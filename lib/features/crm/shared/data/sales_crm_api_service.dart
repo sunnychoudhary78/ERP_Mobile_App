@@ -31,7 +31,7 @@ class SalesCrmApiService {
     // debugPrint('LEADS RAW: ${jsonEncode(response['data']['leads'])}');
     // debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
     debugPrint('DATA KEYS: ${response['data'].keys.toList()}');
-    debugPrint('compantBilling: ${jsonEncode(response['data']['companyBilling'])}');
+    //debugPrint('compantBilling: ${jsonEncode(response['data']['companyBilling'])}');
     debugPrint('WORKSPACE: ${jsonEncode(response['data']['workspace'])}');
     //debugPrint('compaingBilling: ${jsonEncode(response['data']['companyBilling'])}');
     // debugPrint(response.toString());
@@ -51,8 +51,8 @@ class SalesCrmApiService {
   Future<SalesLead> createLead(Map<String, dynamic> payload) async {
     final response = await api.post(ApiEndpoints.salesLeads, payload);
 
-    // debugPrint("=== API Response Leads ===");
-    // debugPrint(response.toString());
+     debugPrint("=== API Response Leads ===");
+     debugPrint(response.toString());
     final map = _asMap(response);
 
     // debugPrint("=== Response Map ===");
@@ -83,6 +83,9 @@ class SalesCrmApiService {
       ApiEndpoints.salesLeadQualify(leadId),
       payload,
     );
+
+    debugPrint("=== API Response Qualify Lead ===");
+    debugPrint(response.toString());
     final map = _asMap(response);
     final lead = map['lead'] is Map ? map['lead'] : map;
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
@@ -148,6 +151,7 @@ class SalesCrmApiService {
     Map<String, dynamic> payload,
   ) async {
     return api.post(ApiEndpoints.salesLeadFollowUps(leadId), payload);
+    
   }
 
   Future<SalesActivity> completeActivity(

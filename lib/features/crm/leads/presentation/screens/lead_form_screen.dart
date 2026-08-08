@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/data/models/sales_lead_model.dart';
+import '../../../shared/data/models/sales_product_model.dart';
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
 
 class LeadFormScreen extends ConsumerStatefulWidget {
@@ -12,26 +13,73 @@ class LeadFormScreen extends ConsumerStatefulWidget {
 }
 
 class _RequirementLine {
+  InventoryProductItem? product;
+  String type;
+  String articleNo;
+  String sku;
+  String itemId;
+
   final _description = TextEditingController();
   final _qty = TextEditingController();
   final _rate = TextEditingController();
+  final _hsn = TextEditingController();
+  final _unit = TextEditingController();
 
-  _RequirementLine({String? description, String? qty, String? rate}) {
-    if (description != null) _description.text = description;
-    if (qty != null) _qty.text = qty;
-    if (rate != null) _rate.text = rate;
+  _RequirementLine({
+    this.product,
+    String? description,
+    String? qty,
+    String? rate,
+    String? hsn,
+    String? unit,
+    this.type = 'PHYSICAL',
+    this.articleNo = '',
+    this.sku = '',
+    this.itemId = '',
+  }) {
+    _description.text = description ?? '';
+    _qty.text = qty ?? '1';
+    _rate.text = rate ?? '';
+    _hsn.text = hsn ?? '';
+    _unit.text = unit ?? '';
+  }
+
+  double get amount =>
+      (double.tryParse(_qty.text) ?? 0) * (double.tryParse(_rate.text) ?? 0);
+
+  /// Auto-fills the line when a product is picked from the dropdown —
+  /// mirrors the web "Pick product" behaviour.
+  void applyProduct(InventoryProductItem p) {
+    product = p;
+    itemId = p.id.toString();
+    articleNo = p.articleNo;
+    sku = p.sku;
+    type = p.type.isNotEmpty ? p.type : 'PHYSICAL';
+    _description.text = p.name;
+    _hsn.text = p.hsn;
+    _unit.text = p.unit;
+    if (p.rate > 0) _rate.text = p.rate.toStringAsFixed(0);
   }
 
   Map<String, dynamic> toJson() => {
+    'itemId': itemId,
+    'articleNo': articleNo,
+    'sku': sku,
     'description': _description.text.trim(),
+    'hsn': _hsn.text.trim(),
+    'unit': _unit.text.trim(),
+    'type': type,
     'qty': double.tryParse(_qty.text) ?? 0,
     'rate': double.tryParse(_rate.text) ?? 0,
+    'amount': amount,
   };
 
   void dispose() {
     _description.dispose();
     _qty.dispose();
     _rate.dispose();
+    _hsn.dispose();
+    _unit.dispose();
   }
 }
 
@@ -128,6 +176,12 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
             description: m['description']?.toString() ?? '',
             qty: m['qty']?.toString() ?? '',
             rate: m['rate']?.toString() ?? '',
+            hsn: m['hsn']?.toString() ?? '',
+            unit: m['unit']?.toString() ?? '',
+            type: m['type']?.toString() ?? 'PHYSICAL',
+            articleNo: m['articleNo']?.toString() ?? '',
+            sku: m['sku']?.toString() ?? '',
+            itemId: m['itemId']?.toString() ?? '',
           ),
         );
       }
@@ -148,6 +202,153 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       line.dispose();
     }
     super.dispose();
+  }
+
+  InventoryProductItem? _matchedProduct(
+    List<InventoryProductItem> products,
+    _RequirementLine line,
+  ) {
+    if (line.product != null) return line.product;
+    if (line.itemId.isEmpty) return null;
+    for (final p in products) {
+      if (p.id.toString() == line.itemId) return p;
+    }
+    return null;
+  }
+
+  Widget _buildProductLines(
+    BuildContext context,
+    List<InventoryProductItem> products, {
+    bool loadError = false,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        if (loadError)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'Could not load product list — you can still enter items manually.',
+              style: TextStyle(color: scheme.error, fontSize: 12),
+            ),
+          ),
+        for (var i = 0; i < _lines.length; i++)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              border: Border.all(color: scheme.outlineVariant),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _responsiveRow([
+                  DropdownButtonFormField<InventoryProductItem>(
+                    value: _matchedProduct(products, _lines[i]),
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Product',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                    ),
+                    hint: const Text('Pick product'),
+                    items: products
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(p.name, overflow: TextOverflow.ellipsis),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (p) {
+                      if (p == null) return;
+                      setState(() => _lines[i].applyProduct(p));
+                    },
+                  ),
+                  TextFormField(
+                    controller: _lines[i]._description,
+                    decoration: const InputDecoration(
+                      labelText: 'Item',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                _responsiveRow([
+                  TextFormField(
+                    controller: _lines[i]._hsn,
+                    decoration: const InputDecoration(
+                      labelText: 'HSN / SAC',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  TextFormField(
+                    controller: _lines[i]._unit,
+                    decoration: const InputDecoration(
+                      labelText: 'Unit',
+                      hintText: 'Nos, Kg, Roll...',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lines[i]._qty,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          labelText: 'Qty',
+                          isDense: true,
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lines[i]._rate,
+                        keyboardType: TextInputType.number,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          labelText: 'Rate',
+                          isDense: true,
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          '₹${_lines[i].amount.toStringAsFixed(0)}',
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      color: scheme.error,
+                      onPressed: () => _removeLine(i),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 
   void _addLine() => setState(() => _lines.add(_RequirementLine()));
@@ -359,63 +560,48 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                           ),
                         ),
                         if (_addProducts) ...[
-                          for (var i = 0; i < _lines.length; i++)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: TextFormField(
-                                      controller: _lines[i]._description,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Description',
-                                        isDense: true,
-                                        border: OutlineInputBorder(),
+                          Builder(
+                            builder: (context) {
+                              final productsAsync =
+                                  ref.watch(crmProductsProvider);
+                              return productsAsync.when(
+                                data: (products) =>
+                                    _buildProductLines(context, products),
+                                loading: () => const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  child: Center(
+                                    child: SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: _lines[i]._qty,
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Qty',
-                                        isDense: true,
-                                        border: OutlineInputBorder(),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: _lines[i]._rate,
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Rate',
-                                        isDense: true,
-                                        border: OutlineInputBorder(),
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.remove_circle_outline,
-                                    ),
-                                    color: scheme.error,
-                                    onPressed: () => _removeLine(i),
-                                  ),
-                                ],
-                              ),
-                            ),
+                                ),
+                                error: (e, _) => _buildProductLines(
+                                  context,
+                                  const [],
+                                  loadError: true,
+                                ),
+                              );
+                            },
+                          ),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: TextButton.icon(
                               onPressed: _addLine,
                               icon: const Icon(Icons.add),
                               label: const Text('Add another product'),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              'Total: ₹${_lines.fold<double>(0, (s, l) => s + l.amount).toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 4),

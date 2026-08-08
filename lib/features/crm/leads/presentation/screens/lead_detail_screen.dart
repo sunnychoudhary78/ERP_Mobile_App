@@ -21,25 +21,45 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   static const Map<String, List<String>> _stageActions = {
     // Initial stage - just created
     'lead_entered': ['edit', 'assign', 'qualify'],
-    
+
     // Client type stage - before qualification
     'client_type': ['edit', 'assign', 'qualify'],
-    
+
     // Qualification stage - shown in screenshots 1, 6
     'qualify': ['edit', 'assign', 'qualify', 'log_followup'],
-    
+
     // Follow-up stage - shown in screenshots 2, 3, 4, 7
     'follow_up': ['edit', 'assign', 'log_followup', 'create_quotation'],
-    
+
     // Quotation stage - shown in screenshot 5
-    'quotation': ['edit', 'assign', 'log_followup', 'edit_quotation', 'email_quote', 'download_quote', 'move_negotiation'],
-    
+    'quotation': [
+      'edit',
+      'assign',
+      'log_followup',
+      'edit_quotation',
+      'email_quote',
+      'download_quote',
+      'move_negotiation',
+    ],
+
     // Negotiation stage - shown in screenshot 7
-    'negotiation': ['edit', 'assign', 'log_followup', 'create_quotation', 'move_negotiation'],
-    
+    'negotiation': [
+      'edit',
+      'assign',
+      'log_followup',
+      'create_quotation',
+      'move_negotiation',
+    ],
+
     // Won stage - show bill/sales order actions
-    'won': ['view_customer', 'view_bill', 'download_bill', 'email_bill', 'view_sales_order'],
-    
+    'won': [
+      'view_customer',
+      'view_bill',
+      'download_bill',
+      'email_bill',
+      'view_sales_order',
+    ],
+
     // Lost stage - minimal actions
     'lost': ['view_customer'],
   };
@@ -53,10 +73,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   bool _isClosed(SalesLead lead) {
     final s = lead.status.toLowerCase();
     final stage = (lead.lifecycleStage ?? '').toLowerCase();
-    return s == 'lost' ||
-        s == 'converted' ||
-        stage == 'lost' ||
-        stage == 'won';
+    return s == 'lost' || s == 'converted' || stage == 'lost' || stage == 'won';
   }
 
   bool _isWon(SalesLead lead) {
@@ -70,10 +87,10 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   List<String> _getAllowedActions(SalesLead lead) {
     if (_isWon(lead)) return _stageActions['won'] ?? ['view_customer'];
     if (_isClosed(lead)) return _stageActions['lost'] ?? ['view_customer'];
-    
+
     final stage = (lead.lifecycleStage ?? '').toLowerCase();
     final normalized = _normalizeStage(stage);
-    
+
     // Map stage aliases to normalized keys
     final stageMap = {
       'new': 'lead_entered',
@@ -97,7 +114,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       'closedlost': 'lost',
       'wonlost': 'won',
     };
-    
+
     final mappedStage = stageMap[normalized] ?? 'lead_entered';
     return _stageActions[mappedStage] ?? ['edit'];
   }
@@ -128,10 +145,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => FollowUpScreen(
-          leadId: leadId,
-          leadName: _leadDisplayName(lead),
-        ),
+        builder: (_) =>
+            FollowUpScreen(leadId: leadId, leadName: _leadDisplayName(lead)),
       ),
     );
   }
@@ -211,10 +226,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 children: [
                   const Text(
                     'Qualify lead',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
@@ -259,17 +271,31 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       },
     );
 
+    // Read values BEFORE disposing — this part was already fine.
     final payload = <String, dynamic>{
       'temperature': temperature,
       'requirements': reqController.text.trim(),
       'value': double.tryParse(valueController.text) ?? lead.value,
     };
-    reqController.dispose();
-    valueController.dispose();
+
+    // IMPORTANT: don't dispose immediately. The bottom sheet's closing
+    // animation is still in progress here, and the TextFields are still
+    // mounted/attached to these controllers. Disposing now races with
+    // that animation and throws '_dependents.isEmpty' assertion.
+    // Push disposal to after the current frame (and animation) settles.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        reqController.dispose();
+        valueController.dispose();
+      });
+    });
+
     if (confirmed != true) return;
 
     await _runAction(() async {
-      await ref.read(salesWorkspaceProvider.notifier).qualifyLead(leadId, payload);
+      await ref
+          .read(salesWorkspaceProvider.notifier)
+          .qualifyLead(leadId, payload);
       _snack('Lead qualified');
     });
   }
@@ -325,8 +351,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                               final m = members[i];
                               return ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor:
-                                      AppColors.primary.withOpacity(0.12),
+                                  backgroundColor: AppColors.primary
+                                      .withOpacity(0.12),
                                   child: Text(
                                     m.name.isNotEmpty
                                         ? m.name[0].toUpperCase()
@@ -489,8 +515,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     }
 
     await _runAction(() async {
-      final result =
-          await ref.read(salesWorkspaceProvider.notifier).ensureCustomer(leadId);
+      final result = await ref
+          .read(salesWorkspaceProvider.notifier)
+          .ensureCustomer(leadId);
       final id = result.customerId;
       final created = result.created;
       if (id == null || id.isEmpty) {
@@ -538,7 +565,11 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         elevation: 0,
         backgroundColor: AppColors.card,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.text),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 20,
+            color: AppColors.text,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -580,7 +611,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               itemBuilder: (ctx) {
                 final allowedActions = _getAllowedActions(lead);
                 final items = <PopupMenuItem<String>>[];
-                
+
                 // Always show Edit if allowed
                 if (allowedActions.contains('edit')) {
                   items.add(
@@ -602,9 +633,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 }
 
                 // Show Won/Approval if not closed and in follow-up or later stages
-                if (!_isClosed(lead) && 
-                    (allowedActions.contains('log_followup') || 
-                     allowedActions.contains('create_quotation'))) {
+                if (!_isClosed(lead) &&
+                    (allowedActions.contains('log_followup') ||
+                        allowedActions.contains('create_quotation'))) {
                   items.add(
                     PopupMenuItem(
                       value: 'won',
@@ -618,7 +649,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 }
 
                 // Show Convert/View Customer if allowed or if has customerId
-                if (allowedActions.contains('view_customer') || 
+                if (allowedActions.contains('view_customer') ||
                     (lead.customerId != null && lead.customerId!.isNotEmpty)) {
                   items.add(
                     PopupMenuItem(
@@ -660,72 +691,74 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       body: ws.isLoading
           ? const Center(child: CircularProgressIndicator())
           : lead == null
-              ? Center(
-                  child: Text(
-                    leadId == null
-                        ? 'Pass leadId via Navigator arguments.'
-                        : 'Lead not found: $leadId',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w600,
+          ? Center(
+              child: Text(
+                leadId == null
+                    ? 'Pass leadId via Navigator arguments.'
+                    : 'Lead not found: $leadId',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          : SafeArea(
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeaderCard(
+                          title: lead.companyName.isNotEmpty
+                              ? lead.companyName
+                              : (lead.contactName.isNotEmpty
+                                    ? lead.contactName
+                                    : 'Testing Lead'),
+                          leadId: leadId ?? 'N/A',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTabBar(),
+                        const SizedBox(height: 20),
+                        if (_selectedTabIndex == 0) ...[
+                          _buildSectionHeader('LIFECYCLE'),
+                          const SizedBox(height: 10),
+                          _buildLifecycleStepper(lead.lifecycleStage ?? ''),
+                          const SizedBox(height: 24),
+                          _buildSectionHeader('LEAD INFORMATION'),
+                          const SizedBox(height: 10),
+                          _buildSnapshotCard(
+                            lead.clientType,
+                            lead.lifecycleStage ?? '',
+                            lead.status,
+                            lead.repeatFrequency,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildContactCard(lead),
+                          const SizedBox(height: 16),
+                          _buildLeadDetailsCard(lead),
+                          const SizedBox(height: 24),
+                          _buildSectionHeader('NEXT STEPS'),
+                          const SizedBox(height: 12),
+                          _buildNextStepsActions(leadId!, lead),
+                        ] else ...[
+                          _buildTimelineList(lead),
+                        ],
+                      ],
                     ),
                   ),
-                )
-              : SafeArea(
-                  child: Stack(
-                    children: [
-                      SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildHeaderCard(
-                              title: lead.companyName.isNotEmpty
-                                  ? lead.companyName
-                                  : (lead.contactName.isNotEmpty ? lead.contactName : 'Testing Lead'),
-                              leadId: leadId ?? 'N/A',
-                            ),
-                            const SizedBox(height: 16),
-                            _buildTabBar(),
-                            const SizedBox(height: 20),
-                            if (_selectedTabIndex == 0) ...[
-                              _buildSectionHeader('LIFECYCLE'),
-                              const SizedBox(height: 10),
-                              _buildLifecycleStepper(lead.lifecycleStage ?? ''),
-                              const SizedBox(height: 24),
-                              _buildSectionHeader('LEAD INFORMATION'),
-                              const SizedBox(height: 10),
-                              _buildSnapshotCard(
-                                lead.clientType,
-                                lead.lifecycleStage ?? '',
-                                lead.status,
-                                lead.repeatFrequency,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildContactCard(lead),
-                              const SizedBox(height: 16),
-                              _buildLeadDetailsCard(lead),
-                              const SizedBox(height: 24),
-                              _buildSectionHeader('NEXT STEPS'),
-                              const SizedBox(height: 12),
-                              _buildNextStepsActions(leadId!, lead),
-                            ] else ...[
-                              _buildTimelineList(lead),
-                            ],
-                          ],
-                        ),
+                  if (_actionBusy)
+                    const Positioned.fill(
+                      child: ColoredBox(
+                        color: Color(0x33000000),
+                        child: Center(child: CircularProgressIndicator()),
                       ),
-                      if (_actionBusy)
-                        const Positioned.fill(
-                          child: ColoredBox(
-                            color: Color(0x33000000),
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                    ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -799,7 +832,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
-                  color: _selectedTabIndex == 0 ? AppColors.card : Colors.transparent,
+                  color: _selectedTabIndex == 0
+                      ? AppColors.card
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,
@@ -808,7 +843,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    color: _selectedTabIndex == 0 ? AppColors.primary : AppColors.muted,
+                    color: _selectedTabIndex == 0
+                        ? AppColors.primary
+                        : AppColors.muted,
                   ),
                 ),
               ),
@@ -820,7 +857,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
-                  color: _selectedTabIndex == 1 ? AppColors.card : Colors.transparent,
+                  color: _selectedTabIndex == 1
+                      ? AppColors.card
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,
@@ -829,7 +868,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
-                    color: _selectedTabIndex == 1 ? AppColors.primary : AppColors.muted,
+                    color: _selectedTabIndex == 1
+                        ? AppColors.primary
+                        : AppColors.muted,
                   ),
                 ),
               ),
@@ -921,15 +962,15 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               color: isSelected
                   ? AppColors.primary
                   : isPassed
-                      ? AppColors.success.withOpacity(0.12)
-                      : AppColors.card,
+                  ? AppColors.success.withOpacity(0.12)
+                  : AppColors.card,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected
                     ? AppColors.primary
                     : isPassed
-                        ? AppColors.success
-                        : AppColors.border,
+                    ? AppColors.success
+                    : AppColors.border,
               ),
             ),
             child: Text(
@@ -940,8 +981,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 color: isSelected
                     ? Colors.white
                     : isPassed
-                        ? AppColors.success
-                        : AppColors.muted,
+                    ? AppColors.success
+                    : AppColors.muted,
               ),
             ),
           );
@@ -984,8 +1025,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     }
 
     final sorted = List<dynamic>.from(rawTimeline)
-      ..sort((a, b) =>
-          _timelineField(b, 'at').compareTo(_timelineField(a, 'at')));
+      ..sort(
+        (a, b) => _timelineField(b, 'at').compareTo(_timelineField(a, 'at')),
+      );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1003,10 +1045,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 top: 16,
                 bottom: 0,
                 left: 5,
-                child: Container(
-                  width: 2,
-                  color: AppColors.border,
-                ),
+                child: Container(width: 2, color: AppColors.border),
               ),
             Padding(
               padding: EdgeInsets.only(bottom: isLast ? 0 : 16.0),
@@ -1032,7 +1071,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.card,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                        border: Border.all(
+                          color: AppColors.border.withOpacity(0.5),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1058,7 +1099,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                             const SizedBox(height: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(6),
@@ -1144,7 +1187,10 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               final isActive = pillEntry.value;
 
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isActive
                       ? AppColors.accent.withOpacity(0.15)
@@ -1192,13 +1238,19 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _buildDetailRow('Owner', lead.ownerName.isNotEmpty ? lead.ownerName : 'Unassigned'),
+          _buildDetailRow(
+            'Owner',
+            lead.ownerName.isNotEmpty ? lead.ownerName : 'Unassigned',
+          ),
           const Divider(height: 24, color: AppColors.surface, thickness: 1.5),
           _buildDetailRow('Phone', lead.phone.isNotEmpty ? lead.phone : 'N/A'),
           const Divider(height: 24, color: AppColors.surface, thickness: 1.5),
           _buildDetailRow('Email', lead.email.isNotEmpty ? lead.email : 'N/A'),
           const Divider(height: 24, color: AppColors.surface, thickness: 1.5),
-          _buildDetailRow('Address', lead.address?.isNotEmpty == true ? lead.address : 'N/A'),
+          _buildDetailRow(
+            'Address',
+            lead.address?.isNotEmpty == true ? lead.address : 'N/A',
+          ),
         ],
       ),
     );
@@ -1278,7 +1330,11 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           for (int i = 0; i < rows.length; i++) ...[
             _buildDetailRow(rows[i].key, rows[i].value),
             if (i != rows.length - 1)
-              const Divider(height: 24, color: AppColors.surface, thickness: 1.5),
+              const Divider(
+                height: 24,
+                color: AppColors.surface,
+                thickness: 1.5,
+              ),
           ],
         ],
       ),
@@ -1318,12 +1374,12 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     final allowedActions = _getAllowedActions(lead);
     final closed = _isClosed(lead);
     final isWon = _isWon(lead);
-    
+
     final List<Widget> buttonRows = [];
-    
+
     // ============ Row 1: Start Follow-up & Log Follow-up ============
     final List<Widget> row1Buttons = [];
-    
+
     // Start follow-up - only show if not closed and in early stages (lead entered, client type, qualify)
     if (allowedActions.contains('start_followup')) {
       row1Buttons.add(
@@ -1345,12 +1401,18 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                       arguments: leadId,
                     );
                   },
-            child: const Text('Start follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Start follow-up',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     // Log follow-up - show from qualify stage onwards
     if (allowedActions.contains('log_followup') && !isWon) {
       row1Buttons.add(
@@ -1364,20 +1426,26 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: _actionBusy ? null : () => _openFollowUp(leadId, lead),
-            child: const Text('Log follow-up', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Log follow-up',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (row1Buttons.isNotEmpty) {
       buttonRows.add(Row(children: row1Buttons));
       buttonRows.add(const SizedBox(height: 12));
     }
-    
+
     // ============ Row 2: Create Quotation & Close as Lost ============
     final List<Widget> row2Buttons = [];
-    
+
     // Create quotation - show from follow-up stage onwards (except won)
     if (allowedActions.contains('create_quotation') && !isWon) {
       row2Buttons.add(
@@ -1393,16 +1461,22 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             onPressed: _actionBusy
                 ? null
                 : () => Navigator.pushNamed(
-                      context,
-                      '/crm/quotes/form',
-                      arguments: leadId,
-                    ),
-            child: const Text('Create quotation', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+                    context,
+                    '/crm/quotes/form',
+                    arguments: leadId,
+                  ),
+            child: const Text(
+              'Create quotation',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     // Close as lost - show for all stages except won
     if (allowedActions.contains('lost') && !closed && !isWon) {
       row2Buttons.add(
@@ -1417,20 +1491,26 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: (_actionBusy) ? null : () => _markLost(leadId),
-            child: const Text('Close as lost', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Close as lost',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (row2Buttons.isNotEmpty) {
       buttonRows.add(Row(children: row2Buttons));
       buttonRows.add(const SizedBox(height: 12));
     }
-    
+
     // ============ Row 3: Quotation Actions (only in quotation stage) ============
     final List<Widget> row3Buttons = [];
-    
+
     if (allowedActions.contains('edit_quotation')) {
       row3Buttons.add(
         Expanded(
@@ -1443,12 +1523,18 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: _actionBusy ? null : () => _snack('Edit quotation'),
-            child: const Text('Edit quotation', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Edit quotation',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (allowedActions.contains('email_quote')) {
       row3Buttons.add(
         Expanded(
@@ -1460,21 +1546,29 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _snack('Email quote to client'),
-            child: const Text('Email quote', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            onPressed: _actionBusy
+                ? null
+                : () => _snack('Email quote to client'),
+            child: const Text(
+              'Email quote',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (row3Buttons.isNotEmpty) {
       buttonRows.add(Row(children: row3Buttons));
       buttonRows.add(const SizedBox(height: 12));
     }
-    
+
     // ============ Row 4: Download Quote & Move Negotiation ============
     final List<Widget> row4Buttons = [];
-    
+
     if (allowedActions.contains('download_quote')) {
       row4Buttons.add(
         Expanded(
@@ -1487,12 +1581,18 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: _actionBusy ? null : () => _snack('Download quote PDF'),
-            child: const Text('Download quote', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Download quote',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (allowedActions.contains('move_negotiation')) {
       row4Buttons.add(
         Expanded(
@@ -1506,17 +1606,20 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: _actionBusy ? null : () => _snack('Move to negotiation'),
-            child: const Text('Move to negotiation', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Move to negotiation',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       );
     }
-    
+
     if (row4Buttons.isNotEmpty) {
       buttonRows.add(Row(children: row4Buttons));
       buttonRows.add(const SizedBox(height: 12));
     }
-    
+
     // ============ Row 5: Close as Won (in quotation/negotiation) ============
     if (allowedActions.contains('move_negotiation')) {
       buttonRows.add(
@@ -1531,17 +1634,25 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _markWonOrRequest(leadId, lead),
-            child: const Text('Close as won', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            onPressed: _actionBusy
+                ? null
+                : () => _markWonOrRequest(leadId, lead),
+            child: const Text(
+              'Close as won',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       );
       buttonRows.add(const SizedBox(height: 12));
     }
-    
+
     // ============ Row 6: Bill/Sales Order Actions (Won stage) ============
     final List<Widget> row6Buttons = [];
-    
+
     if (allowedActions.contains('view_bill')) {
       row6Buttons.add(
         Expanded(
@@ -1554,12 +1665,18 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: _actionBusy ? null : () => _snack('View bill'),
-            child: const Text('View bill', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'View bill',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (allowedActions.contains('download_bill')) {
       row6Buttons.add(
         Expanded(
@@ -1572,20 +1689,26 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: _actionBusy ? null : () => _snack('Download bill PDF'),
-            child: const Text('Download bill', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Download bill',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (row6Buttons.isNotEmpty) {
       buttonRows.add(Row(children: row6Buttons));
       buttonRows.add(const SizedBox(height: 12));
     }
-    
+
     // ============ Row 7: Email Bill & View Sales Order ============
     final List<Widget> row7Buttons = [];
-    
+
     if (allowedActions.contains('email_bill')) {
       row7Buttons.add(
         Expanded(
@@ -1597,13 +1720,21 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _snack('Email bill to client'),
-            child: const Text('Email bill', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            onPressed: _actionBusy
+                ? null
+                : () => _snack('Email bill to client'),
+            child: const Text(
+              'Email bill',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (allowedActions.contains('view_sales_order')) {
       row7Buttons.add(
         Expanded(
@@ -1616,17 +1747,23 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: _actionBusy ? null : () => _snack('View sales order'),
-            child: const Text('Sales order', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Sales order',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
-    
+
     if (row7Buttons.isNotEmpty) {
       buttonRows.add(Row(children: row7Buttons));
       buttonRows.add(const SizedBox(height: 12));
     }
-    
+
     // ============ Row 8: Assign to rep ============
     if (allowedActions.contains('assign')) {
       buttonRows.add(
@@ -1643,13 +1780,16 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: (_actionBusy) ? null : () => _assign(leadId),
-            child: const Text('Assign to rep', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Assign to rep',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       );
       buttonRows.add(const SizedBox(height: 12));
     }
-    
+
     // If no actions available, show a message
     if (buttonRows.isEmpty) {
       return const Padding(
@@ -1662,14 +1802,12 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         ),
       );
     }
-    
+
     // Remove last SizedBox height
     if (buttonRows.last is SizedBox) {
       buttonRows.removeLast();
     }
-    
-    return Column(
-      children: buttonRows,
-    );
+
+    return Column(children: buttonRows);
   }
 }
