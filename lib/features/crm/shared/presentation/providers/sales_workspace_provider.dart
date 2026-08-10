@@ -1,4 +1,5 @@
 import 'package:erp_app/features/crm/shared/data/models/sales_product_model.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/providers/network_providers.dart';
@@ -14,10 +15,10 @@ final salesCrmApiProvider = Provider<SalesCrmApiService>((ref) {
   return SalesCrmApiService(ref.read(apiServiceProvider));
 });
 
-final   salesWorkspaceProvider = AsyncNotifierProvider.autoDispose<
-    SalesWorkspaceNotifier, SalesWorkspace>(
-  SalesWorkspaceNotifier.new,
-);
+final salesWorkspaceProvider =
+    AsyncNotifierProvider.autoDispose<SalesWorkspaceNotifier, SalesWorkspace>(
+      SalesWorkspaceNotifier.new,
+    );
 
 class SalesWorkspaceNotifier extends AsyncNotifier<SalesWorkspace> {
   SalesCrmApiService get _api => ref.read(salesCrmApiProvider);
@@ -46,32 +47,36 @@ class SalesWorkspaceNotifier extends AsyncNotifier<SalesWorkspace> {
   Future<SalesLead> createLead(Map<String, dynamic> payload) =>
       _mutate(() => _api.createLead(payload));
 
-  Future<SalesLead> updateLead(String leadId, Map<String, dynamic> patch) =>
-      _mutate(() => _api.updateLead(leadId, patch));
+  /// Move to negotiations
 
-  Future<SalesLead> qualifyLead(
+  Future<SalesLead> updateLead(
     String leadId,
-    Map<String, dynamic> payload,
-  ) =>
+    Map<String, dynamic> patch,
+  ) async {
+    final response = await _mutate(() => _api.updateLead(leadId, patch));
+
+    debugPrint('=== UPDATE LEAD RESPONSE ===');
+    debugPrint(response.toString());
+    debugPrint('============================');
+
+    return response;
+  }
+
+  Future<SalesLead> qualifyLead(String leadId, Map<String, dynamic> payload) =>
       _mutate(() => _api.qualifyLead(leadId, payload));
 
-  Future<SalesQuote> createQuote(
-    String leadId,
-    Map<String, dynamic> payload,
-  ) =>
+  Future<SalesQuote> createQuote(String leadId, Map<String, dynamic> payload) =>
       _mutate(() => _api.createQuote(leadId, payload));
 
   Future<SalesQuote> updateQuote(
     String quoteId,
     Map<String, dynamic> payload,
-  ) =>
-      _mutate(() => _api.updateQuote(quoteId, payload));
+  ) => _mutate(() => _api.updateQuote(quoteId, payload));
 
   Future<SalesQuote> approveQuote(
     String quoteId, [
     Map<String, dynamic>? payload,
-  ]) =>
-      _mutate(() => _api.approveQuote(quoteId, payload));
+  ]) => _mutate(() => _api.approveQuote(quoteId, payload));
 
   Future<SalesQuote> rejectQuote(String quoteId, String reason) =>
       _mutate(() => _api.rejectQuote(quoteId, reason));
@@ -85,8 +90,7 @@ class SalesWorkspaceNotifier extends AsyncNotifier<SalesWorkspace> {
   Future<void> completeActivity(String activityId, {String? notes}) =>
       _mutate(() => _api.completeActivity(activityId, notes: notes));
 
-  Future<void> markWon(String leadId) =>
-      _mutate(() => _api.markWon(leadId));
+  Future<void> markWon(String leadId) => _mutate(() => _api.markWon(leadId));
 
   Future<void> markLost(String leadId, String reason) =>
       _mutate(() => _api.markLost(leadId, reason));
@@ -108,8 +112,10 @@ class SalesWorkspaceNotifier extends AsyncNotifier<SalesWorkspace> {
 
   Future<({String? customerId, SalesLead? lead, bool created})> ensureCustomer(
     String leadId,
-  ) =>
-      _mutate(() => _api.ensureCustomer(leadId));
+  ) => _mutate(() => _api.ensureCustomer(leadId));
+
+  Future<InventoryCustomer?> matchCustomer({String? phone, String? email}) =>
+      _api.matchCustomer(phone: phone, email: email);
 }
 
 /// Team members for lead assignment (`GET sales/team`).
@@ -133,24 +139,18 @@ class CrmTeamMember {
   const CrmTeamMember({required this.id, required this.name, this.email});
 
   factory CrmTeamMember.fromJson(Map<String, dynamic> json) {
-    final id = (json['userId'] ??
-            json['id'] ??
-            json['_id'] ??
-            json['ownerId'] ??
-            '')
-        .toString();
-    final name = (json['name'] ??
-            json['ownerName'] ??
-            json['fullName'] ??
-            json['userName'] ??
-            json['email'] ??
-            'Unknown')
-        .toString();
-    return CrmTeamMember(
-      id: id,
-      name: name,
-      email: json['email']?.toString(),
-    );
+    final id =
+        (json['userId'] ?? json['id'] ?? json['_id'] ?? json['ownerId'] ?? '')
+            .toString();
+    final name =
+        (json['name'] ??
+                json['ownerName'] ??
+                json['fullName'] ??
+                json['userName'] ??
+                json['email'] ??
+                'Unknown')
+            .toString();
+    return CrmTeamMember(id: id, name: name, email: json['email']?.toString());
   }
 }
 
@@ -180,80 +180,82 @@ final crmBillsProvider = Provider.autoDispose((ref) {
 
 final crmContactsProvider =
     Provider.autoDispose<AsyncValue<List<SalesContact>>>((ref) {
-  return ref.watch(salesWorkspaceProvider).whenData((ws) {
-    return ws.leads
-        .where(
-          (l) =>
-              l.contactName.isNotEmpty ||
-              l.email.isNotEmpty ||
-              l.phone.isNotEmpty,
-        )
-        .map(SalesContact.fromLead)
-        .toList();
-  });
-});
+      return ref.watch(salesWorkspaceProvider).whenData((ws) {
+        return ws.leads
+            .where(
+              (l) =>
+                  l.contactName.isNotEmpty ||
+                  l.email.isNotEmpty ||
+                  l.phone.isNotEmpty,
+            )
+            .map(SalesContact.fromLead)
+            .toList();
+      });
+    });
 
 /// Leads grouped by lifecycleStage (fallback: status).
 final crmPipelineProvider =
     Provider.autoDispose<AsyncValue<Map<String, List<SalesLead>>>>((ref) {
-  return ref.watch(salesWorkspaceProvider).whenData((ws) {
-    final map = <String, List<SalesLead>>{};
-    for (final lead in ws.leads) {
-      final key = (lead.lifecycleStage?.isNotEmpty == true)
-          ? lead.lifecycleStage!
-          : (lead.status.isNotEmpty ? lead.status : 'Other');
-      map.putIfAbsent(key, () => []).add(lead);
-    }
-    return map;
-  });
-});
+      return ref.watch(salesWorkspaceProvider).whenData((ws) {
+        final map = <String, List<SalesLead>>{};
+        for (final lead in ws.leads) {
+          final key = (lead.lifecycleStage?.isNotEmpty == true)
+              ? lead.lifecycleStage!
+              : (lead.status.isNotEmpty ? lead.status : 'Other');
+          map.putIfAbsent(key, () => []).add(lead);
+        }
+        return map;
+      });
+    });
 
 final crmApprovalsProvider =
     Provider.autoDispose<AsyncValue<List<CrmApprovalItem>>>((ref) {
-  return ref.watch(salesWorkspaceProvider).whenData((ws) {
-    final items = <CrmApprovalItem>[];
+      return ref.watch(salesWorkspaceProvider).whenData((ws) {
+        final items = <CrmApprovalItem>[];
 
-    for (final lead in ws.leads) {
-      if (lead.hasPendingWonApproval) {
-        items.add(
-          CrmApprovalItem(
-            kind: 'won',
-            id: lead.id,
-            title: lead.companyName.isEmpty ? lead.contactName : lead.companyName,
-            subtitle: 'Won approval · ${lead.status}',
-            status: lead.wonApproval?['status']?.toString() ?? 'pending',
-            lead: lead,
-          ),
-        );
-      }
-    }
+        for (final lead in ws.leads) {
+          if (lead.hasPendingWonApproval) {
+            items.add(
+              CrmApprovalItem(
+                kind: 'won',
+                id: lead.id,
+                title: lead.companyName.isEmpty
+                    ? lead.contactName
+                    : lead.companyName,
+                subtitle: 'Won approval · ${lead.status}',
+                status: lead.wonApproval?['status']?.toString() ?? 'pending',
+                lead: lead,
+              ),
+            );
+          }
+        }
 
-    for (final quote in ws.quotes) {
-      if (quote.hasPendingApproval) {
-        items.add(
-          CrmApprovalItem(
-            kind: 'quote',
-            id: quote.id,
-            title: quote.number ?? quote.account ?? quote.id,
-            subtitle: 'Quote approval · ${quote.status}',
-            status: quote.approval['status']?.toString() ?? 'pending',
-            quote: quote,
-          ),
-        );
-      }
-    }
+        for (final quote in ws.quotes) {
+          if (quote.hasPendingApproval) {
+            items.add(
+              CrmApprovalItem(
+                kind: 'quote',
+                id: quote.id,
+                title: quote.number ?? quote.account ?? quote.id,
+                subtitle: 'Quote approval · ${quote.status}',
+                status: quote.approval['status']?.toString() ?? 'pending',
+                quote: quote,
+              ),
+            );
+          }
+        }
 
-    return items;
-  });
-});
+        return items;
+      });
+    });
 
-final crmCustomersProvider = AsyncNotifierProvider.autoDispose<
-    CrmCustomersNotifier, List<InventoryCustomer>>(
-  CrmCustomersNotifier.new,
-);
+final crmCustomersProvider =
+    AsyncNotifierProvider.autoDispose<
+      CrmCustomersNotifier,
+      List<InventoryCustomer>
+    >(CrmCustomersNotifier.new);
 
-class CrmCustomersNotifier
-    extends AsyncNotifier<List<InventoryCustomer>> {
+class CrmCustomersNotifier extends AsyncNotifier<List<InventoryCustomer>> {
   @override
   Future<List<InventoryCustomer>> build() async {
     ref.watch(authProvider);
@@ -268,27 +270,30 @@ class CrmCustomersNotifier
   }
 }
 
-final crmLeadByIdProvider =
-    Provider.autoDispose.family<SalesLead?, String>((ref, id) {
-  return ref.watch(salesWorkspaceProvider).maybeWhen(
-        data: (ws) => ws.leadById(id),
-        orElse: () => null,
-      );
+final crmLeadByIdProvider = Provider.autoDispose.family<SalesLead?, String>((
+  ref,
+  id,
+) {
+  return ref
+      .watch(salesWorkspaceProvider)
+      .maybeWhen(data: (ws) => ws.leadById(id), orElse: () => null);
 });
 
-final crmQuoteByIdProvider =
-    Provider.autoDispose.family<SalesQuote?, String>((ref, id) {
-  return ref.watch(salesWorkspaceProvider).maybeWhen(
-        data: (ws) => ws.quoteById(id),
-        orElse: () => null,
-      );
+final crmQuoteByIdProvider = Provider.autoDispose.family<SalesQuote?, String>((
+  ref,
+  id,
+) {
+  return ref
+      .watch(salesWorkspaceProvider)
+      .maybeWhen(data: (ws) => ws.quoteById(id), orElse: () => null);
 });
 
 // ─── Products (inventory items, for the quote-form product picker) ──────
-final crmProductsProvider = AsyncNotifierProvider.autoDispose<
-    CrmProductsNotifier, List<InventoryProductItem>>(
-  CrmProductsNotifier.new,
-);
+final crmProductsProvider =
+    AsyncNotifierProvider.autoDispose<
+      CrmProductsNotifier,
+      List<InventoryProductItem>
+    >(CrmProductsNotifier.new);
 
 class CrmProductsNotifier extends AsyncNotifier<List<InventoryProductItem>> {
   @override
@@ -330,34 +335,37 @@ class CrmDashboardStats {
 
 final crmDashboardStatsProvider =
     Provider.autoDispose<AsyncValue<CrmDashboardStats>>((ref) {
-  return ref.watch(salesWorkspaceProvider).whenData((ws) {
-    final openLeadsList = ws.leads.where(
-      (l) => l.lifecycleStage != 'won' && l.lifecycleStage != 'lost',
-    );
-    final wonLeads = ws.leads.where((l) => l.lifecycleStage == 'won');
+      return ref.watch(salesWorkspaceProvider).whenData((ws) {
+        final openLeadsList = ws.leads.where(
+          (l) => l.lifecycleStage != 'won' && l.lifecycleStage != 'lost',
+        );
+        final wonLeads = ws.leads.where((l) => l.lifecycleStage == 'won');
 
-    final pendingQuoteApprovals =
-        ws.quotes.where((q) => q.hasPendingApproval).length;
-    final pendingWonApprovals =
-        ws.leads.where((l) => l.hasPendingWonApproval).length;
+        final pendingQuoteApprovals = ws.quotes
+            .where((q) => q.hasPendingApproval)
+            .length;
+        final pendingWonApprovals = ws.leads
+            .where((l) => l.hasPendingWonApproval)
+            .length;
 
-    return CrmDashboardStats(
-      pipelineValue: openLeadsList.fold<double>(
-        0,
-        (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
-      ),
-      openDeals: openLeadsList.length,
-      wonValue: wonLeads.fold<double>(
-        0,
-        (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
-      ),
-      openLeads: ws.leads.where((l) => l.status == 'Open').length,
-      overdueActivities:
-          ws.activities.where((a) => a.status == 'overdue').length,
-      pendingApprovals: pendingQuoteApprovals + pendingWonApprovals,
-    );
-  });
-});
+        return CrmDashboardStats(
+          pipelineValue: openLeadsList.fold<double>(
+            0,
+            (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
+          ),
+          openDeals: openLeadsList.length,
+          wonValue: wonLeads.fold<double>(
+            0,
+            (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
+          ),
+          openLeads: ws.leads.where((l) => l.status == 'Open').length,
+          overdueActivities: ws.activities
+              .where((a) => a.status == 'overdue')
+              .length,
+          pendingApprovals: pendingQuoteApprovals + pendingWonApprovals,
+        );
+      });
+    });
 
 // ─── Next actions (dashboard "NEXT ACTIONS" list) ──────────────────────
 
@@ -366,10 +374,10 @@ final crmDashboardStatsProvider =
 /// order)").
 final crmNextActionsProvider =
     Provider.autoDispose<AsyncValue<List<SalesLead>>>((ref) {
-  return ref
-      .watch(salesWorkspaceProvider)
-      .whenData((ws) => ws.leads.take(4).toList());
-});
+      return ref
+          .watch(salesWorkspaceProvider)
+          .whenData((ws) => ws.leads.take(4).toList());
+    });
 
 // ─── Pipeline funnel (dashboard "PIPELINE FUNNEL" widget) ──────────────
 
@@ -406,22 +414,24 @@ const List<_StageDef> _kPipelineStageOrder = [
 
 final crmPipelineFunnelProvider =
     Provider.autoDispose<AsyncValue<List<CrmFunnelStage>>>((ref) {
-  return ref.watch(salesWorkspaceProvider).whenData((ws) {
-    return _kPipelineStageOrder.map((stage) {
-      final stageLeads = ws.leads.where((l) => l.lifecycleStage == stage.key);
-      final value = stageLeads.fold<double>(
-        0,
-        (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
-      );
-      return CrmFunnelStage(
-        key: stage.key,
-        label: stage.label,
-        count: stageLeads.length,
-        value: value,
-      );
-    }).toList();
-  });
-});
+      return ref.watch(salesWorkspaceProvider).whenData((ws) {
+        return _kPipelineStageOrder.map((stage) {
+          final stageLeads = ws.leads.where(
+            (l) => l.lifecycleStage == stage.key,
+          );
+          final value = stageLeads.fold<double>(
+            0,
+            (sum, l) => sum + (num.tryParse('${l.value ?? 0}') ?? 0),
+          );
+          return CrmFunnelStage(
+            key: stage.key,
+            label: stage.label,
+            count: stageLeads.length,
+            value: value,
+          );
+        }).toList();
+      });
+    });
 
 // ─── Chart data (source / temperature / won-lost / follow-up type) ─────
 
@@ -447,8 +457,9 @@ class CrmChartsData {
   }
 }
 
-final crmChartsDataProvider =
-    Provider.autoDispose<AsyncValue<CrmChartsData>>((ref) {
+final crmChartsDataProvider = Provider.autoDispose<AsyncValue<CrmChartsData>>((
+  ref,
+) {
   return ref.watch(salesWorkspaceProvider).whenData((ws) {
     final bySource = <String, int>{};
     for (final l in ws.leads) {
@@ -458,7 +469,9 @@ final crmChartsDataProvider =
 
     final byTemperature = <String, int>{};
     for (final l in ws.leads) {
-      final key = (l.temperature?.isNotEmpty ?? false) ? l.temperature! : 'Unset';
+      final key = (l.temperature?.isNotEmpty ?? false)
+          ? l.temperature!
+          : 'Unset';
       byTemperature[key] = (byTemperature[key] ?? 0) + 1;
     }
 

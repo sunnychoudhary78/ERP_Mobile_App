@@ -1,4 +1,5 @@
 import 'package:erp_app/features/crm/shared/data/models/sales_product_model.dart';
+import 'package:erp_app/features/crm/shared/data/models/sales_quote_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
@@ -55,6 +56,11 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _leadId = TextEditingController();
 
+  // Set when we navigate here to EDIT an existing quote (see
+  // didChangeDependencies). Null == create-mode, same as before.
+  SalesQuote? _editingQuote;
+  bool get _isEditMode => _editingQuote != null;
+
   bool _leadPrefilled = false;
   final _clientEmail = TextEditingController();
   final _address = TextEditingController();
@@ -102,8 +108,56 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final arg = ModalRoute.of(context)?.settings.arguments;
-    if (arg is String && _leadId.text.isEmpty) {
+    if (arg is SalesQuote && _editingQuote == null) {
+      // Edit mode: navigated here with the existing quote (see
+      // lead_detail_screen.dart "Edit quotation" button).
+      _editingQuote = arg;
+      final leadId = arg.leadId;
+      if (leadId != null && leadId.isNotEmpty && _leadId.text.isEmpty) {
+        _leadId.text = leadId;
+      }
+      // NOTE: clientEmail/address/gstNumber deliberately NOT touched here —
+      // SalesQuote doesn't store them, so they stay driven by
+      // _maybePrefillFromLead() below (same as create-mode). We only pull
+      // in what the quote itself actually carries.
+      _prefillFromQuote(arg);
+    } else if (arg is String && _leadId.text.isEmpty) {
       _leadId.text = arg;
+    }
+  }
+
+  // Fills in the fields SalesQuote actually carries (see the model you
+  // shared: id, dbId, number, leadId, account, amount, subtotal, gstRate,
+  // gstAmount, gstNumber, status, validUntil, owner, lines, approval,
+  // notes, sentAt, createdAt). It does NOT have clientEmail, address,
+  // paymentTerms, deliveryFreight, dispatchMode, transportDetails, or
+  // validForDays — those keep coming from the lead / form defaults, same
+  // as in create mode. If you want those preserved on edit too, the
+  // backend/model would need to start returning them — happy to wire that
+  // up if you add the fields.
+  void _prefillFromQuote(SalesQuote quote) {
+    _gstRate.text = quote.gstRate.toString();
+    _notes.text = quote.notes;
+
+    if (quote.lines.isNotEmpty) {
+      for (final line in _lineItems) {
+        line.dispose();
+      }
+      _lineItems.clear();
+      for (final raw in quote.lines) {
+        final Map<String, dynamic> l =
+            raw is Map ? Map<String, dynamic>.from(raw) : const {};
+        final item = _QuoteLineItem()
+          ..product = l['product']?.toString()
+          ..item.text = (l['item'] ?? '').toString()
+          ..hsn.text = (l['hsn'] ?? '').toString()
+          ..unit.text = (l['unit'] ?? '').toString()
+          ..articleNo.text = (l['articleNo'] ?? '').toString()
+          ..type.text = (l['type'] ?? '').toString()
+          ..qty.text = (l['qty'] ?? 1).toString()
+          ..rate.text = (l['rate'] ?? 0).toString();
+        _lineItems.add(item);
+      }
     }
   }
 
@@ -155,7 +209,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
 
   Future<void> _submit() async {
     final leadId = _leadId.text.trim();
-    if (leadId.isEmpty) {
+    if (!_isEditMode && leadId.isEmpty) {
       setState(() => _message = 'leadId is required');
       return;
     }
@@ -169,24 +223,34 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
       _message = null;
     });
 
+    final payload = {
+      'clientEmail': _clientEmail.text.trim(),
+      'account': _clientEmail.text.trim(),
+      'address': _address.text.trim(),
+      'gstNumber': _gstNumber.text.trim(),
+      'gstRate': double.tryParse(_gstRate.text.trim()) ?? 0,
+      'paymentTerms': _paymentTerms,
+      'deliveryFreight': _deliveryFreight,
+      'dispatchMode': _dispatchMode,
+      'transportDetails': _transportDetails.text.trim(),
+      'validForDays': int.tryParse(_validForDays.text.trim()) ?? 30,
+      'notes': _notes.text.trim(),
+      'subtotal': _subtotal,
+      'gstAmount': _gstAmount,
+      'amount': _grandTotal,
+      'lines': _lineItems.map((l) => l.toJson()).toList(),
+    };
+
     try {
-      await ref.read(salesWorkspaceProvider.notifier).createQuote(leadId, {
-        'clientEmail': _clientEmail.text.trim(),
-        'account': _clientEmail.text.trim(),
-        'address': _address.text.trim(),
-        'gstNumber': _gstNumber.text.trim(),
-        'gstRate': double.tryParse(_gstRate.text.trim()) ?? 0,
-        'paymentTerms': _paymentTerms,
-        'deliveryFreight': _deliveryFreight,
-        'dispatchMode': _dispatchMode,
-        'transportDetails': _transportDetails.text.trim(),
-        'validForDays': int.tryParse(_validForDays.text.trim()) ?? 30,
-        'notes': _notes.text.trim(),
-        'subtotal': _subtotal,
-        'gstAmount': _gstAmount,
-        'amount': _grandTotal,
-        'lines': _lineItems.map((l) => l.toJson()).toList(),
-      });
+      if (_isEditMode) {
+        await ref
+            .read(salesWorkspaceProvider.notifier)
+            .updateQuote(_editingQuote!.id, payload);
+      } else {
+        await ref
+            .read(salesWorkspaceProvider.notifier)
+            .createQuote(leadId, payload);
+      }
       if (mounted) Navigator.pop(context);
     } catch (e) {
       setState(() {
@@ -211,7 +275,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.maybePop(context),
         ),
-        title: const Text('Create Quotation'),
+        title: Text(_isEditMode ? 'Edit Quotation' : 'Create Quotation'),
       ),
       body: Form(
         key: _formKey,
@@ -377,7 +441,9 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                     ),
                   ),
                   child: Text(
-                    _submitting ? 'Creating…' : 'Create quote',
+                    _submitting
+                        ? (_isEditMode ? 'Updating…' : 'Creating…')
+                        : (_isEditMode ? 'Update quote' : 'Create quote'),
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -745,8 +811,8 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                     _textField(
                       controller: line.item,
                       hint: 'Description',
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      // validator: (v) =>
+                      //     (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                   ],
                 ),

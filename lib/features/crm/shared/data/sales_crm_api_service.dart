@@ -51,8 +51,8 @@ class SalesCrmApiService {
   Future<SalesLead> createLead(Map<String, dynamic> payload) async {
     final response = await api.post(ApiEndpoints.salesLeads, payload);
 
-     debugPrint("=== API Response Leads ===");
-     debugPrint(response.toString());
+    debugPrint("=== API Response Leads ===");
+    debugPrint(response.toString());
     final map = _asMap(response);
 
     // debugPrint("=== Response Map ===");
@@ -64,6 +64,8 @@ class SalesCrmApiService {
 
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
   }
+
+  // move to negoations
 
   Future<SalesLead> updateLead(
     String leadId,
@@ -112,6 +114,8 @@ class SalesCrmApiService {
       ApiEndpoints.salesQuoteById(quoteId),
       payload,
     );
+    debugPrint("=== API Response Update Quote ===");
+    debugPrint(response.toString());
     final map = _asMap(response);
     final quote = map['quote'] is Map ? map['quote'] : map;
     return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
@@ -151,7 +155,6 @@ class SalesCrmApiService {
     Map<String, dynamic> payload,
   ) async {
     return api.post(ApiEndpoints.salesLeadFollowUps(leadId), payload);
-    
   }
 
   Future<SalesActivity> completeActivity(
@@ -172,11 +175,20 @@ class SalesCrmApiService {
   }
 
   Future<SalesLead> markLost(String leadId, String reason) async {
+    debugPrint('=== MARK LOST API ===');
+    debugPrint('Lead ID: $leadId');
+    debugPrint('Reason: $reason');
+
     final response = await api.post(ApiEndpoints.salesLeadLost(leadId), {
       'reason': reason,
     });
+
+    debugPrint('=== MARK LOST RESPONSE ===');
+    debugPrint(response.toString());
+
     final map = _asMap(response);
     final lead = map['lead'] is Map ? map['lead'] : map;
+
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
   }
 
@@ -226,6 +238,9 @@ class SalesCrmApiService {
       ApiEndpoints.salesCustomersMatch,
       queryParams: query,
     );
+
+    debugPrint("API Response ======");
+    debugPrint(response.toString());
     final map = _asMap(response);
     final customer = map['customer'];
     if (customer is Map) {

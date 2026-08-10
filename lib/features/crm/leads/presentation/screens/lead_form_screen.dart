@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/data/models/inventory_customer_model.dart';
 import '../../../shared/data/models/sales_lead_model.dart';
 import '../../../shared/data/models/sales_product_model.dart';
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
@@ -108,6 +111,12 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
   String? _leadId;
   bool _prefilled = false;
 
+  Timer? _matchDebounce;
+  InventoryCustomer? _matchedCustomer;
+  String? _customerId;
+  bool _matching = false;
+  bool _matchDismissed = false;
+
   static const _sourceOptions = [
     'Phone',
     'Email',
@@ -128,6 +137,73 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
   ];
 
   bool get _isEdit => _leadId != null && _leadId!.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _phone.addListener(_onContactChanged);
+    _email.addListener(_onContactChanged);
+  }
+
+  void _onContactChanged() {
+    if (_isEdit) return; // edit mode mein re-match nahi karna
+    _matchDebounce?.cancel();
+    _matchDebounce = Timer(const Duration(milliseconds: 400), _tryMatchCustomer);
+  }
+
+  Future<void> _tryMatchCustomer() async {
+    final phone = _phone.text.trim();
+    final email = _email.text.trim();
+    final phoneOk = RegExp(r'^[0-9]{10}$').hasMatch(phone);
+    final emailOk = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+
+    if (!phoneOk && !emailOk) {
+      if (mounted) {
+        setState(() {
+          _matchedCustomer = null;
+          _customerId = null;
+          _clientType = 'New';
+          _matchDismissed = false;
+        });
+      }
+      return;
+    }
+
+    setState(() => _matching = true);
+    try {
+      final customer = await ref
+          .read(salesWorkspaceProvider.notifier)
+          .matchCustomer(
+            phone: phoneOk ? phone : null,
+            email: emailOk ? email : null,
+          );
+      if (!mounted) return;
+      setState(() {
+        _matchedCustomer = customer;
+        if (customer != null) {
+          _customerId = customer.id;
+          _clientType = 'Returning';
+          _matchDismissed = false;
+          if (_company.text.trim().isEmpty) _company.text = customer.name;
+          if (_contact.text.trim().isEmpty) _contact.text = customer.name;
+          if ((customer.address ?? '').isNotEmpty) {
+            _address.text = customer.address!;
+          }
+          if ((customer.gstNumber ?? '').isNotEmpty) {
+            _gst.text = customer.gstNumber!;
+          }
+        } else {
+          _customerId = null;
+          _clientType = 'New';
+          _matchDismissed = true;
+        }
+      });
+    } catch (_) {
+      // silent fail — convenience feature hai, submit ko block nahi karna
+    } finally {
+      if (mounted) setState(() => _matching = false);
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -190,6 +266,9 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
 
   @override
   void dispose() {
+    _matchDebounce?.cancel();
+    _phone.removeListener(_onContactChanged);
+    _email.removeListener(_onContactChanged);
     _company.dispose();
     _contact.dispose();
     _phone.dispose();
@@ -350,6 +429,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       ],
     );
   }
+  
 
   void _addLine() => setState(() => _lines.add(_RequirementLine()));
 
@@ -360,22 +440,32 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     });
   }
 
-  Map<String, dynamic> _payload() => {
-        'companyName': _company.text.trim(),
-        'contactName': _contact.text.trim(),
-        'phone': _phone.text.trim(),
-        'email': _email.text.trim(),
-        'address': _address.text.trim(),
-        'gstNumber': _gst.text.trim(),
-        'source': _source,
-        'clientType': _clientType,
-        'temperature': _temperature,
-        'requirements': _requirement.text.trim(),
-        'requirementLines':
-            _addProducts ? _lines.map((l) => l.toJson()).toList() : [],
-        'repeatFrequency': _repeatFreq,
-        'value': double.tryParse(_value.text) ?? 0,
-      };
+  Map<String, dynamic> _payload() {
+    final payload = <String, dynamic>{
+      'companyName': _company.text.trim(),
+      'contactName': _contact.text.trim(),
+      'phone': _phone.text.trim(),
+      'email': _email.text.trim(),
+      'address': _address.text.trim(),
+      'gstNumber': _gst.text.trim(),
+      'source': _source,
+      'clientType': _clientType,
+      'requirements': _requirement.text.trim(),
+      'requirementLines':
+          _addProducts ? _lines.map((l) => l.toJson()).toList() : [],
+      'value': double.tryParse(_value.text) ?? 0,
+      'customerId':
+          _customerId == null ? null : (int.tryParse(_customerId!) ?? _customerId),
+    };
+
+    if (_clientType == 'Returning') {
+      payload['repeatFrequency'] = _repeatFreq;
+    } else {
+      payload['temperature'] = _temperature;
+    }
+
+    return payload;
+  }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -501,6 +591,45 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                             return ok ? null : 'Enter a valid email';
                           },
                         ),
+                        if (_matching)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: LinearProgressIndicator(minHeight: 2),
+                          ),
+                        if (_matchedCustomer != null && !_matchDismissed)
+                          Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: scheme.primaryContainer.withOpacity(0.35),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.verified_user_outlined,
+                                  size: 18,
+                                  color: scheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Existing customer found: ${_matchedCustomer!.name} — details autofilled',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close, size: 18),
+                                  onPressed: () =>
+                                      setState(() => _matchDismissed = true),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ],
+                            ),
+                          ),
                         _responsiveRow([
                           _textField(
                             controller: _address,
@@ -523,20 +652,14 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                             },
                           ),
                         ]),
-                        _responsiveRow([
+                        _clientTypeBadge(scheme),
+                        if (_clientType == 'New')
                           _dropdown(
-                            label: 'Type',
-                            value: _clientType,
-                            items: _clientTypeOptions,
-                            onChanged: (v) => setState(() => _clientType = v!),
-                          ),
-                          _dropdown(
-                            label: 'Temp',
+                            label: 'Temperature',
                             value: _temperature,
                             items: _temperatureOptions,
                             onChanged: (v) => setState(() => _temperature = v!),
                           ),
-                        ]),
                       ],
                     ),
 
@@ -614,12 +737,13 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                           maxLines: 4,
                         ),
                         _responsiveRow([
-                          _dropdown(
-                            label: 'Repeat freq.',
-                            value: _repeatFreq,
-                            items: _repeatFreqOptions,
-                            onChanged: (v) => setState(() => _repeatFreq = v!),
-                          ),
+                          if (_clientType == 'Returning')
+                            _dropdown(
+                              label: 'Repeat freq.',
+                              value: _repeatFreq,
+                              items: _repeatFreqOptions,
+                              onChanged: (v) => setState(() => _repeatFreq = v!),
+                            ),
                           _textField(
                             controller: _value,
                             label: 'Value (₹)',
@@ -853,6 +977,49 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
           .map((e) => DropdownMenuItem(value: e, child: Text(e)))
           .toList(),
       onChanged: onChanged,
+    );
+  }
+
+  /// Read-only — clientType ab match API se auto-detect hota hai,
+  /// user manually New/Returning toggle nahi karta.
+  Widget _clientTypeBadge(ColorScheme scheme) {
+    final isReturning = _clientType == 'Returning';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: isReturning
+            ? scheme.primaryContainer.withOpacity(0.35)
+            : scheme.surfaceVariant.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isReturning
+                ? Icons.verified_user_outlined
+                : Icons.person_add_alt_outlined,
+            size: 18,
+            color: isReturning ? scheme.primary : scheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            isReturning ? 'Returning customer' : 'New customer',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isReturning ? scheme.primary : scheme.onSurfaceVariant,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            'Auto-detected',
+            style: TextStyle(
+              fontSize: 11,
+              color: scheme.onSurfaceVariant.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

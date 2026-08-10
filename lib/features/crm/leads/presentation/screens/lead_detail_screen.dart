@@ -40,6 +40,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       'email_quote',
       'download_quote',
       'move_negotiation',
+      'lost',
     ],
 
     // Negotiation stage - shown in screenshot 7
@@ -49,6 +50,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       'log_followup',
       'create_quotation',
       'move_negotiation',
+      'lost',
     ],
 
     // Won stage - show bill/sales order actions
@@ -141,6 +143,41 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     }
   }
 
+  Future<void> _moveToNegotiation(String leadId) async {
+    setState(() {
+      _actionBusy = true;
+    });
+
+    try {
+      final response = await ref
+          .read(salesWorkspaceProvider.notifier)
+          .updateLead(leadId, {'lifecycleStage': 'negotiation'});
+
+      debugPrint('=== MOVE TO NEGOTIATION RESPONSE ===');
+      debugPrint(response.toString());
+      debugPrint('====================================');
+
+      if (!mounted) return;
+
+      _snack('Lead moved to negotiation');
+
+      // Refresh/update your lead data here if required.
+    } catch (e) {
+      debugPrint('=== MOVE TO NEGOTIATION ERROR ===');
+      debugPrint(e.toString());
+
+      if (!mounted) return;
+
+      _snack('Failed to move to negotiation');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _actionBusy = false;
+        });
+      }
+    }
+  }
+
   void _openFollowUp(String leadId, SalesLead lead) {
     Navigator.push(
       context,
@@ -157,6 +194,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
 
   Future<void> _markLost(String leadId) async {
     final reasonController = TextEditingController();
+
     final reason = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -179,7 +217,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           FilledButton(
             onPressed: () {
               final text = reasonController.text.trim();
+
               if (text.isEmpty) return;
+
               Navigator.pop(ctx, text);
             },
             child: const Text('Mark lost'),
@@ -187,11 +227,27 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         ],
       ),
     );
-    reasonController.dispose();
-    if (reason == null || reason.isEmpty) return;
+
+    // Read result before disposing controller
+    if (reason == null || reason.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          reasonController.dispose();
+        });
+      });
+      return;
+    }
+
+    // Wait until dialog closing animation is finished
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        reasonController.dispose();
+      });
+    });
 
     await _runAction(() async {
       await ref.read(salesWorkspaceProvider.notifier).markLost(leadId, reason);
+
       _snack('Lead marked as lost');
     });
   }
@@ -202,6 +258,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     final valueController = TextEditingController(
       text: lead.value > 0 ? lead.value.toStringAsFixed(0) : '',
     );
+    final needController = TextEditingController();
     const temps = ['Hot', 'Warm', 'Cold', 'Later'];
 
     final confirmed = await showModalBottomSheet<bool>(
@@ -245,7 +302,17 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     controller: reqController,
                     maxLines: 3,
                     decoration: const InputDecoration(
-                      labelText: 'Requirements',
+                      labelText: 'Budget',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: needController,
+                    maxLines: 1,
+                    decoration: const InputDecoration(
+                      labelText: 'Need',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -254,7 +321,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     controller: valueController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Value (₹)',
+                      labelText: 'Timeline',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -613,14 +680,14 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 final items = <PopupMenuItem<String>>[];
 
                 // Always show Edit if allowed
-                if (allowedActions.contains('edit')) {
-                  items.add(
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Text('Edit lead'),
-                    ),
-                  );
-                }
+                // if (allowedActions.contains('edit')) {
+                //   items.add(
+                //     const PopupMenuItem(
+                //       value: 'edit',
+                //       child: Text('Close as lost'),
+                //     ),
+                //   );
+                // }
 
                 // Show Qualify if allowed and not closed
                 if (allowedActions.contains('qualify') && !_isClosed(lead)) {
@@ -1522,7 +1589,25 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _snack('Edit quotation'),
+            onPressed: _actionBusy
+            ? null
+            : () {
+                final quoteId = lead.quoteId;
+                if (quoteId == null || quoteId.isEmpty) {
+                  _snack('No quotation found for this lead');
+                  return;
+                }
+                final quote = ref.read(crmQuoteByIdProvider(quoteId));
+                if (quote == null) {
+                  _snack('Quotation not found');
+                  return;
+                }
+                Navigator.pushNamed(
+                  context,
+                  '/crm/quotes/form',
+                  arguments: quote,
+                );
+              },
             child: const Text(
               'Edit quotation',
               style: TextStyle(
@@ -1605,7 +1690,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _snack('Move to negotiation'),
+            onPressed: _actionBusy ? null : () => _moveToNegotiation(leadId),
             child: const Text(
               'Move to negotiation',
               style: TextStyle(fontWeight: FontWeight.bold),
