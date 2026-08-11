@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:erp_app/features/crm/shared/data/models/sales_product_model.dart';
 import 'package:flutter/material.dart';
@@ -347,6 +348,21 @@ class SalesCrmApiService {
     if (map['team'] is List) return map['team'] as List;
     if (response is List) return response;
     return const [];
+  }
+
+  Future<Uint8List> downloadQuotePdf(String quoteId) async {
+    final bytes = await api.downloadBytes(
+      ApiEndpoints.salesPdfdownload(quoteId),
+    );
+    debugPrint("Download PDF  -----------------$bytes");
+    return Uint8List.fromList(bytes);
+  }
+
+  Future<Uint8List> downloadBillPdf(String billId) async {
+    final bytes = await api.downloadBytes(
+      ApiEndpoints.salesPdfBillDownload(billId),
+    );
+    return Uint8List.fromList(bytes);
   }
 
   Future<List<InventoryProductItem>> fetchItems({

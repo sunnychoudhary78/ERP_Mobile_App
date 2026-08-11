@@ -25,6 +25,15 @@ class ApiService {
     }
   }
 
+  // Inside ApiService class (wherever your internal Dio instance is, e.g. `_dio` or `dio`)
+  Future<List<int>> downloadBytes(String path) async {
+    final response = await _dio.get<List<int>>(
+      path,
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return response.data ?? <int>[];
+  }
+
   Future<dynamic> get(
     String endpoint, {
     Map<String, dynamic>? queryParams,
@@ -66,8 +75,6 @@ class ApiService {
       throw _extractException(e);
     }
   }
-
-  
 
   Future<dynamic> deleteNoBody(String endpoint) async {
     final path = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;

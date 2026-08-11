@@ -90,6 +90,9 @@ class ApiEndpoints {
   static String salesQuoteReject(String id) => 'sales/quotes/$id/reject';// use after some time
   static String salesQuoteSend(String id) => 'sales/quotes/$id/send'; // use after some time in approvals
 
+  static String salesPdfdownload(String id) => 'sales/quotes/$id/pdf'; // download pdf //done
+  static String salesPdfBillDownload(String id) => 'sales/bills/$id/pdf';
+
   static String salesActivityComplete(String id) =>
       'sales/activities/$id/complete'; // done
 }

@@ -1,5 +1,6 @@
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/crm/activities/presentation/screens/follow_up_screen.dart';
+import 'package:erp_app/features/crm/shared/presentation/widgets/quote_pdf_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,21 +20,23 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
 
   // Stage to actions mapping based on your screenshots
   static const Map<String, List<String>> _stageActions = {
-    // Initial stage - just created
-    'lead_entered': ['edit', 'assign', 'qualify'],
+    // Client type stage - starting stage for every lead created through the
+    // app (matches the web dashboard: new leads show 'Lead entered' done and
+    // 'Client type' as current). Only the Qualify action is shown here;
+    // tapping it moves the lead into the 'qualify' stage.
+    'client_type': ['qualify', 'assign', 'lost'],
 
-    // Client type stage - before qualification
-    'client_type': ['edit', 'assign', 'qualify'],
-
-    // Qualification stage - shown in screenshots 1, 6
-    'qualify': ['edit', 'assign', 'qualify', 'log_followup'],
+    // Qualification stage - default stage for leads created through the app.
+    // Only these four actions are shown; the Qualify action itself is not
+    // shown again once a lead is already in this stage.
+    'qualify': ['log_followup', 'create_quotation', 'lost', 'assign'],
 
     // Follow-up stage - shown in screenshots 2, 3, 4, 7
-    'follow_up': ['edit', 'assign', 'log_followup', 'create_quotation'],
+    'follow_up': ['edit', 'assign', 'log_followup', 'create_quotation', 'lost'],
 
     // Quotation stage - shown in screenshot 5
     'quotation': [
-      'edit',
+      'won',
       'assign',
       'log_followup',
       'edit_quotation',
@@ -45,11 +48,12 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
 
     // Negotiation stage - shown in screenshot 7
     'negotiation': [
-      'edit',
+      'won',
       'assign',
       'log_followup',
-      'create_quotation',
-      'move_negotiation',
+      'edit_quotation',
+      'download_quote',
+      'email_quote',
       'lost',
     ],
 
@@ -59,11 +63,12 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       'view_bill',
       'download_bill',
       'email_bill',
+      'create_sales_order',
       'view_sales_order',
+      'assign',
     ],
-
     // Lost stage - minimal actions
-    'lost': ['view_customer'],
+    'lost': ['assign'],
   };
 
   String _leadDisplayName(SalesLead lead) {
@@ -93,11 +98,14 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     final stage = (lead.lifecycleStage ?? '').toLowerCase();
     final normalized = _normalizeStage(stage);
 
-    // Map stage aliases to normalized keys
+    // Map stage aliases to normalized keys.
+    // Leads created through the app start at 'client_type' (same as web) —
+    // only after the user taps Qualify there does the lead move into the
+    // 'qualify' stage.
     final stageMap = {
-      'new': 'lead_entered',
-      'leadentered': 'lead_entered',
-      'created': 'lead_entered',
+      'new': 'client_type',
+      'leadentered': 'client_type',
+      'created': 'client_type',
       'clienttype': 'client_type',
       'qualify': 'qualify',
       'qualified': 'qualify',
@@ -117,8 +125,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       'wonlost': 'won',
     };
 
-    final mappedStage = stageMap[normalized] ?? 'lead_entered';
-    return _stageActions[mappedStage] ?? ['edit'];
+    final mappedStage = stageMap[normalized] ?? 'client_type';
+    return _stageActions[mappedStage] ?? ['qualify', 'assign', 'lost'];
   }
 
   void _snack(String message, {bool error = false}) {
@@ -648,112 +656,82 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          if (lead != null && leadId != null)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.text),
-              enabled: !_actionBusy,
-              onSelected: (value) {
-                switch (value) {
-                  case 'edit':
-                    _openEdit(leadId);
-                    break;
-                  case 'qualify':
-                    _qualify(leadId, lead);
-                    break;
-                  case 'won':
-                    _markWonOrRequest(leadId, lead);
-                    break;
-                  case 'convert':
-                    _convertCustomer(leadId, lead);
-                    break;
-                  case 'assign':
-                    _assign(leadId);
-                    break;
-                  case 'lost':
-                    _markLost(leadId);
-                    break;
-                }
-              },
-              itemBuilder: (ctx) {
-                final allowedActions = _getAllowedActions(lead);
-                final items = <PopupMenuItem<String>>[];
+        // actions: [
+        //   if (lead != null && leadId != null)
+        //     PopupMenuButton<String>(
+        //       icon: const Icon(Icons.more_vert, color: AppColors.text),
+        //       enabled: !_actionBusy,
+        //       onSelected: (value) {
+        //         switch (value) {
+        //           case 'edit':
+        //             _openEdit(leadId);
+        //             break;
+        //           case 'qualify':
+        //             _qualify(leadId, lead);
+        //             break;
+        //           case 'won':
+        //             _markWonOrRequest(leadId, lead);
+        //             break;
+        //           case 'convert':
+        //             _convertCustomer(leadId, lead);
+        //             break;
+        //           case 'assign':
+        //             _assign(leadId);
+        //             break;
+        //           case 'lost':
+        //             _markLost(leadId);
+        //             break;
+        //         }
+        //       },
+        //       itemBuilder: (ctx) {
+        //         final allowedActions = _getAllowedActions(lead);
+        //         final items = <PopupMenuItem<String>>[];
 
-                // Always show Edit if allowed
-                // if (allowedActions.contains('edit')) {
-                //   items.add(
-                //     const PopupMenuItem(
-                //       value: 'edit',
-                //       child: Text('Close as lost'),
-                //     ),
-                //   );
-                // }
+        //         // Always show Edit if allowed
+        //         // if (allowedActions.contains('edit')) {
+        //         //   items.add(
+        //         //     const PopupMenuItem(
+        //         //       value: 'edit',
+        //         //       child: Text('Close as lost'),
+        //         //     ),
+        //         //   );
+        //         // }
 
-                // Show Qualify if allowed and not closed
-                if (allowedActions.contains('qualify') && !_isClosed(lead)) {
-                  items.add(
-                    const PopupMenuItem(
-                      value: 'qualify',
-                      child: Text('Qualify'),
-                    ),
-                  );
-                }
+        //         // Show Won/Approval if not closed and in follow-up or later stages
+        //         if (!_isClosed(lead) &&
+        //             (allowedActions.contains('log_followup') ||
+        //                 allowedActions.contains('create_quotation'))) {
+        //           items.add(
+        //             PopupMenuItem(
+        //               value: 'won',
+        //               child: Text(
+        //                 lead.hasPendingWonApproval
+        //                     ? 'Won approval status'
+        //                     : 'Mark won / request approval',
+        //               ),
+        //             ),
+        //           );
+        //         }
 
-                // Show Won/Approval if not closed and in follow-up or later stages
-                if (!_isClosed(lead) &&
-                    (allowedActions.contains('log_followup') ||
-                        allowedActions.contains('create_quotation'))) {
-                  items.add(
-                    PopupMenuItem(
-                      value: 'won',
-                      child: Text(
-                        lead.hasPendingWonApproval
-                            ? 'Won approval status'
-                            : 'Mark won / request approval',
-                      ),
-                    ),
-                  );
-                }
+        //         // Show Convert/View Customer if allowed or if has customerId
+        //         if (allowedActions.contains('view_customer') ||
+        //             (lead.customerId != null && lead.customerId!.isNotEmpty)) {
+        //           items.add(
+        //             PopupMenuItem(
+        //               value: 'convert',
+        //               child: Text(
+        //                 lead.customerId != null && lead.customerId!.isNotEmpty
+        //                     ? 'View linked customer'
+        //                     : 'Convert to customer',
+        //               ),
+        //             ),
+        //           );
+        //         }
 
-                // Show Convert/View Customer if allowed or if has customerId
-                if (allowedActions.contains('view_customer') ||
-                    (lead.customerId != null && lead.customerId!.isNotEmpty)) {
-                  items.add(
-                    PopupMenuItem(
-                      value: 'convert',
-                      child: Text(
-                        lead.customerId != null && lead.customerId!.isNotEmpty
-                            ? 'View linked customer'
-                            : 'Convert to customer',
-                      ),
-                    ),
-                  );
-                }
-
-                // Show Assign if allowed
-                if (allowedActions.contains('assign')) {
-                  items.add(
-                    const PopupMenuItem(
-                      value: 'assign',
-                      child: Text('Assign to rep'),
-                    ),
-                  );
-                }
-
-                // Show Lost if allowed
-                if (allowedActions.contains('lost')) {
-                  items.add(
-                    const PopupMenuItem(
-                      value: 'lost',
-                      child: Text('Close as lost'),
-                    ),
-                  );
-                }
-
-                return items;
-              },
-            ),
-        ],
+        //         return items;
+        //       },
+        //     ),
+        // ],
       ),
       body: ws.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -1444,6 +1422,34 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
 
     final List<Widget> buttonRows = [];
 
+    // ============ Row 0: Qualify (only shown for client_type stage) ============
+    if (allowedActions.contains('qualify') && !closed && !isWon) {
+      buttonRows.add(
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _actionBusy ? null : () => _qualify(leadId, lead),
+            child: const Text(
+              'Qualify',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      );
+      buttonRows.add(const SizedBox(height: 12));
+    }
+
     // ============ Row 1: Start Follow-up & Log Follow-up ============
     final List<Widget> row1Buttons = [];
 
@@ -1590,24 +1596,24 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               ),
             ),
             onPressed: _actionBusy
-            ? null
-            : () {
-                final quoteId = lead.quoteId;
-                if (quoteId == null || quoteId.isEmpty) {
-                  _snack('No quotation found for this lead');
-                  return;
-                }
-                final quote = ref.read(crmQuoteByIdProvider(quoteId));
-                if (quote == null) {
-                  _snack('Quotation not found');
-                  return;
-                }
-                Navigator.pushNamed(
-                  context,
-                  '/crm/quotes/form',
-                  arguments: quote,
-                );
-              },
+                ? null
+                : () {
+                    final quoteId = lead.quoteId;
+                    if (quoteId == null || quoteId.isEmpty) {
+                      _snack('No quotation found for this lead');
+                      return;
+                    }
+                    final quote = ref.read(crmQuoteByIdProvider(quoteId));
+                    if (quote == null) {
+                      _snack('Quotation not found');
+                      return;
+                    }
+                    Navigator.pushNamed(
+                      context,
+                      '/crm/quotes/form',
+                      arguments: quote,
+                    );
+                  },
             child: const Text(
               'Edit quotation',
               style: TextStyle(
@@ -1665,7 +1671,18 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _snack('Download quote PDF'),
+            onPressed: _actionBusy || lead.quoteId == null
+                ? null
+                : () async {
+                    setState(() => _actionBusy = true);
+                    try {
+                      await saveAndOpenQuotePdf(ref, lead.quoteId!);
+                    } catch (e) {
+                      _snack('Could not open quote PDF: $e');
+                    } finally {
+                      if (mounted) setState(() => _actionBusy = false);
+                    }
+                  },
             child: const Text(
               'Download quote',
               style: TextStyle(
@@ -1706,7 +1723,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     }
 
     // ============ Row 5: Close as Won (in quotation/negotiation) ============
-    if (allowedActions.contains('move_negotiation')) {
+    // ============ Row 5: Close as Won (in quotation/negotiation) ============
+    if (allowedActions.contains('won') && !closed && !isWon) {
       buttonRows.add(
         SizedBox(
           width: double.infinity,
@@ -1762,7 +1780,10 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       );
     }
 
+    // download_bill was in the allowed-actions list but had no button —
+    // that's why it never showed up on the won stage.
     if (allowedActions.contains('download_bill')) {
+      row6Buttons.add(const SizedBox(width: 12));
       row6Buttons.add(
         Expanded(
           child: OutlinedButton(
@@ -1773,9 +1794,23 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _snack('Download bill PDF'),
+            onPressed:
+                _actionBusy ||
+                    lead.billId ==
+                        null 
+                ? null
+                : () async {
+                    setState(() => _actionBusy = true);
+                    try {
+                      await saveAndOpenBillPdf(ref, lead.billId!);
+                    } catch (e) {
+                      _snack('Could not download bill: $e', error: true);
+                    } finally {
+                      if (mounted) setState(() => _actionBusy = false);
+                    }
+                  },
             child: const Text(
-              'Download bill',
+              'Download bill (PDF)',
               style: TextStyle(
                 color: AppColors.text,
                 fontWeight: FontWeight.w600,
@@ -1833,7 +1868,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             ),
             onPressed: _actionBusy ? null : () => _snack('View sales order'),
             child: const Text(
-              'Sales order',
+              'Create Sales order',
               style: TextStyle(
                 color: AppColors.text,
                 fontWeight: FontWeight.w600,
