@@ -1,15 +1,15 @@
 class ApiEndpoints {
   // ───────── AUTH ─────────
-  static const String login = 'auth/login';
-  static const String permissions = 'auth/permissions';
-  static const String changePassword = 'auth/change-password';
-  static const String forgotPassword = 'auth/forgot-password';
+  static const String login = 'auth/login';// done
+  static const String permissions = 'auth/permissions'; // done
+  static const String changePassword = 'auth/change-password'; // not done 
+  static const String forgotPassword = 'auth/forgot-password'; // not done
   static const String resetPassword = 'auth/reset-password';
   static const String registerFcmToken = 'auth/register-fcm-token';
-  static const String unregisterFcmToken = 'auth/unregister-fcm-token';
+  static const String unregisterFcmToken = 'auth/unregister-fcm-token'; //done
 
   // ───────── USER / EMPLOYEE ─────────
-  static const String userDetails = 'auth/me';
+  static const String userDetails = 'auth/me'; // done
   static const String employeeLeaveBalance = 'employees/leave-balance';
 
   // ───────── ATTENDANCE ─────────

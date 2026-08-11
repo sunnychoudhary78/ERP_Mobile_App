@@ -551,7 +551,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                     children: [
                       Text(
                         'Recent Visits',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.text,
                         ),
