@@ -1,7 +1,8 @@
-
 import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
+import 'package:erp_app/features/inventory/lowstock/presentations/screen/low_stock_screen.dart';
+import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../core/screens/subscription_expired_screen.dart';
@@ -25,7 +26,7 @@ import '../features/crm/quotes/presentation/screens/quotes_list_screen.dart';
 import '../features/crm/visits/presentation/screens/visit_check_in_screen.dart';
 import '../features/crm/visits/presentation/screens/visit_tracking_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
-import '../features/inventory/presentation/screens/stock_lookup_screen.dart';
+
 import '../features/leave/presentation/screens/leave_apply_screen.dart';
 import '../features/leave/presentation/screens/leave_balance_screen.dart';
 import '../features/leave/presentation/screens/leave_status_screen.dart';
@@ -67,9 +68,10 @@ class AppRoutes {
     '/crm/hrms_sales_screen': (_) => const HrmsScreen(),
     '/crm/inventory_sales_screen': (_) => const InventorySalesScreen(),
 
-
     // Inventory / Production
     '/stock-lookup': (_) => const StockLookupScreen(),
     '/work-orders': (_) => const WorkOrdersScreen(),
+    '/low-stock': (_) => const LowStockScreen(),
+  
   };
 }

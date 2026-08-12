@@ -25,7 +25,6 @@ class ApiService {
     }
   }
 
-  // Inside ApiService class (wherever your internal Dio instance is, e.g. `_dio` or `dio`)
   Future<List<int>> downloadBytes(String path) async {
     final response = await _dio.get<List<int>>(
       path,
@@ -34,12 +33,29 @@ class ApiService {
     return response.data ?? <int>[];
   }
 
+  // Future<dynamic> get(
+  //   String endpoint, {
+  //   Map<String, dynamic>? queryParams,
+  // }) async {
+  //   try {
+  //     final response = await _dio.get(endpoint, queryParameters: queryParams);
+  //     return _handle(response);
+  //   } on DioException catch (e) {
+  //     throw _extractException(e);
+  //   }
+  // }
+
   Future<dynamic> get(
     String endpoint, {
     Map<String, dynamic>? queryParams,
+    Map<String, dynamic>? headers,
   }) async {
     try {
-      final response = await _dio.get(endpoint, queryParameters: queryParams);
+      final response = await _dio.get(
+        endpoint,
+        queryParameters: queryParams,
+        options: headers != null ? Options(headers: headers) : null,
+      );
       return _handle(response);
     } on DioException catch (e) {
       throw _extractException(e);
