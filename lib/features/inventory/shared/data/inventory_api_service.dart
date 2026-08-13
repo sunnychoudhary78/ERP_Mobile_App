@@ -1,3 +1,5 @@
+import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
+import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_endpoints.dart';
@@ -81,4 +83,26 @@ class InventoryApiService {
     final list = (data is Map ? data['data'] : data) as List? ?? [];
     return list.map((e) => Warehouse.fromJson(e as Map<String, dynamic>)).toList();
   }
+
+
+  Future<List<StockReportRow>> getStockReport() async {
+    final res = await _api.get(
+      ApiEndpoints.inventoryReport,
+      headers: _companyHeader,
+    );
+    final list = res['data'] as List? ?? [];
+    return list
+        .map((e) => StockReportRow.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+ 
+  Future<FinancialReport> getFinancialReport({String months = '12'}) async {
+    final res = await _api.get(
+      ApiEndpoints.inventoryReportsFinancial,
+      queryParams: {'months': months},
+      headers: _companyHeader,
+    );
+    return FinancialReport.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
 }

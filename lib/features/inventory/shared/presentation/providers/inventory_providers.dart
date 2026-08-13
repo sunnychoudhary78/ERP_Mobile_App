@@ -1,7 +1,9 @@
 import 'package:erp_app/core/providers/network_providers.dart';
 import 'package:erp_app/features/inventory/shared/data/inventory_api_service.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
+import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
+import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
 import 'package:erp_app/features/inventory/shared/data/repository/inventory_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -148,4 +150,19 @@ final dashboardStatsProvider = FutureProvider<InventoryDashboardStats>((ref) asy
 final lowStockItemsProvider = FutureProvider<List<InventoryItem>>((ref) async {
   final repo = ref.read(inventoryRepositoryProvider);
   return repo.getLowStockItems();
+});
+
+
+// ───────── Stock report (section 5.3) ─────────
+ 
+final stockReportProvider = FutureProvider<List<StockReportRow>>((ref) async {
+  final repo = ref.read(inventoryRepositoryProvider);
+  return repo.getStockReport();
+});
+ 
+
+final financialReportProvider =
+    FutureProvider.family<FinancialReport, String>((ref, months) async {
+  final repo = ref.read(inventoryRepositoryProvider);
+  return repo.getFinancialReport(months: months);
 });

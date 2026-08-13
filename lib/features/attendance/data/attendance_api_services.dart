@@ -9,6 +9,26 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/network/api_endpoints.dart';
 import '../../../core/network/api_service.dart';
 
+/// Thrown for any failed attendance API call. Carries the backend's own
+/// message (when available) plus the HTTP status code so callers can react
+/// to specific cases (e.g. 409 "open session already exists") without
+/// string-matching on Dio's generic error text.
+class AttendanceApiException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  AttendanceApiException(this.message, {this.statusCode});
+
+  /// True when the backend rejected the request because an attendance
+  /// session is already open/closed in a state that conflicts with the
+  /// action being attempted (checkIn while already checked in, checkOut
+  /// with no open session, etc).
+  bool get isConflict => statusCode == 409;
+
+  @override
+  String toString() => message;
+}
+
 class AttendanceApiService {
   final ApiService api;
 
@@ -81,11 +101,19 @@ class AttendanceApiService {
       );
     }
 
-    final response = await api.postMultipart(
-      ApiEndpoints.checkIn,
-      FormData.fromMap(formMap),
-    );
-    return AttendanceSession.fromJson(_extractSession(response));
+    try {
+      final response = await api.postMultipart(
+        ApiEndpoints.checkIn,
+        FormData.fromMap(formMap),
+      );
+      return AttendanceSession.fromJson(_extractSession(response));
+    } on DioException catch (e) {
+      debugPrint('Check-in DIO ERROR: ${e.response?.statusCode} ${e.response?.data}');
+      throw AttendanceApiException(
+        _extractErrorMessage(e, fallback: 'Could not punch in. Please try again.'),
+        statusCode: e.response?.statusCode,
+      );
+    }
   }
 
   Future<AttendanceSession> checkOut({
@@ -111,15 +139,46 @@ class AttendanceApiService {
       );
     }
 
-    final response = await api.postMultipart(
-      ApiEndpoints.checkOut,
-      FormData.fromMap(formMap),
-    );
-    debugPrint('Check-out response: $response');
-    return AttendanceSession.fromJson(_extractSession(response));
+    try {
+      final response = await api.postMultipart(
+        ApiEndpoints.checkOut,
+        FormData.fromMap(formMap),
+      );
+      debugPrint('Check-out response: $response');
+      return AttendanceSession.fromJson(_extractSession(response));
+    } on DioException catch (e) {
+      debugPrint('Check-out DIO ERROR: ${e.response?.statusCode} ${e.response?.data}');
+      throw AttendanceApiException(
+        _extractErrorMessage(e, fallback: 'Could not punch out. Please try again.'),
+        statusCode: e.response?.statusCode,
+      );
+    }
   }
 
   // ── helpers ──────────────────────────────────────────────────────────
+
+  /// Pulls the backend's own message out of a DioException's response body
+  /// (tries the common `message` / `error` / `msg` keys), falling back to
+  /// [fallback] when the body doesn't have one.
+  String _extractErrorMessage(DioException e, {required String fallback}) {
+    final data = e.response?.data;
+    String? backendMessage;
+
+    if (data is Map) {
+      final m = Map<String, dynamic>.from(data);
+      backendMessage = (m['message'] ?? m['error'] ?? m['msg'])?.toString();
+    } else if (data is String && data.trim().isNotEmpty) {
+      backendMessage = data.trim();
+    }
+
+    if (backendMessage != null && backendMessage.isNotEmpty) {
+      return backendMessage;
+    }
+    if (e.response?.statusCode == 409) {
+      return 'An attendance session conflict occurred. Pull down to refresh and try again.';
+    }
+    return fallback;
+  }
 
   String _formatDate(DateTime d) {
     String two(int n) => n.toString().padLeft(2, '0');

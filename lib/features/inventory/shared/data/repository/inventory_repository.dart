@@ -1,6 +1,8 @@
 import 'package:erp_app/features/inventory/shared/data/inventory_api_service.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
+import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
+import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
 
@@ -64,5 +66,15 @@ class InventoryRepository {
 
   Future<List<Warehouse>> getWarehouses() {
     return _api.getWarehouses();
+  }
+
+
+  Future<List<StockReportRow>> getStockReport() {
+    return _api.getStockReport();
+  }
+ 
+  /// Section 5.4 — period financial summary.
+  Future<FinancialReport> getFinancialReport({String months = '12'}) {
+    return _api.getFinancialReport(months: months);
   }
 }

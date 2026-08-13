@@ -84,6 +84,15 @@ class AttendanceNotifier extends Notifier<AttendanceState> {
         successMessage: 'Punched in successfully',
       );
       return true;
+    } on AttendanceApiException catch (e) {
+      if (e.isConflict) {
+        // Backend says a session is already open — our local state is
+        // stale. Resync so the UI flips to the Punch Out button instead
+        // of staying stuck showing Punch In.
+        await refreshStatus();
+      }
+      state = state.copyWith(isSubmitting: false, errorMessage: e.message);
+      return false;
     } catch (e) {
       state = state.copyWith(isSubmitting: false, errorMessage: _clean(e));
       return false;
@@ -123,6 +132,14 @@ class AttendanceNotifier extends Notifier<AttendanceState> {
         successMessage: 'Punched out successfully',
       );
       return true;
+    } on AttendanceApiException catch (e) {
+      if (e.isConflict) {
+        // Backend disagrees with our local "punched in" state — resync
+        // so the UI reflects reality instead of staying stuck.
+        await refreshStatus();
+      }
+      state = state.copyWith(isSubmitting: false, errorMessage: e.message);
+      return false;
     } catch (e) {
       state = state.copyWith(isSubmitting: false, errorMessage: _clean(e));
       return false;

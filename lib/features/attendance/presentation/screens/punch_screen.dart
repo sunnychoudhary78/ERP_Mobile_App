@@ -110,9 +110,6 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
     final state = ref.watch(attendanceProvider);
     final isPunchedIn = state.isPunchedIn;
 
-    final actionLabel = isPunchedIn ? 'PUNCH OUT' : 'PUNCH IN';
-    final buttonBgColor = isPunchedIn ? AppColors.danger : AppColors.primary;
-
     final now = DateTime.now();
     final currentTime = DateFormat('hh:mm a').format(now);
     final currentDate = DateFormat('EEEE, MMM d').format(now);
@@ -226,9 +223,14 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                   ),
                   const SizedBox(height: 12),
 
-                  // Sleek Punch Action Card
+                  // Punch Action Card — explicit Punch In / Punch Out buttons.
+                  // Both stay tappable regardless of the locally-known state:
+                  // if the backend and the app ever disagree (e.g. an open
+                  // session already exists), the user can still tap Punch
+                  // Out directly instead of being stuck behind a single
+                  // toggle button that only shows "Punch In".
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                     decoration: BoxDecoration(
                       color: AppColors.card,
                       borderRadius: BorderRadius.circular(16),
@@ -236,61 +238,38 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                     ),
                     child: Column(
                       children: [
-                        GestureDetector(
-                          onTap: (_actionInFlight || state.isSubmitting || state.isLoading)
-                              ? null
-                              : () => _handlePunch(isPunchedIn),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            width: 104,
-                            height: 104,
-                            decoration: BoxDecoration(
-                              color: buttonBgColor,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: buttonBgColor.withOpacity(0.28),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _PunchButton(
+                                label: 'PUNCH IN',
+                                icon: Icons.login_rounded,
+                                color: AppColors.primary,
+                                emphasized: !isPunchedIn,
+                                loading: (_actionInFlight || state.isSubmitting) && !isPunchedIn,
+                                onTap: (_actionInFlight || state.isSubmitting || state.isLoading)
+                                    ? null
+                                    : () => _handlePunch(false),
+                              ),
                             ),
-                            child: (_actionInFlight || state.isSubmitting)
-                                ? const Center(
-                                    child: SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    ),
-                                  )
-                                : Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(
-                                        Icons.power_settings_new_rounded,
-                                        size: 32,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        actionLabel,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _PunchButton(
+                                label: 'PUNCH OUT',
+                                icon: Icons.logout_rounded,
+                                color: AppColors.danger,
+                                emphasized: isPunchedIn,
+                                loading: (_actionInFlight || state.isSubmitting) && isPunchedIn,
+                                onTap: (_actionInFlight || state.isSubmitting || state.isLoading)
+                                    ? null
+                                    : () => _handlePunch(true),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          isPunchedIn ? 'Tap button to clock out' : 'Tap button to clock in',
+                          isPunchedIn ? 'You are on shift — tap Punch Out to clock out' : 'Tap Punch In to clock in',
                           style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.muted,
@@ -483,6 +462,83 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A single Punch In / Punch Out action button.
+/// [emphasized] renders it as a solid filled button (the action that
+/// matches current state); otherwise it's an outlined secondary button.
+/// It stays tappable either way — see the note above where it's used.
+class _PunchButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool emphasized;
+  final bool loading;
+  final VoidCallback? onTap;
+
+  const _PunchButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.emphasized,
+    required this.loading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onTap == null;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: emphasized ? color : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: emphasized ? color : color.withOpacity(disabled ? 0.3 : 0.6),
+            width: 1.4,
+          ),
+        ),
+        child: loading
+            ? Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: emphasized ? Colors.white : color,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+              )
+            : Opacity(
+                opacity: disabled && !emphasized ? 0.5 : 1,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 22,
+                      color: emphasized ? Colors.white : color,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: emphasized ? Colors.white : color,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }

@@ -14,6 +14,7 @@ class HomeScreen extends ConsumerWidget {
 
   static const _sections = <LinkSection>[
     LinkSection('Attendance & leave', [
+      QuickLink('Home', '/crm/hrms_sales_screen', Icons.fingerprint_rounded),
       QuickLink('Punch', '/punch', Icons.fingerprint_rounded),
       QuickLink('Leave balance', '/leave-balance', Icons.beach_access_outlined),
       QuickLink('Apply leave', '/leave-apply', Icons.event_available_outlined),
@@ -21,6 +22,7 @@ class HomeScreen extends ConsumerWidget {
       QuickLink('Approvals', '/approvals', Icons.approval_outlined),
     ]),
     LinkSection('CRM', [
+      QuickLink('Home', '/crm/crm_sales_screen', Icons.fingerprint_rounded),
       QuickLink('Leads', '/crm/leads', Icons.leaderboard_outlined),
       QuickLink('Pipeline', '/crm/pipeline', Icons.view_kanban_outlined),
       QuickLink('Follow-ups', '/crm/activities', Icons.timeline_outlined),
@@ -30,6 +32,7 @@ class HomeScreen extends ConsumerWidget {
       QuickLink('Quotes', '/crm/quotes', Icons.request_quote_outlined),
     ]),
     LinkSection('Field & inventory', [
+      QuickLink('Home', '/crm/inventory_sales_screen', Icons.fingerprint_rounded),
       QuickLink('Visits', '/crm/visits', Icons.location_on_outlined),
       QuickLink('Team tracking', '/crm/tracking', Icons.map_outlined),
       QuickLink('Stock lookup', '/stock-lookup', Icons.inventory_2_outlined),

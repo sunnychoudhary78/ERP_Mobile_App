@@ -104,8 +104,18 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
       return;
     }
 
+    if (_selectedLeaveType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a Leave Type.'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
     final data = {
-      'leaveTypeId': _selectedLeaveType?.id ?? _selectedLeaveType.toString(),
+      'leaveTypeId': _selectedLeaveType.leaveTypeId,
       'startDate': DateFormat('yyyy-MM-dd').format(_startDate!),
       'endDate': DateFormat('yyyy-MM-dd').format(_endDate!),
       'isHalfDay': _isHalfDay,

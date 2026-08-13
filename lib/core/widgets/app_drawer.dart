@@ -50,9 +50,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     return Drawer(
       backgroundColor: Colors.white,
       elevation: 0,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
         top: false,
         child: Column(
@@ -66,7 +64,11 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(left: 20, bottom: 12, top: 4),
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      bottom: 12,
+                      top: 4,
+                    ),
                     child: Text(
                       'MENU',
                       style: TextStyle(
@@ -213,9 +215,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -229,7 +229,11 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     ),
                   ),
                   SizedBox(width: 6),
-                  Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.white),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 14,
+                    color: Colors.white,
+                  ),
                 ],
               ),
             ),
@@ -246,8 +250,11 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today_outlined,
-                    size: 16, color: Colors.white),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                  color: Colors.white,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   today,
@@ -260,8 +267,11 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                 const Spacer(),
                 Stack(
                   children: [
-                    const Icon(Icons.notifications_none_rounded,
-                        size: 20, color: Colors.white),
+                    const Icon(
+                      Icons.notifications_none_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                     Positioned(
                       right: 1,
                       top: 1,
@@ -284,8 +294,39 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     );
   }
 
+  Widget _buildHomeTile(BuildContext context) {
+    final bool isSelected = _selectedRoute == '/home';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        leading: Icon(Icons.home_rounded, color: AppColors.text, size: 22),
+        title: Text(
+          'Home',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            color: AppColors.text,
+          ),
+        ),
+        selected: isSelected,
+        selectedTileColor: AppColors.border.withValues(alpha: 0.35),
+        onTap: () {
+          setState(() {
+            _selectedRoute = '/home';
+          });
+
+          Navigator.pop(context);
+          Navigator.pushNamed(context, '/home');
+        },
+      ),
+    );
+  }
+
   Widget _buildSectionTile(BuildContext context, LinkSection section) {
     final bool isExpanded = _expandedState[section.title] ?? false;
+
     final String displayTitle = _displayTitle(section.title);
 
     return Column(
@@ -324,36 +365,56 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
           ),
         ),
 
-        // Expanded Links with Vertical Guide Indicator Line
+        // Expanded links
         if (isExpanded)
           Padding(
             padding: const EdgeInsets.only(left: 48, top: 2, bottom: 8),
             child: Column(
               children: section.links.map((link) {
+                final bool isSelected = _selectedRoute == link.route;
+
                 return IntrinsicHeight(
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Sub-item tree line indicator
+                      // Vertical guide line
                       Container(
                         width: 1.5,
                         color: AppColors.border,
                         margin: const EdgeInsets.symmetric(vertical: 4),
                       ),
+
                       const SizedBox(width: 16),
+
                       Expanded(
                         child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
                           onTap: () {
-                            setState(() => _selectedRoute = link.route);
+                            setState(() {
+                              _selectedRoute = link.route;
+                            });
+
                             Navigator.pop(context);
                             Navigator.pushNamed(context, link.route);
                           },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.border.withValues(alpha: 0.30)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Text(
                               link.label,
                               style: TextStyle(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
                                 color: AppColors.text.withValues(alpha: 0.85),
                               ),
                             ),
@@ -386,10 +447,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
             icon: const Icon(Icons.logout_rounded, size: 20),
             label: const Text(
               'Logout',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             onPressed: () async {
               final confirmed = await showLogoutConfirmationDialog(context);
@@ -417,10 +475,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
               const SizedBox(height: 2),
               Text(
                 'Cloud Industrial Solution',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.muted,
-                ),
+                style: TextStyle(fontSize: 11, color: AppColors.muted),
               ),
             ],
           ),
@@ -435,7 +490,9 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
       return Icons.badge_outlined;
     } else if (t.contains('crm')) {
       return Icons.groups_outlined;
-    } else if (t.contains('inventory') || t.contains('field') || t.contains('stock')) {
+    } else if (t.contains('inventory') ||
+        t.contains('field') ||
+        t.contains('stock')) {
       return Icons.assignment_outlined;
     } else if (t.contains('setting')) {
       return Icons.settings_outlined;
@@ -453,13 +510,31 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
 
   String _formattedDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     const weekdays = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     final weekday = weekdays[date.weekday - 1];
     return '$weekday, ${date.day} ${months[date.month - 1]} ${date.year}';
   }
+
+  
 }

@@ -55,6 +55,8 @@ class ApiEndpoints {
   static const String lookupWarehouses = 'lookups/warehouses';
 
   static String itemById(String id) => 'items/$id';
+  static const String inventoryReport = 'inventory/report';
+  static const String inventoryReportsFinancial = 'inventory/reports/financial';
 
   // ───────── PRODUCTION (existing backend) ─────────
   static const String workOrders = 'production/work-orders';
