@@ -1,7 +1,7 @@
 class ApiEndpoints {
   // ───────── AUTH ─────────
   static const String login = 'auth/login'; // done
-  static const String permissions = 'auth/permissions'; // done
+  static const String permissions = 'auth/permissions'; 
   static const String changePassword = 'auth/change-password'; // not done
   static const String forgotPassword = 'auth/forgot-password'; // not done
   static const String resetPassword = 'auth/reset-password';
@@ -40,18 +40,18 @@ class ApiEndpoints {
   static String notificationMarkRead(String id) => 'notifications/$id/read';
 
   // ───────── INVENTORY (existing backend) ─────────
-  static const String items = 'items';
+  static const String items = 'items'; // done 
   static const String inventory = 'inventory';
-  static const String inventoryLowStock = 'inventory/low-stock';
-  static const String inventoryWarehouseStock = 'inventory/warehouse-stock';
-  static const String warehouses = 'warehouse';
+  static const String inventoryLowStock = 'inventory/low-stock';//done
+  static const String inventoryWarehouseStock = 'inventory/warehouse-stock'; // done
+  static const String warehouses = 'warehouse';//done
   static const String customers = 'customers'; //  done
 
   static String customerById(String id) => 'customers/$id';
 
   // ───────── INVENTORY (new — add below existing block) ─────────
   static const String inventoryDashboardStats = 'inventory/dashboard/stats';
-  static const String lookupItems = 'lookups/items';
+  static const String lookupItems = 'lookups/items'; //done
   static const String lookupWarehouses = 'lookups/warehouses';
 
   static String itemById(String id) => 'items/$id';

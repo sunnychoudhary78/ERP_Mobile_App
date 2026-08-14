@@ -1,15 +1,16 @@
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/features/approvals/data/models/approval_inbox_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/approvals_inbox_provider.dart';
 
-
 class ApprovalsInboxScreen extends ConsumerStatefulWidget {
   const ApprovalsInboxScreen({super.key});
 
   @override
-  ConsumerState<ApprovalsInboxScreen> createState() => _ApprovalsInboxScreenState();
+  ConsumerState<ApprovalsInboxScreen> createState() =>
+      _ApprovalsInboxScreenState();
 }
 
 class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
@@ -20,6 +21,10 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      setState(() {}); // rebuild body with the new tab's filter
+    });
   }
 
   @override
@@ -31,6 +36,106 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(approvalsInboxProvider);
+
+    Future<String?> _showCommentDialog({
+      required String title,
+      required String actionLabel,
+      required Color actionColor,
+      bool requireComment = false,
+    }) async {
+      final controller = TextEditingController();
+      return showDialog<String>(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setState) => AlertDialog(
+            title: Text(title),
+            content: TextField(
+              controller: controller,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: requireComment
+                    ? 'Reason (required)'
+                    : 'Comment (optional)',
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('CANCEL'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: actionColor),
+                onPressed: () {
+                  if (requireComment && controller.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Reason is required')),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx, controller.text.trim());
+                },
+                child: Text(
+                  actionLabel,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Add these methods inside _ApprovalsInboxScreenState
+
+    Future<void> _handleApprove(ApprovalInboxItem item) async {
+      final comment = await _showCommentDialog(
+        title: 'Approve Leave',
+        actionLabel: 'APPROVE',
+        actionColor: const Color(0xFF15803D),
+      );
+      if (comment == null) return; // user cancelled
+
+      try {
+        await ref
+            .read(approvalsInboxProvider.notifier)
+            .approveLeave(item, comment: comment.isEmpty ? null : comment);
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Leave approved')));
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
+
+    Future<void> _handleReject(ApprovalInboxItem item) async {
+      final comment = await _showCommentDialog(
+        title: 'Reject Leave',
+        actionLabel: 'REJECT',
+        actionColor: const Color(0xFFB91C1C),
+        requireComment: true,
+      );
+      if (comment == null) return;
+
+      try {
+        await ref
+            .read(approvalsInboxProvider.notifier)
+            .rejectLeave(item, comment: comment.isEmpty ? null : comment);
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Leave rejected')));
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FA),
@@ -109,45 +214,61 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
             ),
           ),
         ),
-        data: (items) => RefreshIndicator(
-          onRefresh: () =>
-              ref.read(approvalsInboxProvider.notifier).refresh(),
+        data: (items) {
+          final pendingCount =
+              items.where((e) => e.status.toLowerCase() == 'pending').length;
+
+          List<ApprovalInboxItem> visibleItems;
+          switch (_tabController.index) {
+            case 0: // Pending
+              visibleItems = items
+                  .where((e) => e.status.toLowerCase() == 'pending')
+                  .toList();
+              break;
+            case 1: // Processed
+              visibleItems = items
+                  .where((e) => e.status.toLowerCase() != 'pending')
+                  .toList();
+              break;
+            default: // All
+              visibleItems = items;
+          }
+
+          return RefreshIndicator(
+          onRefresh: () => ref.read(approvalsInboxProvider.notifier).refresh(),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               // Banner
-              _buildAttentionBanner(items.length),
+              _buildAttentionBanner(pendingCount),
               const SizedBox(height: 16),
 
               // Dynamic Approval Cards
-              if (items.isEmpty)
+              if (visibleItems.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 32.0),
                   child: Center(
                     child: Text(
-                      'No pending approvals found',
+                      'No approvals found',
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
                 )
               else
-                ...items.map((item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: ApprovalCard(
-                        item: item,
-                        onApprove: () {
-                          // Call your approval action
-                          // ref.read(approvalsInboxProvider.notifier).approveLeave(item, comment: ...);
-                        },
-                        onReject: () {
-                          // Call your rejection action
-                          // ref.read(approvalsInboxProvider.notifier).rejectLeave(item, comment: ...);
-                        },
-                      ),
-                    )),
+                ...visibleItems.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: ApprovalCard(
+                      item: item,
+                      onApprove: () => _handleApprove(item),
+                      onReject: () => _handleReject(item),
+                    ),
+                  ),
+                ),
             ],
           ),
-        ),
+        );
+        },
       ),
     );
   }
@@ -199,11 +320,7 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right,
-            color: Colors.white,
-            size: 28,
-          ),
+          const Icon(Icons.chevron_right, color: Colors.white, size: 28),
         ],
       ),
     );
@@ -211,7 +328,7 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
 }
 
 class ApprovalCard extends StatelessWidget {
-  final dynamic item; // Replace with your model type (e.g. ApprovalItem)
+  final ApprovalInboxItem item;
   final VoidCallback onApprove;
   final VoidCallback onReject;
 
@@ -244,10 +361,7 @@ class ApprovalCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Left Blue Stripe Accent
-              Container(
-                width: 5,
-                color: AppColors.primary,
-              ),
+              Container(width: 5, color: AppColors.primary),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -261,12 +375,7 @@ class ApprovalCard extends StatelessWidget {
                           CircleAvatar(
                             radius: 26,
                             backgroundColor: Colors.grey.shade200,
-                            backgroundImage: item.avatarUrl != null
-                                ? NetworkImage(item.avatarUrl!)
-                                : null,
-                            child: item.avatarUrl == null
-                                ? const Icon(Icons.person, color: Colors.grey)
-                                : null,
+                            child: const Icon(Icons.person, color: Colors.grey),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -303,7 +412,8 @@ class ApprovalCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              (item.type ?? 'ANNUAL LEAVE').toUpperCase(),
+                              (item.type?.toString() ?? 'ANNUAL LEAVE')
+                                  .toUpperCase(),
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -347,7 +457,12 @@ class ApprovalCard extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        item.durationText ?? 'Oct 12 - Oct 15',
+                                        item.leaveRequest?.startDate != null
+                                            ? (item.leaveRequest?.startDate ==
+                                                      item.leaveRequest?.endDate
+                                                  ? item.leaveRequest!.startDate
+                                                  : '${item.leaveRequest!.startDate} → ${item.leaveRequest!.endDate}')
+                                            : 'Oct 12 - Oct 15',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,
@@ -381,7 +496,8 @@ class ApprovalCard extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        item.totalTimeText ?? '4 Days',
+                                        item.leaveRequest?.days?.toString() ??
+                                            '4 Days',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,
@@ -399,84 +515,116 @@ class ApprovalCard extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       // Comment / Quote Section
-                      if (item.comment != null || item.description != null) ...[
-                        IntrinsicHeight(
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 2,
-                                color: const Color(0xFFCBD5E1),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  '"${item.comment ?? item.description}"',
-                                  style: const TextStyle(
-                                    fontStyle: FontStyle.italic,
-                                    color: Color(0xFF475569),
-                                    fontSize: 13,
-                                    height: 1.4,
+                      // if (item.comment != null || item.description != null) ...[
+                      //   IntrinsicHeight(
+                      //     child: Row(
+                      //       children: [
+                      //         Container(
+                      //           width: 2,
+                      //           color: const Color(0xFFCBD5E1),
+                      //         ),
+                      //         const SizedBox(width: 10),
+                      //         Expanded(
+                      //           child: Text(
+                      //             '"${item.comment ?? item.description}"',
+                      //             style: const TextStyle(
+                      //               fontStyle: FontStyle.italic,
+                      //               color: Color(0xFF475569),
+                      //               fontSize: 13,
+                      //               height: 1.4,
+                      //             ),
+                      //             maxLines: 2,
+                      //             overflow: TextOverflow.ellipsis,
+                      //           ),
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      //   const SizedBox(height: 16),
+                      // ],
+
+                      // Action Buttons — only for items still awaiting a decision
+                      if (item.status.toLowerCase() == 'pending')
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: onReject,
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                                  side: const BorderSide(
+                                    color: Color(0xFFB91C1C),
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'REJECT',
+                                  style: TextStyle(
+                                    color: Color(0xFFB91C1C),
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
-                            ],
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: onApprove,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  backgroundColor: const Color(0xFF15803D),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'APPROVE',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: item.status.toLowerCase() == 'approved'
+                                  ? const Color(0xFF15803D).withOpacity(0.1)
+                                  : const Color(0xFFB91C1C).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              item.status.toUpperCase(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                letterSpacing: 0.5,
+                                color: item.status.toLowerCase() == 'approved'
+                                    ? const Color(0xFF15803D)
+                                    : const Color(0xFFB91C1C),
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                      ],
-
-                      // Action Buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: onReject,
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                side: const BorderSide(
-                                  color: Color(0xFFB91C1C),
-                                  width: 1.5,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: const Text(
-                                'REJECT',
-                                style: TextStyle(
-                                  color: Color(0xFFB91C1C),
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: onApprove,
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                backgroundColor: const Color(0xFF15803D),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: const Text(
-                                'APPROVE',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),

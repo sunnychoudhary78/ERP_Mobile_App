@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
+import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 
@@ -18,12 +19,19 @@ class StockLookupScreen extends ConsumerStatefulWidget {
 class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  final _searchFocusNode = FocusNode();
   Timer? _searchDebounce;
+  bool _showSuggestions = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _searchFocusNode.addListener(() {
+      if (!_searchFocusNode.hasFocus) {
+        setState(() => _showSuggestions = false);
+      }
+    });
   }
 
   void _onScroll() {
@@ -35,16 +43,30 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
 
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
+    setState(() => _showSuggestions = value.trim().isNotEmpty);
     _searchDebounce = Timer(const Duration(milliseconds: 400), () {
       if (!mounted) return;
       ref.read(stockLookupProvider.notifier).search(value);
+      ref.read(itemLookupProvider.notifier).lookup(value);
     });
+  }
+
+  void _onSuggestionTap(ItemLookupResult suggestion) {
+    _searchDebounce?.cancel();
+    _controller.value = TextEditingValue(
+      text: suggestion.name,
+      selection: TextSelection.collapsed(offset: suggestion.name.length),
+    );
+    setState(() => _showSuggestions = false);
+    _searchFocusNode.unfocus();
+    ref.read(stockLookupProvider.notifier).search(suggestion.name);
   }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
     _controller.dispose();
+    _searchFocusNode.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -53,6 +75,7 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(stockLookupProvider);
+    final lookupState = ref.watch(itemLookupProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -66,28 +89,42 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: TextField(
-                controller: _controller,
-                style: const TextStyle(fontSize: 15, color: AppColors.text),
-                decoration: InputDecoration(
-                  hintText: 'Search by name / SKU / product code...',
-                  hintStyle: const TextStyle(color: AppColors.muted, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, color: AppColors.muted),
-                  suffixIcon: state.query.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: AppColors.muted),
-                          onPressed: () {
-                            _controller.clear();
-                            ref.read(stockLookupProvider.notifier).clear();
-                          },
-                        )
-                      : null,
-                ),
-                onChanged: _onSearchChanged,
-                onSubmitted: (value) {
-                  _searchDebounce?.cancel();
-                  ref.read(stockLookupProvider.notifier).search(value);
-                },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: _controller,
+                    focusNode: _searchFocusNode,
+                    style: const TextStyle(fontSize: 15, color: AppColors.text),
+                    decoration: InputDecoration(
+                      hintText: 'Search by name / SKU / product code...',
+                      hintStyle: const TextStyle(color: AppColors.muted, fontSize: 14),
+                      prefixIcon: const Icon(Icons.search, color: AppColors.muted),
+                      suffixIcon: state.query.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: AppColors.muted),
+                              onPressed: () {
+                                _controller.clear();
+                                setState(() => _showSuggestions = false);
+                                ref.read(stockLookupProvider.notifier).clear();
+                                ref.read(itemLookupProvider.notifier).clear();
+                              },
+                            )
+                          : null,
+                    ),
+                    onChanged: _onSearchChanged,
+                    onSubmitted: (value) {
+                      _searchDebounce?.cancel();
+                      setState(() => _showSuggestions = false);
+                      ref.read(stockLookupProvider.notifier).search(value);
+                    },
+                  ),
+                  if (_showSuggestions && lookupState.results.isNotEmpty)
+                    _SuggestionsDropdown(
+                      results: lookupState.results,
+                      onTap: _onSuggestionTap,
+                    ),
+                ],
               ),
             ),
             Expanded(child: _buildBody(state)),
@@ -760,6 +797,73 @@ class _WarehouseStockCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Typeahead suggestions from the compact lookup API (6.1b).
+/// Tapping a row fills the search box and runs the full search
+/// so stock/reorder details load through the existing flow.
+class _SuggestionsDropdown extends StatelessWidget {
+  final List<ItemLookupResult> results;
+  final ValueChanged<ItemLookupResult> onTap;
+
+  const _SuggestionsDropdown({required this.results, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = results.take(8).toList();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 4),
+      constraints: const BoxConstraints(maxHeight: 260),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        itemCount: visible.length,
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, color: AppColors.border),
+        itemBuilder: (context, index) {
+          final r = visible[index];
+          final subtitleParts = [
+            r.sku,
+            if (r.brandName != null && r.brandName!.isNotEmpty) r.brandName!,
+          ];
+          return ListTile(
+            dense: true,
+            leading: const Icon(
+              Icons.inventory_2_outlined,
+              size: 18,
+              color: AppColors.muted,
+            ),
+            title: Text(
+              r.name,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.text,
+              ),
+            ),
+            subtitle: Text(
+              subtitleParts.join(' • '),
+              style: const TextStyle(fontSize: 12, color: AppColors.muted),
+            ),
+            onTap: () => onTap(r),
+          );
+        },
       ),
     );
   }

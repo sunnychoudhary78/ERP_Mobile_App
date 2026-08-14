@@ -3,6 +3,7 @@ import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
 import 'package:erp_app/features/inventory/lowstock/presentations/screen/low_stock_screen.dart';
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
+import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../core/screens/subscription_expired_screen.dart';
@@ -72,6 +73,10 @@ class AppRoutes {
     '/stock-lookup': (_) => const StockLookupScreen(),
     '/work-orders': (_) => const WorkOrdersScreen(),
     '/low-stock': (_) => const LowStockScreen(),
+
+
+    // profile
+    '/profile': (context) => const ProfileScreen(),
   
   };
 }

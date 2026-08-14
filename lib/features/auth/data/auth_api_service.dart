@@ -1,4 +1,4 @@
-
+import 'package:flutter/material.dart';
 
 import '../../../core/network/api_endpoints.dart';
 import '../../../core/network/api_service.dart';
@@ -19,6 +19,8 @@ class AuthApiService {
 
   Future<Map<String, dynamic>> fetchProfile() async {
     final response = await api.get(ApiEndpoints.userDetails);
+
+    debugPrint("Profile:->>>>>>>>>>>>>>>>>>>>>>>>${response}");
     return Map<String, dynamic>.from(response as Map);
   }
 
@@ -42,7 +44,7 @@ class AuthApiService {
     await api.post(ApiEndpoints.unregisterFcmToken, {'fcmToken': fcmToken});
   }
 
-  Future<void> forgotPassword(String email) async{
+  Future<void> forgotPassword(String email) async {
     await api.post(ApiEndpoints.forgotPassword, {'email': email});
   }
 }

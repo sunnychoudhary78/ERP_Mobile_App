@@ -3,12 +3,12 @@ import 'package:erp_app/features/inventory/shared/data/inventory_api_service.dar
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
+import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
 import 'package:erp_app/features/inventory/shared/data/repository/inventory_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-
 
 // ───────── DI ─────────
 
@@ -67,8 +67,8 @@ class StockLookupState {
 
 final stockLookupProvider =
     NotifierProvider<StockLookupNotifier, StockLookupState>(
-  StockLookupNotifier.new,
-);
+      StockLookupNotifier.new,
+    );
 
 class StockLookupNotifier extends Notifier<StockLookupState> {
   late final InventoryRepository _repo;
@@ -96,16 +96,15 @@ class StockLookupNotifier extends Notifier<StockLookupState> {
       final result = await _repo.searchItems(query, page: page);
       state = state.copyWith(
         isLoading: false,
-        items: page == 1
-            ? result.items
-            : [...state.items, ...result.items],
+        items: page == 1 ? result.items : [...state.items, ...result.items],
         page: result.page,
         totalPages: result.totalPages,
         clearError: true,
       );
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
-      final forbidden = msg.contains('403') || msg.toLowerCase().contains('forbidden');
+      final forbidden =
+          msg.contains('403') || msg.toLowerCase().contains('forbidden');
       state = state.copyWith(
         isLoading: false,
         isForbidden: forbidden,
@@ -124,25 +123,100 @@ class StockLookupNotifier extends Notifier<StockLookupState> {
   }
 }
 
+// ───────── Item Lookup (compact typeahead — 6.1b) ─────────
+
+class ItemLookupState {
+  final bool isLoading;
+  final String query;
+  final List<ItemLookupResult> results;
+  final String? errorMessage;
+
+  const ItemLookupState({
+    this.isLoading = false,
+    this.query = '',
+    this.results = const [],
+    this.errorMessage,
+  });
+
+  ItemLookupState copyWith({
+    bool? isLoading,
+    String? query,
+    List<ItemLookupResult>? results,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return ItemLookupState(
+      isLoading: isLoading ?? this.isLoading,
+      query: query ?? this.query,
+      results: results ?? this.results,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+final itemLookupProvider =
+    NotifierProvider<ItemLookupNotifier, ItemLookupState>(
+      ItemLookupNotifier.new,
+    );
+
+class ItemLookupNotifier extends Notifier<ItemLookupState> {
+  late final InventoryRepository _repo;
+
+  @override
+  ItemLookupState build() {
+    _repo = ref.read(inventoryRepositoryProvider);
+    return const ItemLookupState();
+  }
+
+  Future<void> lookup(String query) async {
+    if (query.trim().isEmpty) {
+      state = const ItemLookupState();
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, query: query, clearError: true);
+
+    try {
+      final results = await _repo.lookupItems(query);
+      state = state.copyWith(
+        isLoading: false,
+        results: results,
+        clearError: true,
+      );
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+    }
+  }
+
+  void clear() {
+    state = const ItemLookupState();
+  }
+}
+
 // ───────── Selected item + its warehouse stock ─────────
 
 final selectedItemIdProvider = StateProvider<int?>((ref) => null);
 
-final itemDetailProvider =
-    FutureProvider.family<InventoryItem, int>((ref, itemId) async {
+final itemDetailProvider = FutureProvider.family<InventoryItem, int>((
+  ref,
+  itemId,
+) async {
   final repo = ref.read(inventoryRepositoryProvider);
   return repo.getItem(itemId);
 });
 
 final warehouseStockForItemProvider =
     FutureProvider.family<List<WarehouseStockRow>, int>((ref, itemId) async {
-  final repo = ref.read(inventoryRepositoryProvider);
-  return repo.getWarehouseStockForItem(itemId);
-});
+      final repo = ref.read(inventoryRepositoryProvider);
+      return repo.getWarehouseStockForItem(itemId);
+    });
 
 // ───────── Low stock (Home badge + list) ─────────
 
-final dashboardStatsProvider = FutureProvider<InventoryDashboardStats>((ref) async {
+final dashboardStatsProvider = FutureProvider<InventoryDashboardStats>((
+  ref,
+) async {
   final repo = ref.read(inventoryRepositoryProvider);
   return repo.getDashboardStats();
 });
@@ -152,17 +226,17 @@ final lowStockItemsProvider = FutureProvider<List<InventoryItem>>((ref) async {
   return repo.getLowStockItems();
 });
 
-
 // ───────── Stock report (section 5.3) ─────────
- 
+
 final stockReportProvider = FutureProvider<List<StockReportRow>>((ref) async {
   final repo = ref.read(inventoryRepositoryProvider);
   return repo.getStockReport();
 });
- 
 
-final financialReportProvider =
-    FutureProvider.family<FinancialReport, String>((ref, months) async {
+final financialReportProvider = FutureProvider.family<FinancialReport, String>((
+  ref,
+  months,
+) async {
   final repo = ref.read(inventoryRepositoryProvider);
   return repo.getFinancialReport(months: months);
 });

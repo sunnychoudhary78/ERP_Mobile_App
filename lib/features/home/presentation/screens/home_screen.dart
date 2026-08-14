@@ -14,15 +14,16 @@ class HomeScreen extends ConsumerWidget {
 
   static const _sections = <LinkSection>[
     LinkSection('Attendance & leave', [
-      QuickLink('Home', '/crm/hrms_sales_screen', Icons.fingerprint_rounded),
+      QuickLink('Dashboard', '/crm/hrms_sales_screen', Icons.fingerprint_rounded),
       QuickLink('Punch', '/punch', Icons.fingerprint_rounded),
       QuickLink('Leave balance', '/leave-balance', Icons.beach_access_outlined),
       QuickLink('Apply leave', '/leave-apply', Icons.event_available_outlined),
       QuickLink('My leave', '/leave-status', Icons.list_alt_outlined),
       QuickLink('Approvals', '/approvals', Icons.approval_outlined),
+      QuickLink('Profile', '/profile', Icons.person),
     ]),
     LinkSection('CRM', [
-      QuickLink('Home', '/crm/crm_sales_screen', Icons.fingerprint_rounded),
+      QuickLink('Dashboard', '/crm/crm_sales_screen', Icons.fingerprint_rounded),
       QuickLink('Leads', '/crm/leads', Icons.leaderboard_outlined),
       QuickLink('Pipeline', '/crm/pipeline', Icons.view_kanban_outlined),
       QuickLink('Follow-ups', '/crm/activities', Icons.timeline_outlined),
@@ -32,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
       QuickLink('Quotes', '/crm/quotes', Icons.request_quote_outlined),
     ]),
     LinkSection('Field & inventory', [
-      QuickLink('Home', '/crm/inventory_sales_screen', Icons.fingerprint_rounded),
+      QuickLink('Dashboard', '/crm/inventory_sales_screen', Icons.fingerprint_rounded),
       QuickLink('Visits', '/crm/visits', Icons.location_on_outlined),
       QuickLink('Team tracking', '/crm/tracking', Icons.map_outlined),
       QuickLink('Stock lookup', '/stock-lookup', Icons.inventory_2_outlined),
@@ -54,6 +55,7 @@ class HomeScreen extends ConsumerWidget {
 
     final fullName = profile?.associatesName ?? 'there';
     final firstName = fullName.split(' ').first;
+    final designation = (profile?.designation ?? '').trim();
     final initials = fullName.trim().isEmpty
         ? '?'
         : fullName
@@ -121,15 +123,18 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.white.withValues(alpha: 0.18),
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                    GestureDetector(
+                      onTap: () => Navigator.pushNamed(context, '/profile'),
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.white.withValues(alpha: 0.18),
+                        child: Text(
+                          initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -150,11 +155,15 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            "Here's your operational status.",
+                            designation.isNotEmpty
+                                ? designation
+                                : "Here's your operational status.",
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: Colors.white.withValues(alpha: 0.8),
                                 ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),

@@ -1,4 +1,5 @@
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/features/leave/data/models/leave_status_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -227,9 +228,9 @@ class _LeaveStatusScreenState extends ConsumerState<LeaveStatusScreen>
     );
   }
 
-  bool _matchesStatus(dynamic r, String status) {
-    return (r.status ?? '').toString().toLowerCase() == status;
-  }
+  bool _matchesStatus(LeaveStatus r, String status) {
+  return (r.status ?? '').toString().toLowerCase() == status;
+}
 }
 
 // -----------------------------------------------------------------------------
@@ -334,7 +335,7 @@ class _MetricsOverviewCard extends StatelessWidget {
 // Individual Leave Card
 // -----------------------------------------------------------------------------
 class _LeaveRequestCard extends StatelessWidget {
-  final dynamic request;
+  final LeaveStatus request;
   final VoidCallback onTap;
 
   const _LeaveRequestCard({required this.request, required this.onTap});
@@ -350,7 +351,8 @@ class _LeaveRequestCard extends StatelessWidget {
     final iconBg = _getIconBgColor(leaveType);
     final iconColor = _getIconColor(leaveType);
 
-    final remarks = request.reason ?? request.remarks;
+    final remarks = request.halfDayPart;
+    final appliedOn = request.createdAt?.toLocal().toString().split(' ')[0] ?? 'N/A';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -414,7 +416,7 @@ class _LeaveRequestCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${request.days ?? '1'} ${request.days == 1 ? 'Day' : 'Days'}',
+                          '${request.requestedDates.length} ${request.requestedDates.length == 1 ? 'Day' : 'Days'}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade500,
@@ -459,7 +461,7 @@ class _LeaveRequestCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        'Applied on ${request.appliedDate ?? request.createdAt ?? 'N/A'}',
+                        'Applied on $appliedOn',
                         style: TextStyle(
                           fontSize: 10,
                           color: Colors.grey.shade500,

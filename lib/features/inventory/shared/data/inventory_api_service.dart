@@ -1,4 +1,5 @@
 import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
+import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -70,7 +71,9 @@ class InventoryApiService {
       ApiEndpoints.inventoryDashboardStats,
       headers: _companyHeader,
     );
-    return InventoryDashboardStats.fromJson(res['data'] as Map<String, dynamic>);
+    return InventoryDashboardStats.fromJson(
+      res['data'] as Map<String, dynamic>,
+    );
   }
 
   Future<List<Warehouse>> getWarehouses() async {
@@ -81,9 +84,10 @@ class InventoryApiService {
     );
     final data = res['data'];
     final list = (data is Map ? data['data'] : data) as List? ?? [];
-    return list.map((e) => Warehouse.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => Warehouse.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
-
 
   Future<List<StockReportRow>> getStockReport() async {
     final res = await _api.get(
@@ -95,7 +99,7 @@ class InventoryApiService {
         .map((e) => StockReportRow.fromJson(e as Map<String, dynamic>))
         .toList();
   }
- 
+
   Future<FinancialReport> getFinancialReport({String months = '12'}) async {
     final res = await _api.get(
       ApiEndpoints.inventoryReportsFinancial,
@@ -105,4 +109,18 @@ class InventoryApiService {
     return FinancialReport.fromJson(res['data'] as Map<String, dynamic>);
   }
 
+  Future<List<ItemLookupResult>> lookupItems(
+    String query, {
+    int limit = 200,
+  }) async {
+    final res = await _api.get(
+      ApiEndpoints.lookupItems,
+      queryParams: {'search': query, 'limit': limit},
+      headers: _companyHeader,
+    );
+    final list = res['data'] as List? ?? [];
+    return list
+        .map((e) => ItemLookupResult.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }
