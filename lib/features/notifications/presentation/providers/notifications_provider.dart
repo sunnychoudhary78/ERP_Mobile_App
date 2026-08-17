@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/network_providers.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+// import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/notification_model.dart';
 import '../../data/notification_api_service.dart';
 
@@ -9,21 +9,26 @@ final notificationApiServiceProvider = Provider<NotificationApiService>((ref) {
   return NotificationApiService(ref.read(apiServiceProvider));
 });
 
-final notificationProvider = AsyncNotifierProvider.autoDispose<
-    NotificationNotifier, List<AppNotification>>(
-  NotificationNotifier.new,
-);
+final notificationProvider =
+    AsyncNotifierProvider.autoDispose<
+      NotificationNotifier,
+      List<AppNotification>
+    >(NotificationNotifier.new);
 
 class NotificationNotifier extends AsyncNotifier<List<AppNotification>> {
   @override
   Future<List<AppNotification>> build() async {
-    ref.watch(authProvider);
+    return _fetchNotifications();
+  }
+
+  Future<List<AppNotification>> _fetchNotifications() {
     return ref.read(notificationApiServiceProvider).fetchMyNotifications();
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(build);
+
+    state = await AsyncValue.guard(_fetchNotifications);
   }
 
   Future<void> markAsRead(String id) async {
@@ -61,9 +66,7 @@ class NotificationNotifier extends AsyncNotifier<List<AppNotification>> {
     final api = ref.read(notificationApiServiceProvider);
     final currentList = state.value ?? const [];
 
-    state = AsyncData(
-      currentList.where((n) => !ids.contains(n.id)).toList(),
-    );
+    state = AsyncData(currentList.where((n) => !ids.contains(n.id)).toList());
 
     try {
       await api.deleteNotifications(ids);

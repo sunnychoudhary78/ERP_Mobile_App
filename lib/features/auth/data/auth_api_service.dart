@@ -21,7 +21,16 @@ class AuthApiService {
     final response = await api.get(ApiEndpoints.userDetails);
 
     debugPrint("Profile:->>>>>>>>>>>>>>>>>>>>>>>>${response}");
-    return Map<String, dynamic>.from(response as Map);
+
+    final map = Map<String, dynamic>.from(response as Map);
+    // Real /auth/me response nests everything under "user":
+    // {user: {id, name, email, ..., company: {...}}}.
+    // UserDetails.fromJson expects a flat object at the top level,
+    // so unwrap it here before parsing.
+    if (map['user'] is Map) {
+      return Map<String, dynamic>.from(map['user'] as Map);
+    }
+    return map;
   }
 
   Future<List<String>> fetchPermissions() async {

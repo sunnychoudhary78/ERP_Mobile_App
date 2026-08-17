@@ -6,14 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AppDrawer extends ConsumerStatefulWidget {
   final String fullName;
-  final String jobTitle;
+  final String? jobTitle;
   final String initials;
   final List<LinkSection> sections;
   final String? currentRoute;
 
   const AppDrawer({
     required this.fullName,
-    this.jobTitle = 'Operations Manager',
+    this.jobTitle,
     required this.initials,
     required this.sections,
     this.currentRoute,
@@ -131,7 +131,13 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final String today = _formattedDate(DateTime.now());
+    // Watch profile to dynamically retrieve designation/job title
+    final profile = ref.watch(authProvider).profile;
+    final dynamicJobTitle =
+        widget.jobTitle ??
+        (profile?.designation != null && profile!.designation!.trim().isNotEmpty
+            ? profile.designation!
+            : 'Operations Manager');
 
     return Container(
       color: AppColors.primary,
@@ -147,35 +153,22 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar with online status
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    child: Text(
-                      widget.initials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, '/profile');
+                },
+                child: CircleAvatar(
+                  radius: 28,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  child: Text(
+                    widget.initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
-                  Positioned(
-                    right: 2,
-                    bottom: 2,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: Colors.greenAccent.shade400,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.primary, width: 2),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -192,7 +185,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      widget.jobTitle,
+                      dynamicJobTitle,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 13,
@@ -204,125 +197,12 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // View Profile Pill
-          InkWell(
-            onTap: () {},
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'View Profile',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(width: 6),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Date & Notification Banner
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 16,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  today,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                Stack(
-                  children: [
-                    const Icon(
-                      Icons.notifications_none_rounded,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                    Positioned(
-                      right: 1,
-                      top: 1,
-                      child: Container(
-                        width: 7,
-                        height: 7,
-                        decoration: const BoxDecoration(
-                          color: Colors.redAccent,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildHomeTile(BuildContext context) {
-    final bool isSelected = _selectedRoute == '/home';
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        leading: Icon(Icons.home_rounded, color: AppColors.text, size: 22),
-        title: Text(
-          'Home',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-            color: AppColors.text,
-          ),
-        ),
-        selected: isSelected,
-        selectedTileColor: AppColors.border.withValues(alpha: 0.35),
-        onTap: () {
-          setState(() {
-            _selectedRoute = '/home';
-          });
-
-          Navigator.pop(context);
-          Navigator.pushNamed(context, '/home');
-        },
-      ),
-    );
-  }
 
   Widget _buildSectionTile(BuildContext context, LinkSection section) {
     final bool isExpanded = _expandedState[section.title] ?? false;
@@ -508,33 +388,4 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     return title;
   }
 
-  String _formattedDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    final weekday = weekdays[date.weekday - 1];
-    return '$weekday, ${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
-  
 }

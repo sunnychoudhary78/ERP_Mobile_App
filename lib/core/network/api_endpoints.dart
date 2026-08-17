@@ -1,7 +1,7 @@
 class ApiEndpoints {
   // ───────── AUTH ─────────
   static const String login = 'auth/login'; // done
-  static const String permissions = 'auth/permissions'; 
+  static const String permissions = 'auth/permissions';
   static const String changePassword = 'auth/change-password'; // not done
   static const String forgotPassword = 'auth/forgot-password'; // not done
   static const String resetPassword = 'auth/reset-password';
@@ -40,11 +40,12 @@ class ApiEndpoints {
   static String notificationMarkRead(String id) => 'notifications/$id/read';
 
   // ───────── INVENTORY (existing backend) ─────────
-  static const String items = 'items'; // done 
+  static const String items = 'items'; // done
   static const String inventory = 'inventory';
-  static const String inventoryLowStock = 'inventory/low-stock';//done
-  static const String inventoryWarehouseStock = 'inventory/warehouse-stock'; // done
-  static const String warehouses = 'warehouse';//done
+  static const String inventoryLowStock = 'inventory/low-stock'; //done
+  static const String inventoryWarehouseStock =
+      'inventory/warehouse-stock'; // done
+  static const String warehouses = 'warehouse'; //done
   static const String customers = 'customers'; //  done
 
   static String customerById(String id) => 'customers/$id';
@@ -60,6 +61,14 @@ class ApiEndpoints {
 
   // ───────── PRODUCTION (existing backend) ─────────
   static const String workOrders = 'production/work-orders';
+
+  // ───────── HRMS DASHBOARD   ─────────
+  static const String getManagerPendingLeaves =
+      'leave-requests/manager/pending';
+  static const String getstatsAdminOverviews = 'stats/admin-overview';
+  static const String getTeamDashboard = 'employees/team-dashboard';
+  static const String attendanceCorrectionPending =
+      'attendance/corrections/pending';
 
   // ───────── SALES CRM (/api/sales — requires sales module backend) ─────────
   static const String salesWorkspace = 'sales/workspace';

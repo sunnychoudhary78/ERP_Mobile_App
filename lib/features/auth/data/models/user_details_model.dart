@@ -41,7 +41,7 @@ class UserDetails {
 
     // Real /auth/me response uses "name" at the top level, not
     // "associates_name" — keep both so this survives a future backend change.
-    associatesName = (json['associates_name'] ?? json['name'])?.toString();
+    associatesName = (json['name'])?.toString();
 
     payrollCode = (json['payroll_code'] ?? json['payrollCode'])?.toString();
 
