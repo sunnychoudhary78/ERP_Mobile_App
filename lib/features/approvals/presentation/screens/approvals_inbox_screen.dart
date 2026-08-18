@@ -456,17 +456,21 @@ class ApprovalCard extends StatelessWidget {
                                         color: Color(0xFF0F172A),
                                       ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        item.leaveRequest?.startDate != null
-                                            ? (item.leaveRequest?.startDate ==
-                                                      item.leaveRequest?.endDate
-                                                  ? item.leaveRequest!.startDate
-                                                  : '${item.leaveRequest!.startDate} → ${item.leaveRequest!.endDate}')
-                                            : 'Oct 12 - Oct 15',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: Color(0xFF0F172A),
+                                      Expanded(
+                                        child: Text(
+                                          item.leaveRequest?.startDate != null
+                                              ? (item.leaveRequest?.startDate ==
+                                                        item.leaveRequest?.endDate
+                                                    ? item.leaveRequest!.startDate
+                                                    : '${item.leaveRequest!.startDate} → ${item.leaveRequest!.endDate}')
+                                              : 'Oct 12 - Oct 15',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: Color(0xFF0F172A),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -495,13 +499,17 @@ class ApprovalCard extends StatelessWidget {
                                         color: Color(0xFF0F172A),
                                       ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        item.leaveRequest?.days?.toString() ??
-                                            '4 Days',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: Color(0xFF0F172A),
+                                      Flexible(
+                                        child: Text(
+                                          item.leaveRequest?.days?.toString() ??
+                                              '4 Days',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: Color(0xFF0F172A),
+                                          ),
                                         ),
                                       ),
                                     ],

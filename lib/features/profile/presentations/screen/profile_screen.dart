@@ -51,16 +51,16 @@ class ProfileScreen extends ConsumerWidget {
                         label: 'Designation',
                         value: profile.designation,
                       ),
-                      _InfoTile(
-                        icon: Icons.confirmation_number_outlined,
-                        label: 'Payroll code',
-                        value: profile.payrollCode,
-                      ),
-                      _InfoTile(
-                        icon: Icons.apartment_outlined,
-                        label: 'Department',
-                        value: profile.departmentName,
-                      ),
+                      // _InfoTile(
+                      //   icon: Icons.confirmation_number_outlined,
+                      //   label: 'Payroll code',
+                      //   value: profile.payrollCode,
+                      // ),
+                      // _InfoTile(
+                      //   icon: Icons.apartment_outlined,
+                      //   label: 'Department',
+                      //   value: profile.departmentName,
+                      // ),
                       _InfoTile(
                         icon: profile.active == false
                             ? Icons.cancel_outlined

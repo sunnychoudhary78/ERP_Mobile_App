@@ -399,7 +399,7 @@ class _PipelineCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        '$stalledCount stalled 7d+',
+                        '$stalledCount stalled',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -508,7 +508,7 @@ class _PipelineCard extends StatelessWidget {
 
   String _formatCurrency(double value) {
     if (value >= 100000) {
-      return '\$${(value / 1000).toStringAsFixed(0)}K';
+      return '\₹${(value / 1000).toStringAsFixed(0)}K';
     }
     final s = value.toStringAsFixed(0);
     final buf = StringBuffer();
@@ -516,7 +516,7 @@ class _PipelineCard extends StatelessWidget {
       if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
       buf.write(s[i]);
     }
-    return '\$$buf';
+    return '\₹$buf';
   }
 }
 

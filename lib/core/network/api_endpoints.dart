@@ -58,9 +58,26 @@ class ApiEndpoints {
   static String itemById(String id) => 'items/$id';
   static const String inventoryReport = 'inventory/report';
   static const String inventoryReportsFinancial = 'inventory/reports/financial';
-
   // ───────── PRODUCTION (existing backend) ─────────
   static const String workOrders = 'production/work-orders';
+  static const String workOrdersSummary = 'production/work-orders/summary';
+
+  static String workOrderById(String id) => 'production/work-orders/$id';
+
+  static String workOrderExecution(String id) =>
+      'production/work-orders/$id/execution';
+
+  static String workOrderQc(String id) => 'production/work-orders/$id/qc';
+
+  static String workOrderTransition(String id) =>
+      'production/work-orders/$id/transition';
+
+  static String workOrderComplete(String id) =>
+      'production/work-orders/$id/complete';
+
+  static String workOrderFinishFromQc(String id) =>
+      'production/work-orders/$id/finish-from-qc';
+  static String workOrderNotesPatch(String id) => 'production/work-orders/$id';
 
   // ───────── HRMS DASHBOARD   ─────────
   static const String getManagerPendingLeaves =

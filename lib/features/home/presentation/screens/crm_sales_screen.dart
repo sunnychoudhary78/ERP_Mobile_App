@@ -162,11 +162,11 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
           children: [
             SizedBox(height: 12),
             // Dynamic Quick Actions Section
-            _buildSectionHeader(
-              'QUICK ACTIONS',
-              actionText: 'Customize',
-              onAction: () {},
-            ),
+            // _buildSectionHeader(
+            //   'QUICK ACTIONS',
+            //   actionText: 'Customize',
+            //   onAction: () {},
+            // ),
             const SizedBox(height: 12),
             _QuickActionsGrid(actions: quickActions),
             const SizedBox(height: 24),
@@ -235,11 +235,11 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
             const SizedBox(height: 24),
 
             // Dynamic Activities Section
-            _buildSectionHeader(
-              'TODAY\'S ACTIVITIES',
-              actionText: 'View Calendar',
-              onAction: () => Navigator.pushNamed(context, '/crm/activities'),
-            ),
+            // _buildSectionHeader(
+            //   'TODAY\'S ACTIVITIES',
+            //   actionText: 'View Calendar',
+            //   onAction: () => Navigator.pushNamed(context, '/crm/activities'),
+            // ),
             const SizedBox(height: 12),
             _TodayActivitiesCard(nextActionsAsync: nextActionsAsync),
             const SizedBox(height: 24),

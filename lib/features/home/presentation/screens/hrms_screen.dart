@@ -202,13 +202,13 @@ class _DashboardBody extends ConsumerWidget {
                 ),
 
                 _buildQuickActionCard(
-                  icon: Icons.description_rounded,
-                  iconBgColor: const Color(0xFFFEF3C7),
-                  iconColor: const Color(0xFFF59E0B),
-                  title: 'My Leave',
-                  subtitle: 'See your leave',
+                  icon: Icons.approval_rounded,
+                  iconBgColor: const Color.fromARGB(255, 199, 241, 254),
+                  iconColor: const Color.fromARGB(255, 11, 93, 245),
+                  title: 'Approval',
+                  subtitle: 'Approval Screen',
                   onTap: () {
-                     Navigator.pushNamed(context, '/leave-status');
+                     Navigator.pushNamed(context, '/approvals');
                   },
                 ),
               ],

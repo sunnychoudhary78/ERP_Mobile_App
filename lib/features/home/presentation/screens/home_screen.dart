@@ -1,6 +1,8 @@
 import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
+import 'package:erp_app/features/home/presentation/screens/production_screen.dart';
+import 'package:erp_app/features/production/presentation/screens/work_orders_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,8 +50,16 @@ class HomeScreen extends ConsumerWidget {
       QuickLink('Visits', '/crm/visits', Icons.location_on_outlined),
       QuickLink('Team tracking', '/crm/tracking', Icons.map_outlined),
       QuickLink('Stock lookup', '/stock-lookup', Icons.inventory_2_outlined),
+    ]),
+
+    LinkSection('Production', [
       QuickLink(
-        'Work orders',
+        'Dashboard',
+        '/production_screen',
+        Icons.fingerprint_rounded,
+      ),
+      QuickLink(
+        'Orders',
         '/work-orders',
         Icons.precision_manufacturing_outlined,
       ),
@@ -304,6 +314,22 @@ class HomeScreen extends ConsumerWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) => const InventorySalesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                _ListCardTile(
+                  icon: Icons.work_history_outlined,
+                  iconBgColor: const Color.fromARGB(136, 240, 253, 244),
+                  iconColor: const Color.fromARGB(255, 163, 22, 156),
+                  title: 'Production',
+                  subtitle: 'Stock lookup and field activities',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ProductionDashboardScreen(),
                       ),
                     );
                   },
