@@ -18,6 +18,12 @@ class SalesQuote {
   final String? sentAt;
   final String? createdAt;
 
+  // ── Commercial terms (see Sales_CRM_Commercial_Terms_APIs.md) ──
+  final String paymentTermKey;
+  final String paymentTerms;
+  final String deliveryTerm;
+  final Map<String, dynamic> transport;
+
   const SalesQuote({
     required this.id,
     this.dbId,
@@ -37,6 +43,15 @@ class SalesQuote {
     required this.notes,
     this.sentAt,
     this.createdAt,
+    this.paymentTermKey = 'net_30',
+    this.paymentTerms = '',
+    this.deliveryTerm = 'buyer',
+    this.transport = const {
+      'mode': 'client',
+      'dispatch': 'deliver',
+      'charge': 0,
+      'notes': '',
+    },
   });
 
   bool get hasPendingApproval {
@@ -68,6 +83,17 @@ class SalesQuote {
       notes: json['notes']?.toString() ?? '',
       sentAt: json['sentAt']?.toString(),
       createdAt: json['createdAt']?.toString(),
+      paymentTermKey: json['paymentTermKey']?.toString() ?? 'net_30',
+      paymentTerms: json['paymentTerms']?.toString() ?? '',
+      deliveryTerm: json['deliveryTerm']?.toString() ?? 'buyer',
+      transport: json['transport'] is Map
+          ? Map<String, dynamic>.from(json['transport'] as Map)
+          : const {
+              'mode': 'client',
+              'dispatch': 'deliver',
+              'charge': 0,
+              'notes': '',
+            },
     );
   }
 }

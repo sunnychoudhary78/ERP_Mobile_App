@@ -125,12 +125,11 @@ class ApiEndpoints {
   static String salesQuoteById(String id) =>
       'sales/quotes/$id'; // updated quotations -> done
   static String salesQuoteApprove(String id) =>
-      'sales/quotes/$id/approve'; // used after sometime
+      'sales/quotes/$id/approve'; // used alreadyy
   static String salesQuoteReject(String id) =>
-      'sales/quotes/$id/reject'; // use after some time
+      'sales/quotes/$id/reject'; // done
   static String salesQuoteSend(String id) =>
-      'sales/quotes/$id/send'; // use after some time in approvals
-
+      'sales/quotes/$id/send'; // done
   static String salesPdfdownload(String id) =>
       'sales/quotes/$id/pdf'; // download pdf //done
   static String salesPdfBillDownload(String id) => 'sales/bills/$id/pdf';

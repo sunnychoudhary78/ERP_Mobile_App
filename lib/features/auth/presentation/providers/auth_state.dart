@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import '../../data/models/user_details_model.dart';
 import '../../data/models/user_model.dart';
 
@@ -36,6 +38,9 @@ class AuthState {
     String? errorMessage,
     bool clearError = false,
   }) {
+    debugPrint('Current Permissions: $this.permissions');
+    debugPrint('New Permissions: $permissions');
+
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       isInitializing: isInitializing ?? this.isInitializing,
@@ -49,4 +54,12 @@ class AuthState {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
+}
+
+extension AuthPermissions on AuthState {
+  bool can(String permission) => permissions.contains(permission);
+
+  bool canAny(List<String> required) => required.isEmpty || required.any(can);
+
+  bool canAll(List<String> required) => required.every(can);
 }

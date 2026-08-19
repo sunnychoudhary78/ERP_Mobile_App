@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:erp_app/features/auth/data/models/user_model.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_constants.dart';
@@ -47,6 +49,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
       final profile = UserDetails.fromJson(profileJson);
       final permissions = await _authApi.fetchPermissions();
+      
+       print('PERMISSIONS FOR THIS USER: $permissions');
 
       state = state.copyWith(
         isLoading: false,

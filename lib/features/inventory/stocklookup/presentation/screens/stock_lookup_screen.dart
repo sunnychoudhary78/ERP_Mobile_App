@@ -8,7 +8,6 @@ import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 
-
 class StockLookupScreen extends ConsumerStatefulWidget {
   const StockLookupScreen({super.key});
 
@@ -88,7 +87,10 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -98,11 +100,20 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
                     style: const TextStyle(fontSize: 15, color: AppColors.text),
                     decoration: InputDecoration(
                       hintText: 'Search by name / SKU / product code...',
-                      hintStyle: const TextStyle(color: AppColors.muted, fontSize: 14),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.muted),
+                      hintStyle: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 14,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.muted,
+                      ),
                       suffixIcon: state.query.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, color: AppColors.muted),
+                              icon: const Icon(
+                                Icons.clear,
+                                color: AppColors.muted,
+                              ),
                               onPressed: () {
                                 _controller.clear();
                                 setState(() => _showSuggestions = false);
@@ -279,12 +290,18 @@ class _ItemTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'SKU: ${item.sku}',
-                      style: const TextStyle(fontSize: 13, color: AppColors.muted),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.muted,
+                      ),
                     ),
                     if (item.brandName != null)
                       Text(
                         'Brand: ${item.brandName}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.muted,
+                        ),
                       ),
                   ],
                 ),
@@ -297,13 +314,18 @@ class _ItemTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: item.isLowStock ? AppColors.danger : AppColors.text,
+                      color: item.isLowStock
+                          ? AppColors.danger
+                          : AppColors.text,
                     ),
                   ),
                   if (item.isLowStock) ...[
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.danger.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -342,6 +364,8 @@ class _ItemDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
+        title: const Text("Item Detials"),
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.of(context).pop(),
@@ -360,20 +384,26 @@ class _ItemDetailScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header Details
-                Text(
-                  item.name,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.text,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'SKU: ${item.sku}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.muted,
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'SKU: ${item.sku}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.muted,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -385,7 +415,9 @@ class _ItemDetailScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFADBD8),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.danger.withOpacity(0.3)),
+                      border: Border.all(
+                        color: AppColors.danger.withOpacity(0.3),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,55 +467,55 @@ class _ItemDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
 
                 // Bottom Dynamic Action Buttons
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () {
-                      // Action logic for request restock
-                    },
-                    icon: const Icon(Icons.add_shopping_cart, size: 18),
-                    label: const Text(
-                      'REQUEST RESTOCK',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.border),
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.text,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () {
-                      // Action logic for transfer stock
-                    },
-                    icon: const Icon(Icons.swap_horiz, size: 20),
-                    label: const Text(
-                      'TRANSFER STOCK',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
+                // SizedBox(
+                //   width: double.infinity,
+                //   height: 48,
+                //   child: ElevatedButton.icon(
+                //     style: ElevatedButton.styleFrom(
+                //       backgroundColor: AppColors.primary,
+                //       shape: RoundedRectangleBorder(
+                //         borderRadius: BorderRadius.circular(10),
+                //       ),
+                //     ),
+                //     onPressed: () {
+                //       // Action logic for request restock
+                //     },
+                //     icon: const Icon(Icons.add_shopping_cart, size: 18),
+                //     label: const Text(
+                //       'REQUEST RESTOCK',
+                //       style: TextStyle(
+                //         fontWeight: FontWeight.bold,
+                //         letterSpacing: 0.5,
+                //       ),
+                //     ),
+                //   ),
+                // ),
+                // const SizedBox(height: 10),
+                // SizedBox(
+                //   width: double.infinity,
+                //   height: 48,
+                //   child: OutlinedButton.icon(
+                //     style: OutlinedButton.styleFrom(
+                //       side: const BorderSide(color: AppColors.border),
+                //       backgroundColor: Colors.white,
+                //       foregroundColor: AppColors.text,
+                //       shape: RoundedRectangleBorder(
+                //         borderRadius: BorderRadius.circular(10),
+                //       ),
+                //     ),
+                //     onPressed: () {
+                //       // Action logic for transfer stock
+                //     },
+                //     icon: const Icon(Icons.swap_horiz, size: 20),
+                //     label: const Text(
+                //       'TRANSFER STOCK',
+                //       style: TextStyle(
+                //         fontWeight: FontWeight.bold,
+                //         letterSpacing: 0.5,
+                //       ),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -524,9 +556,7 @@ class _ItemInfoCard extends StatelessWidget {
               Expanded(
                 child: _gridItem('PRODUCT CODE', item.productCode ?? '-'),
               ),
-              Expanded(
-                child: _gridItem('BRAND', item.brandName ?? '-'),
-              ),
+              Expanded(child: _gridItem('BRAND', item.brandName ?? '-')),
             ],
           ),
           const SizedBox(height: 16),
@@ -595,7 +625,8 @@ class _ItemInfoCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                item.status ?? (item.isLowStock ? 'Low' : 'Normal'),
+                                item.status ??
+                                    (item.isLowStock ? 'Low' : 'Normal'),
                                 style: TextStyle(
                                   color: item.isLowStock
                                       ? AppColors.danger
@@ -617,9 +648,7 @@ class _ItemInfoCard extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: _gridItem('HSN/SAC', item.hsnSac ?? '-'),
-              ),
+              Expanded(child: _gridItem('HSN/SAC', item.hsnSac ?? '-')),
               Expanded(
                 child: _gridItem(
                   'SELLING PRICE',
@@ -746,10 +775,8 @@ class _WarehouseStockCard extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: rows.length,
-                separatorBuilder: (_, __) => const Divider(
-                  height: 20,
-                  color: AppColors.border,
-                ),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 20, color: AppColors.border),
                 itemBuilder: (context, index) {
                   final row = rows[index];
                   final isLow = row.quantity < 15; // Example dynamic check

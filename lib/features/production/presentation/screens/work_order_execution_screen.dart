@@ -39,9 +39,7 @@ class _WorkOrderExecutionScreenState
       _stageOutput[s.code] = TextEditingController(
         text: s.outputQty.toString(),
       );
-      _stageScrap[s.code] = TextEditingController(
-        text: s.scrapQty.toString(),
-      );
+      _stageScrap[s.code] = TextEditingController(text: s.scrapQty.toString());
     }
     _selectedActiveStep = wo.activeStep;
     _initializedFor = true;
@@ -96,9 +94,9 @@ class _WorkOrderExecutionScreenState
 
     if (!mounted) return;
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Execution logged')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Execution logged')));
       _noteController.clear();
     } else {
       final err = ref.read(workOrderActionsControllerProvider).error;
@@ -156,9 +154,7 @@ class _WorkOrderExecutionScreenState
             padding: const EdgeInsets.all(16),
             children: [
               Text(
-                wo.woNumber?.isNotEmpty == true
-                    ? wo.woNumber!
-                    : 'WO #${wo.id}',
+                wo.woNumber?.isNotEmpty == true ? wo.woNumber! : 'WO #${wo.id}',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -334,6 +330,7 @@ class _WorkOrderExecutionScreenState
                     style: TextStyle(color: AppColors.muted, fontSize: 12),
                   ),
                   const SizedBox(height: 10),
+
                   DropdownButtonFormField<String>(
                     value: _selectedActiveStep,
                     decoration: const InputDecoration(
@@ -342,17 +339,22 @@ class _WorkOrderExecutionScreenState
                       isDense: true,
                     ),
                     items: const [
+                      DropdownMenuItem(value: 'demand', child: Text('Demand')),
                       DropdownMenuItem(
                         value: 'shop-floor',
-                        child: Text('shop-floor'),
+                        child: Text('Shop Floor'),
                       ),
-                      DropdownMenuItem(value: 'qc', child: Text('qc')),
+                      DropdownMenuItem(value: 'qc', child: Text('QC')),
                       DropdownMenuItem(
                         value: 'release',
-                        child: Text('release'),
+                        child: Text('Release'),
                       ),
                     ],
-                    onChanged: (v) => setState(() => _selectedActiveStep = v),
+                    onChanged: (v) {
+                      setState(() {
+                        _selectedActiveStep = v;
+                      });
+                    },
                   ),
                   const SizedBox(height: 10),
                   SizedBox(

@@ -38,7 +38,8 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
+            onPressed: () =>
+                ref.read(salesWorkspaceProvider.notifier).refresh(),
           ),
         ],
       ),
@@ -50,7 +51,8 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
           final wonCount = items.where((i) => i.kind == 'won').length;
 
           return RefreshIndicator(
-            onRefresh: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
+            onRefresh: () =>
+                ref.read(salesWorkspaceProvider.notifier).refresh(),
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               children: [
@@ -85,8 +87,14 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search accounts, quotes, or owners...',
-                    hintStyle: const TextStyle(color: Color(0xFF95A5A6), fontSize: 14),
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF7F8C8D)),
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF95A5A6),
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: Color(0xFF7F8C8D),
+                    ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     filled: true,
                     fillColor: Colors.grey.shade100,
@@ -96,7 +104,10 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFF1B4F72), width: 1.5),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1B4F72),
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -122,8 +133,12 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                         selectedColor: const Color(0xFF1B4F72),
                         backgroundColor: Colors.grey.shade200,
                         labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : const Color(0xFF1C2833),
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF1C2833),
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
                           fontSize: 13,
                         ),
                         shape: RoundedRectangleBorder(
@@ -151,7 +166,10 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(8),
@@ -176,11 +194,18 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                       padding: const EdgeInsets.all(40.0),
                       child: Column(
                         children: [
-                          Icon(Icons.check_circle_outline, size: 48, color: Colors.grey.shade400),
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             'No pending CRM approvals.',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 16,
+                            ),
                           ),
                         ],
                       ),
@@ -261,10 +286,7 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
               ),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF5D6D7E),
-                ),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF5D6D7E)),
               ),
             ],
           ),
@@ -276,7 +298,9 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
   // Modern Item Approval Card
   Widget _buildApprovalCard(BuildContext context, dynamic item) {
     final isWon = item.kind == 'won';
-    final headerColor = isWon ? const Color(0xFF1E8449) : const Color(0xFF1B4F72);
+    final headerColor = isWon
+        ? const Color(0xFF1E8449)
+        : const Color(0xFF1B4F72);
     final badgeBg = isWon ? Colors.green.shade50 : Colors.red.shade50;
     final badgeText = isWon ? Colors.green.shade700 : Colors.red.shade700;
 
@@ -346,7 +370,9 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: isWon ? const Color(0xFF1E8449) : const Color(0xFF1C2833),
+                            color: isWon
+                                ? const Color(0xFF1E8449)
+                                : const Color(0xFF1C2833),
                           ),
                         ),
                       ],
@@ -361,12 +387,16 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: isWon ? Colors.green.shade50 : Colors.grey.shade100,
+                        color: isWon
+                            ? Colors.green.shade50
+                            : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         isWon ? Icons.handshake : Icons.apartment,
-                        color: isWon ? const Color(0xFF1E8449) : const Color(0xFF1B4F72),
+                        color: isWon
+                            ? const Color(0xFF1E8449)
+                            : const Color(0xFF1B4F72),
                         size: 24,
                       ),
                     ),
@@ -407,7 +437,11 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                         CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.grey.shade300,
-                          child: const Icon(Icons.person, size: 14, color: Colors.white),
+                          child: const Icon(
+                            Icons.person,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -421,13 +455,17 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: badgeBg,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        (item.status ?? (isWon ? 'WON TODAY' : 'EXPIRING 2H')).toUpperCase(),
+                        (item.status ?? (isWon ? 'WON TODAY' : 'EXPIRING 2H'))
+                            .toUpperCase(),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -450,7 +488,11 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
               Expanded(
                 child: TextButton.icon(
                   onPressed: () => _handleReject(context, item),
-                  icon: const Icon(Icons.close, size: 18, color: Color(0xFFC0392B)),
+                  icon: const Icon(
+                    Icons.close,
+                    size: 18,
+                    color: Color(0xFFC0392B),
+                  ),
                   label: const Text(
                     'Reject',
                     style: TextStyle(
@@ -461,7 +503,9 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16)),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(16),
+                      ),
                     ),
                   ),
                 ),
@@ -470,7 +514,11 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
               Expanded(
                 child: TextButton.icon(
                   onPressed: () => _handleApprove(context, item),
-                  icon: const Icon(Icons.check, size: 18, color: Color(0xFF1E8449)),
+                  icon: const Icon(
+                    Icons.check,
+                    size: 18,
+                    color: Color(0xFF1E8449),
+                  ),
                   label: const Text(
                     'Approve',
                     style: TextStyle(
@@ -481,7 +529,9 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(bottomRight: Radius.circular(16)),
+                      borderRadius: BorderRadius.only(
+                        bottomRight: Radius.circular(16),
+                      ),
                     ),
                   ),
                 ),
@@ -501,13 +551,13 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
         await notifier.approveWon(item.id);
       } else {
         await notifier.approveQuote(item.id);
+        // Auto-send the quote right after it's approved.
+        await notifier.sendQuote(item.id);
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-          ),
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
         );
       }
     }
@@ -524,9 +574,7 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-          ),
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
         );
       }
     }

@@ -14,6 +14,10 @@ class AuthApiService {
       'email': email,
       'password': password,
     });
+
+    debugPrint('LOGIN EMAIL: $email');
+    debugPrint('LOGIN RESPONSE: $response');
+
     return UserModel.fromJson(Map<String, dynamic>.from(response as Map));
   }
 

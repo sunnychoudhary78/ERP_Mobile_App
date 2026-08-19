@@ -1,9 +1,12 @@
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/approvals/data/models/approval_inbox_item.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/approvals_inbox_provider.dart';
+
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class ApprovalsInboxScreen extends ConsumerStatefulWidget {
   const ApprovalsInboxScreen({super.key});
@@ -35,6 +38,28 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
+    // Screen-level guard: even if this screen is only reachable via a
+    // permission-gated nav entry, a stray deep-link or hardcoded route
+    // should not expose it to a user without approval.view.
+    if (!authState.canAny(['approval.view'])) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.maybePop(context),
+          ),
+        ),
+        body: const Center(
+          child: Text("You don't have permission to view this screen"),
+        ),
+      );
+    }
+
+    final canApprove = authState.can('approval.approve');
+    final canReject = authState.can('approval.reject');
+
     final async = ref.watch(approvalsInboxProvider);
 
     Future<String?> _showCommentDialog({
@@ -260,6 +285,8 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: ApprovalCard(
                       item: item,
+                      canApprove: canApprove,
+                      canReject: canReject,
                       onApprove: () => _handleApprove(item),
                       onReject: () => _handleReject(item),
                     ),
@@ -329,12 +356,16 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
 
 class ApprovalCard extends StatelessWidget {
   final ApprovalInboxItem item;
+  final bool canApprove;
+  final bool canReject;
   final VoidCallback onApprove;
   final VoidCallback onReject;
 
   const ApprovalCard({
     super.key,
     required this.item,
+    required this.canApprove,
+    required this.canReject,
     required this.onApprove,
     required this.onReject,
   });
@@ -551,59 +582,64 @@ class ApprovalCard extends StatelessWidget {
                       //   const SizedBox(height: 16),
                       // ],
 
-                      // Action Buttons — only for items still awaiting a decision
-                      if (item.status.toLowerCase() == 'pending')
+                      // Action Buttons — only for items still awaiting a decision,
+                      // and only for buttons this user actually has permission for
+                      if (item.status.toLowerCase() == 'pending' &&
+                          (canApprove || canReject))
                         Row(
                           children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: onReject,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
+                            if (canReject)
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: onReject,
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    side: const BorderSide(
+                                      color: Color(0xFFB91C1C),
+                                      width: 1.5,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
                                   ),
-                                  side: const BorderSide(
-                                    color: Color(0xFFB91C1C),
-                                    width: 1.5,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'REJECT',
-                                  style: TextStyle(
-                                    color: Color(0xFFB91C1C),
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: onApprove,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  backgroundColor: const Color(0xFF15803D),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'APPROVE',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
+                                  child: const Text(
+                                    'REJECT',
+                                    style: TextStyle(
+                                      color: Color(0xFFB91C1C),
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            if (canReject && canApprove)
+                              const SizedBox(width: 12),
+                            if (canApprove)
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: onApprove,
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    backgroundColor: const Color(0xFF15803D),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'APPROVE',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         )
                       else

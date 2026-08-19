@@ -67,11 +67,39 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
   final _gstNumber = TextEditingController();
   final _gstRate = TextEditingController(text: '18');
 
-  String? _paymentTerms = _paymentTermsOptions.first;
-  String? _deliveryFreight = _deliveryFreightOptions.first;
-  String? _dispatchMode = _dispatchModeOptions.first;
+  // ── Commercial terms (see Sales_CRM_Commercial_Terms_APIs.md) ──
+  static const Map<String, String> _paymentTermOptions = {
+    'advance_100': '100% advance before dispatch',
+    'advance_50_balance_15': '50% advance, balance within 15 days',
+    'advance_30_balance_7': '30% advance, balance within 7 days',
+    'net_7': 'Net 7 days from invoice date',
+    'net_15': 'Net 15 days from invoice date',
+    'net_30': 'Net 30 days from invoice date',
+    'net_45': 'Net 45 days from invoice date',
+    'net_60': 'Net 60 days from invoice date',
+    'custom': 'Custom (enter below)',
+  };
 
-  final _transportDetails = TextEditingController();
+  static const Map<String, String> _deliveryTermOptions = {
+    'buyer': 'Freight paid by customer',
+    'seller': 'Freight paid by us',
+    'shared_50': '50 / 50 freight sharing',
+  };
+
+  static const Map<String, String> _dispatchOptions = {
+    'takeaway': 'Customer pickup / takeaway',
+    'deliver': 'Delivery to customer site',
+    'transporter': 'Via transporter / courier',
+  };
+
+  String _paymentTermKey = 'net_30';
+  String _deliveryTerm = 'buyer';
+  String _dispatch = 'deliver';
+
+  final _customPaymentTerms = TextEditingController();
+  final _transportCharge = TextEditingController(text: '0');
+  final _transportNotes = TextEditingController();
+
   final List<_QuoteLineItem> _lineItems = [_QuoteLineItem()];
 
   final _validForDays = TextEditingController(text: '30');
@@ -79,30 +107,6 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
 
   bool _submitting = false;
   String? _message;
-
-  static const List<String> _paymentTermsOptions = [
-    'Net 15 days from invoice date',
-    'Net 30 days from invoice date',
-    'Net 45 days from invoice date',
-    'Net 60 days from invoice date',
-    '50% advance, balance on delivery',
-    'Payment against delivery (COD)',
-    '100% advance',
-  ];
-
-  static const List<String> _deliveryFreightOptions = [
-    'Freight paid by customer (buyer)',
-    'Freight paid by seller (included)',
-    'Freight to pay (collect)',
-    'Ex-works (customer arranges pickup)',
-  ];
-
-  static const List<String> _dispatchModeOptions = [
-    'Delivery to customer site',
-    'Customer pickup from warehouse',
-    'Courier / parcel service',
-    'Third-party transporter',
-  ];
 
   @override
   void didChangeDependencies() {
@@ -126,18 +130,24 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
     }
   }
 
-  // Fills in the fields SalesQuote actually carries (see the model you
-  // shared: id, dbId, number, leadId, account, amount, subtotal, gstRate,
-  // gstAmount, gstNumber, status, validUntil, owner, lines, approval,
-  // notes, sentAt, createdAt). It does NOT have clientEmail, address,
-  // paymentTerms, deliveryFreight, dispatchMode, transportDetails, or
-  // validForDays — those keep coming from the lead / form defaults, same
-  // as in create mode. If you want those preserved on edit too, the
-  // backend/model would need to start returning them — happy to wire that
-  // up if you add the fields.
+  // Fills in the fields SalesQuote carries, including commercial terms
+  // (paymentTermKey, paymentTerms, deliveryTerm, transport). clientEmail /
+  // address / gstNumber still aren't on the quote model, so those keep
+  // coming from the lead / form defaults, same as create mode. validDays
+  // also isn't returned by the backend, so it stays at the form default.
   void _prefillFromQuote(SalesQuote quote) {
     _gstRate.text = quote.gstRate.toString();
     _notes.text = quote.notes;
+
+    _paymentTermKey = quote.paymentTermKey;
+    if (_paymentTermKey == 'custom') {
+      _customPaymentTerms.text = quote.paymentTerms;
+    }
+    _deliveryTerm = quote.deliveryTerm;
+    _dispatch = (quote.transport['dispatch'] ?? 'deliver').toString();
+    _transportNotes.text = (quote.transport['notes'] ?? '').toString();
+    final chargeVal = quote.transport['charge'];
+    _transportCharge.text = chargeVal == null ? '0' : chargeVal.toString();
 
     if (quote.lines.isNotEmpty) {
       for (final line in _lineItems) {
@@ -168,7 +178,9 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
     _address.dispose();
     _gstNumber.dispose();
     _gstRate.dispose();
-    _transportDetails.dispose();
+    _customPaymentTerms.dispose();
+    _transportCharge.dispose();
+    _transportNotes.dispose();
     _validForDays.dispose();
     _notes.dispose();
     for (final line in _lineItems) {
@@ -223,17 +235,28 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
       _message = null;
     });
 
+    final mode = _deliveryTerm == 'seller' ? 'company' : 'client';
+    final charge = mode == 'company'
+        ? (double.tryParse(_transportCharge.text.trim()) ?? 0)
+        : 0;
+
     final payload = {
       'clientEmail': _clientEmail.text.trim(),
       'account': _clientEmail.text.trim(),
       'address': _address.text.trim(),
       'gstNumber': _gstNumber.text.trim(),
       'gstRate': double.tryParse(_gstRate.text.trim()) ?? 0,
-      'paymentTerms': _paymentTerms,
-      'deliveryFreight': _deliveryFreight,
-      'dispatchMode': _dispatchMode,
-      'transportDetails': _transportDetails.text.trim(),
-      'validForDays': int.tryParse(_validForDays.text.trim()) ?? 30,
+      'paymentTermKey': _paymentTermKey,
+      'paymentTerms':
+          _paymentTermKey == 'custom' ? _customPaymentTerms.text.trim() : '',
+      'deliveryTerm': _deliveryTerm,
+      'transport': {
+        'mode': mode,
+        'dispatch': _dispatch,
+        'charge': charge,
+        'notes': _transportNotes.text.trim(),
+      },
+      'validDays': int.tryParse(_validForDays.text.trim()) ?? 30,
       'notes': _notes.text.trim(),
       'subtotal': _subtotal,
       'gstAmount': _gstAmount,
@@ -323,23 +346,49 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
               title: 'Commercial Terms',
               children: [
                 _label('Payment terms'),
-                _dropdown(
-                  value: _paymentTerms,
-                  items: _paymentTermsOptions,
-                  onChanged: (v) => setState(() => _paymentTerms = v),
+                _keyDropdown(
+                  value: _paymentTermKey,
+                  options: _paymentTermOptions,
+                  onChanged: (v) =>
+                      setState(() => _paymentTermKey = v ?? 'net_30'),
                 ),
+                if (_paymentTermKey == 'custom') ...[
+                  const SizedBox(height: 10),
+                  _label('Custom payment terms'),
+                  _textField(
+                    controller: _customPaymentTerms,
+                    hint: 'e.g. 40% advance, 60% against delivery',
+                    validator: (v) => _paymentTermKey == 'custom' &&
+                            (v == null || v.trim().isEmpty)
+                        ? 'Required'
+                        : null,
+                  ),
+                ],
                 _label('Delivery / freight'),
-                _dropdown(
-                  value: _deliveryFreight,
-                  items: _deliveryFreightOptions,
-                  onChanged: (v) => setState(() => _deliveryFreight = v),
+                _keyDropdown(
+                  value: _deliveryTerm,
+                  options: _deliveryTermOptions,
+                  onChanged: (v) =>
+                      setState(() => _deliveryTerm = v ?? 'buyer'),
                 ),
                 _label('Dispatch mode'),
-                _dropdown(
-                  value: _dispatchMode,
-                  items: _dispatchModeOptions,
-                  onChanged: (v) => setState(() => _dispatchMode = v),
+                _keyDropdown(
+                  value: _dispatch,
+                  options: _dispatchOptions,
+                  onChanged: (v) => setState(() => _dispatch = v ?? 'deliver'),
                 ),
+                if (_deliveryTerm != 'buyer' && _dispatch != 'takeaway') ...[
+                  const SizedBox(height: 10),
+                  _label(_deliveryTerm == 'shared_50'
+                      ? 'Transport charge (your 50% share)'
+                      : 'Transport charge (₹)'),
+                  _textField(
+                    controller: _transportCharge,
+                    hint: '0',
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 16),
@@ -347,9 +396,9 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
               titleIcon: Icons.local_shipping_outlined,
               title: 'Transport Details',
               children: [
-                _label('Transport details (optional)'),
+                _label('Transport notes (optional)'),
                 _textField(
-                  controller: _transportDetails,
+                  controller: _transportNotes,
                   hint: 'Transporter name, vehicle, pickup point...',
                   maxLines: 3,
                 ),
@@ -634,6 +683,46 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
       ),
       items: items
           .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  // Like _dropdown, but the stored value is a backend key while the user
+  // sees the mapped label (e.g. 'net_30' -> 'Net 30 days from invoice date').
+  Widget _keyDropdown({
+    required String value,
+    required Map<String, String> options,
+    required ValueChanged<String?> onChanged,
+    String hint = 'Select',
+  }) {
+    return DropdownButtonFormField<String>(
+      value: options.containsKey(value) ? value : null,
+      isExpanded: true,
+      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.muted),
+      style: const TextStyle(fontSize: 14, color: AppColors.text),
+      decoration: InputDecoration(
+        hintText: hint,
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        filled: true,
+        fillColor: AppColors.card,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      ),
+      items: options.entries
+          .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
           .toList(),
       onChanged: onChanged,
     );

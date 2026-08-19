@@ -122,18 +122,26 @@ class SalesCrmApiService {
     return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
   }
 
-  Future<SalesQuote> approveQuote(
-    String quoteId, [
-    Map<String, dynamic>? payload,
-  ]) async {
-    final response = await api.post(
-      ApiEndpoints.salesQuoteApprove(quoteId),
-      payload ?? {},
-    );
-    final map = _asMap(response);
-    final quote = map['quote'] is Map ? map['quote'] : map;
-    return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
-  }
+ Future<SalesQuote> approveQuote(
+  String quoteId, [
+  Map<String, dynamic>? payload,
+]) async {
+  final response = await api.post(
+    ApiEndpoints.salesQuoteApprove(quoteId),
+    payload ?? {},
+  );
+
+  debugPrint('========== APPROVE QUOTE RESPONSE ==========');
+  debugPrint(response);
+  debugPrint('============================================');
+
+  final map = _asMap(response);
+  final quote = map['quote'] is Map ? map['quote'] : map;
+
+  return SalesQuote.fromJson(
+    Map<String, dynamic>.from(quote as Map),
+  );
+}
 
   Future<SalesQuote> rejectQuote(String quoteId, String reason) async {
     final response = await api.post(ApiEndpoints.salesQuoteReject(quoteId), {

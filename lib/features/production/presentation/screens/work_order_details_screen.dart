@@ -136,7 +136,7 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                     'Production Stages',
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
                   ),
@@ -167,7 +167,7 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                         'Execution Logs',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
                       ),
@@ -355,7 +355,7 @@ class _HeaderCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: AppColors.text,
               ),
             ),
             ElevatedButton.icon(
@@ -383,7 +383,7 @@ class _HeaderCard extends StatelessWidget {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F203C),
+                backgroundColor: AppColors.primaryDark,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
@@ -432,7 +432,7 @@ class _HeaderCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF1B3054),
+                color:AppColors.primaryDark,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
