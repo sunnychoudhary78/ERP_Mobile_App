@@ -1,4 +1,7 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/shared/widgets/can_widget.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -128,7 +131,9 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(crmLeadsProvider);
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.crmLeads,
+      child: Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
@@ -142,10 +147,13 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        onPressed: () => Navigator.pushNamed(context, '/crm/leads/form'),
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Can(
+        anyOf: AppPermissions.crmLeadsManage,
+        child: FloatingActionButton(
+          backgroundColor: AppColors.primary,
+          onPressed: () => Navigator.pushNamed(context, '/crm/leads/form'),
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
       body: CrmAsyncBody(
         async: async,
@@ -246,6 +254,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
           );
         },
       ),
+    ),
     );
   }
 }

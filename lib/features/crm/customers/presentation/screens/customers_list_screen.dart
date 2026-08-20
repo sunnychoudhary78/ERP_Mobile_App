@@ -1,4 +1,7 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/shared/widgets/can_widget.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
@@ -56,7 +59,9 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
     final async = ref.watch(crmCustomersProvider);
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.crmCustomers,
+      child: Scaffold(
       appBar: AppBar(
         leadingWidth: 56,
         title: Text(
@@ -68,22 +73,25 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
         ),
        
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Add customer logic
-        },
-        backgroundColor: AppColors.primaryDark,
-        elevation: 0,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          'Add Customer',
-          style: textTheme.labelLarge?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      floatingActionButton: Can(
+        anyOf: AppPermissions.crmCustomers,
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            // Add customer logic
+          },
+          backgroundColor: AppColors.primaryDark,
+          elevation: 0,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: Text(
+            'Add Customer',
+            style: textTheme.labelLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
       body: CrmAsyncBody(
@@ -216,6 +224,7 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
           );
         },
       ),
+    ),
     );
   }
 }

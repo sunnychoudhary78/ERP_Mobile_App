@@ -1,3 +1,6 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,8 +34,11 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(crmApprovalsProvider);
+    final canManage = ref.watch(authProvider).canAny(AppPermissions.crmApprovals);
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.crmApprovals,
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('CRM Approvals'),
         actions: [
@@ -212,12 +218,19 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                     ),
                   )
                 else
-                  ...items.map((item) => _buildApprovalCard(context, item)),
+                  ...items.map(
+                    (item) => _buildApprovalCard(
+                      context,
+                      item,
+                      canManage: canManage,
+                    ),
+                  ),
               ],
             ),
           );
         },
       ),
+    ),
     );
   }
 
@@ -296,7 +309,11 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
   }
 
   // Modern Item Approval Card
-  Widget _buildApprovalCard(BuildContext context, dynamic item) {
+  Widget _buildApprovalCard(
+    BuildContext context,
+    dynamic item, {
+    required bool canManage,
+  }) {
     final isWon = item.kind == 'won';
     final headerColor = isWon
         ? const Color(0xFF1E8449)
@@ -483,61 +500,62 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
           const Divider(height: 1, thickness: 1, color: Color(0xFFF2F4F4)),
 
           // Bottom Actions Row (Reject / Approve buttons)
-          Row(
-            children: [
-              Expanded(
-                child: TextButton.icon(
-                  onPressed: () => _handleReject(context, item),
-                  icon: const Icon(
-                    Icons.close,
-                    size: 18,
-                    color: Color(0xFFC0392B),
-                  ),
-                  label: const Text(
-                    'Reject',
-                    style: TextStyle(
+          if (canManage)
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () => _handleReject(context, item),
+                    icon: const Icon(
+                      Icons.close,
+                      size: 18,
                       color: Color(0xFFC0392B),
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
+                    label: const Text(
+                      'Reject',
+                      style: TextStyle(
+                        color: Color(0xFFC0392B),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Container(width: 1, height: 40, color: const Color(0xFFF2F4F4)),
-              Expanded(
-                child: TextButton.icon(
-                  onPressed: () => _handleApprove(context, item),
-                  icon: const Icon(
-                    Icons.check,
-                    size: 18,
-                    color: Color(0xFF1E8449),
-                  ),
-                  label: const Text(
-                    'Approve',
-                    style: TextStyle(
+                Container(width: 1, height: 40, color: const Color(0xFFF2F4F4)),
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: () => _handleApprove(context, item),
+                    icon: const Icon(
+                      Icons.check,
+                      size: 18,
                       color: Color(0xFF1E8449),
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                        bottomRight: Radius.circular(16),
+                    label: const Text(
+                      'Approve',
+                      style: TextStyle(
+                        color: Color(0xFF1E8449),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          bottomRight: Radius.circular(16),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );

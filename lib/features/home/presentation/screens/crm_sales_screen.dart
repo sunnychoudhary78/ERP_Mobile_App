@@ -1,3 +1,6 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -13,6 +16,7 @@ class QuickActionItem {
   final Color iconColor;
   final Color backgroundColor;
   final String route;
+  final List<String> anyOf;
 
   const QuickActionItem({
     required this.title,
@@ -21,76 +25,87 @@ class QuickActionItem {
     required this.iconColor,
     required this.backgroundColor,
     required this.route,
+    this.anyOf = const [],
   });
 }
 
 final quickActionsProvider = Provider<List<QuickActionItem>>((ref) {
-  return const [
+  final auth = ref.watch(authProvider);
+  const all = <QuickActionItem>[
     QuickActionItem(
       title: 'View Lead',
       subtitle: 'Capture new leads',
       icon: Icons.person,
-      iconColor: Color(0xFF7C3AED), // Purple
+      iconColor: Color(0xFF7C3AED),
       backgroundColor: Color(0xFFF3E8FF),
       route: '/crm/leads',
+      anyOf: AppPermissions.crmLeads,
     ),
     QuickActionItem(
       title: 'Add Deal',
       subtitle: 'Create new deal',
       icon: Icons.person_add_alt_1_rounded,
-      iconColor: Color(0xFF10B981), // Emerald Green
+      iconColor: Color(0xFF10B981),
       backgroundColor: Color(0xFFD1FAE5),
       route: '/crm/leads/form',
+      anyOf: AppPermissions.crmLeadsManage,
     ),
     QuickActionItem(
       title: 'Follow-up',
       subtitle: 'Plan your follow-up',
       icon: Icons.calendar_month_rounded,
-      iconColor: Color(0xFF2563EB), // Blue
+      iconColor: Color(0xFF2563EB),
       backgroundColor: Color(0xFFDBEAFE),
       route: '/crm/activities',
+      anyOf: AppPermissions.crmActivities,
     ),
     QuickActionItem(
       title: 'View Contacts',
       subtitle: 'All your contacts',
       icon: Icons.people_alt_rounded,
-      iconColor: Color(0xFFF97316), // Orange
+      iconColor: Color(0xFFF97316),
       backgroundColor: Color(0xFFFFEDD5),
       route: '/crm/contacts',
+      anyOf: AppPermissions.crmCustomers,
     ),
     QuickActionItem(
       title: 'Pipeline Overview',
       subtitle: 'Pipeline stages & stats',
       icon: Icons.oil_barrel_outlined,
-      iconColor: Color(0xFF0284C7), // Sky Blue
+      iconColor: Color(0xFF0284C7),
       backgroundColor: Color(0xFFE0F2FE),
       route: '/crm/pipeline',
+      anyOf: AppPermissions.crmLeads,
     ),
     QuickActionItem(
       title: 'Approval Overview',
       subtitle: 'Pending approvals & stats',
       icon: Icons.approval_outlined,
-      iconColor: Color(0xFF059669), // Mint Teal
+      iconColor: Color(0xFF059669),
       backgroundColor: Color(0xFFD1E7DD),
       route: '/crm/approvals',
+      anyOf: AppPermissions.crmApprovals,
     ),
     QuickActionItem(
       title: 'Visit Overview',
       subtitle: 'Scheduled visits & tracking',
       icon: Icons.location_on_outlined,
-      iconColor: Color(0xFFDC2626), // Crimson Red
+      iconColor: Color(0xFFDC2626),
       backgroundColor: Color(0xFFFEE2E2),
       route: '/crm/visits',
+      anyOf: AppPermissions.crmVisits,
     ),
     QuickActionItem(
       title: 'Tracking Overview',
       subtitle: 'Pending tracking & stats',
       icon: Icons.track_changes_outlined,
-      iconColor: Color(0xFFD97706), // Amber Gold
+      iconColor: Color(0xFFD97706),
       backgroundColor: Color(0xFFFEF3C7),
       route: '/crm/tracking',
+      anyOf: AppPermissions.crmVisits,
     ),
   ];
+  return all.where((a) => auth.canAny(a.anyOf)).toList(growable: false);
 });
 
 
@@ -124,7 +139,9 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
     final chartsAsync = ref.watch(crmChartsDataProvider);
     final quickActions = ref.watch(quickActionsProvider);
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.crmModule,
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -246,6 +263,7 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

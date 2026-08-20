@@ -112,21 +112,4 @@ class HrmsApiService {
     final res = await _api.get(ApiEndpoints.getstatsAdminOverviews);
     return Map<String, dynamic>.from(res as Map);
   }
-
-  /// Permissions — GET auth/permissions. Adjust parsing below if your
-  /// actual response shape differs.
-  Future<Set<String>> getPermissions() async {
-    final res = await _api.get(ApiEndpoints.permissions);
-    List<dynamic> raw;
-    if (res is List) {
-      raw = res;
-    } else if (res is Map && res['data'] is List) {
-      raw = res['data'] as List;
-    } else if (res is Map && res['permissions'] is List) {
-      raw = res['permissions'] as List;
-    } else {
-      raw = [];
-    }
-    return raw.map((e) => e.toString()).toSet();
-  }
 }

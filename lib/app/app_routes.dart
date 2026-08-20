@@ -1,3 +1,4 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
@@ -5,6 +6,7 @@ import 'package:erp_app/features/home/presentation/screens/production_screen.dar
 import 'package:erp_app/features/inventory/lowstock/presentations/screen/low_stock_screen.dart';
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 
 import '../core/screens/subscription_expired_screen.dart';
@@ -35,6 +37,10 @@ import '../features/leave/presentation/screens/leave_status_screen.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../features/production/presentation/screens/work_orders_screen.dart';
 
+Widget _gate(List<String> anyOf, Widget child) {
+  return PermissionGate(anyOf: anyOf, child: child);
+}
+
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     '/login': (_) => const LoginScreen(),
@@ -42,43 +48,58 @@ class AppRoutes {
     '/subscription-expired': (_) => const SubscriptionExpiredScreen(),
 
     // HRMS
-    '/punch': (_) => const PunchScreen(),
-    '/leave-balance': (_) => const LeaveBalanceScreen(),
-    '/leave-apply': (_) => const LeaveApplyScreen(),
-    '/leave-status': (_) => const LeaveStatusScreen(),
+    '/punch': (_) => _gate(AppPermissions.punch, const PunchScreen()),
+    '/leave-balance': (_) =>
+        _gate(AppPermissions.leaveSelf, const LeaveBalanceScreen()),
+    '/leave-apply': (_) =>
+        _gate(AppPermissions.leaveSelf, const LeaveApplyScreen()),
+    '/leave-status': (_) =>
+        _gate(AppPermissions.leaveSelf, const LeaveStatusScreen()),
     '/approvals': (_) => const ApprovalsInboxScreen(),
     '/notifications': (_) => const NotificationsScreen(),
 
     // CRM
     '/crm/leads': (_) => const LeadsListScreen(),
-    '/crm/leads/detail': (_) => const LeadDetailScreen(),
-    '/crm/leads/form': (_) => const LeadFormScreen(),
+    '/crm/leads/detail': (_) =>
+        _gate(AppPermissions.crmLeads, const LeadDetailScreen()),
+    '/crm/leads/form': (_) =>
+        _gate(AppPermissions.crmLeadsManage, const LeadFormScreen()),
     '/crm/contacts': (_) => const ContactsListScreen(),
-    '/crm/contacts/detail': (_) => const ContactDetailScreen(),
-    '/crm/contacts/form': (_) => const ContactFormScreen(),
+    '/crm/contacts/detail': (_) =>
+        _gate(AppPermissions.crmCustomers, const ContactDetailScreen()),
+    '/crm/contacts/form': (_) =>
+        _gate(AppPermissions.crmLeadsManage, const ContactFormScreen()),
     '/crm/customers': (_) => const CustomersListScreen(),
-    '/crm/customers/detail': (_) => const CustomerDetailScreen(),
-    '/crm/pipeline': (_) => const PipelineScreen(),
+    '/crm/customers/detail': (_) =>
+        _gate(AppPermissions.crmCustomers, const CustomerDetailScreen()),
+    '/crm/pipeline': (_) =>
+        _gate(AppPermissions.crmLeads, const PipelineScreen()),
     '/crm/activities': (_) => const ActivitiesScreen(),
     '/crm/approvals': (_) => const CrmApprovalsScreen(),
-    '/crm/quotes': (_) => const QuotesListScreen(),
-    '/crm/quotes/detail': (_) => const QuoteDetailScreen(),
-    '/crm/quotes/form': (_) => const QuoteFormScreen(),
-    '/crm/visits': (_) => const VisitCheckInScreen(),
-    '/crm/tracking': (_) => const VisitTrackingScreen(),
+    '/crm/quotes': (_) =>
+        _gate(AppPermissions.crmQuotes, const QuotesListScreen()),
+    '/crm/quotes/detail': (_) =>
+        _gate(AppPermissions.crmQuotes, const QuoteDetailScreen()),
+    '/crm/quotes/form': (_) =>
+        _gate(AppPermissions.crmLeadsManage, const QuoteFormScreen()),
+    '/crm/visits': (_) =>
+        _gate(AppPermissions.crmVisits, const VisitCheckInScreen()),
+    '/crm/tracking': (_) =>
+        _gate(AppPermissions.crmVisits, const VisitTrackingScreen()),
     '/crm/crm_sales_screen': (_) => const CrmSalesScreen(),
     '/crm/hrms_sales_screen': (_) => const HrmsScreen(),
     '/crm/inventory_sales_screen': (_) => const InventorySalesScreen(),
 
     // Inventory / Production
-    '/stock-lookup': (_) => const StockLookupScreen(),
-    '/work-orders': (_) => const WorkOrdersScreen(),
-    '/low-stock': (_) => const LowStockScreen(),
-    '/production_screen':(_)=> ProductionDashboardScreen(),
-
+    '/stock-lookup': (_) =>
+        _gate(AppPermissions.stockLookup, const StockLookupScreen()),
+    '/work-orders': (_) =>
+        _gate(AppPermissions.productionModule, const WorkOrdersScreen()),
+    '/low-stock': (_) =>
+        _gate(AppPermissions.lowStock, const LowStockScreen()),
+    '/production_screen': (_) => const ProductionDashboardScreen(),
 
     // profile
-    '/profile': (context) => const ProfileScreen(),
-  
+    '/profile': (_) => const ProfileScreen(),
   };
 }

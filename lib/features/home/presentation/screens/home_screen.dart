@@ -1,8 +1,10 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/core/permissions/nav_links.dart';
 import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/production_screen.dart';
-import 'package:erp_app/features/production/presentation/screens/work_orders_screen.dart';
+import 'package:erp_app/shared/widgets/can_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +12,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
+
+export 'package:erp_app/core/permissions/nav_links.dart'
+    show LinkSection, QuickLink;
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -20,48 +25,133 @@ class HomeScreen extends ConsumerWidget {
         'Dashboard',
         '/crm/hrms_sales_screen',
         Icons.fingerprint_rounded,
+        anyOf: AppPermissions.hrmsModule,
       ),
-      QuickLink('Punch', '/punch', Icons.fingerprint_rounded),
-      QuickLink('Leave balance', '/leave-balance', Icons.beach_access_outlined),
-      QuickLink('Apply leave', '/leave-apply', Icons.event_available_outlined),
-      QuickLink('My leave', '/leave-status', Icons.list_alt_outlined),
-      QuickLink('Approvals', '/approvals', Icons.approval_outlined),
+      QuickLink(
+        'Punch',
+        '/punch',
+        Icons.fingerprint_rounded,
+        anyOf: AppPermissions.punch,
+      ),
+      QuickLink(
+        'Leave balance',
+        '/leave-balance',
+        Icons.beach_access_outlined,
+        anyOf: AppPermissions.leaveSelf,
+      ),
+      QuickLink(
+        'Apply leave',
+        '/leave-apply',
+        Icons.event_available_outlined,
+        anyOf: AppPermissions.leaveSelf,
+      ),
+      QuickLink(
+        'My leave',
+        '/leave-status',
+        Icons.list_alt_outlined,
+        anyOf: AppPermissions.leaveSelf,
+      ),
+      QuickLink(
+        'Approvals',
+        '/approvals',
+        Icons.approval_outlined,
+        anyOf: AppPermissions.leaveApprovals,
+      ),
     ]),
     LinkSection('CRM', [
       QuickLink(
         'Dashboard',
         '/crm/crm_sales_screen',
         Icons.fingerprint_rounded,
+        anyOf: AppPermissions.crmModule,
       ),
-      QuickLink('Leads', '/crm/leads', Icons.leaderboard_outlined),
-      QuickLink('Pipeline', '/crm/pipeline', Icons.view_kanban_outlined),
-      QuickLink('Follow-ups', '/crm/activities', Icons.timeline_outlined),
-      QuickLink('Approvals', '/crm/approvals', Icons.fact_check_outlined),
-      QuickLink('Contacts', '/crm/contacts', Icons.contacts_outlined),
-      QuickLink('Customers', '/crm/customers', Icons.business_outlined),
-      QuickLink('Quotes', '/crm/quotes', Icons.request_quote_outlined),
+      QuickLink(
+        'Leads',
+        '/crm/leads',
+        Icons.leaderboard_outlined,
+        anyOf: AppPermissions.crmLeads,
+      ),
+      QuickLink(
+        'Pipeline',
+        '/crm/pipeline',
+        Icons.view_kanban_outlined,
+        anyOf: AppPermissions.crmLeads,
+      ),
+      QuickLink(
+        'Follow-ups',
+        '/crm/activities',
+        Icons.timeline_outlined,
+        anyOf: AppPermissions.crmActivities,
+      ),
+      QuickLink(
+        'Approvals',
+        '/crm/approvals',
+        Icons.fact_check_outlined,
+        anyOf: AppPermissions.crmApprovals,
+      ),
+      QuickLink(
+        'Contacts',
+        '/crm/contacts',
+        Icons.contacts_outlined,
+        anyOf: AppPermissions.crmCustomers,
+      ),
+      QuickLink(
+        'Customers',
+        '/crm/customers',
+        Icons.business_outlined,
+        anyOf: AppPermissions.crmCustomers,
+      ),
+      QuickLink(
+        'Quotes',
+        '/crm/quotes',
+        Icons.request_quote_outlined,
+        anyOf: AppPermissions.crmQuotes,
+      ),
+      QuickLink(
+        'Visits',
+        '/crm/visits',
+        Icons.location_on_outlined,
+        anyOf: AppPermissions.crmVisits,
+      ),
+      QuickLink(
+        'Team tracking',
+        '/crm/tracking',
+        Icons.map_outlined,
+        anyOf: AppPermissions.crmVisits,
+      ),
     ]),
     LinkSection('Inventory', [
       QuickLink(
         'Dashboard',
         '/crm/inventory_sales_screen',
         Icons.fingerprint_rounded,
+        anyOf: AppPermissions.inventoryModule,
       ),
-      QuickLink('Visits', '/crm/visits', Icons.location_on_outlined),
-      QuickLink('Team tracking', '/crm/tracking', Icons.map_outlined),
-      QuickLink('Stock lookup', '/stock-lookup', Icons.inventory_2_outlined),
+      QuickLink(
+        'Stock lookup',
+        '/stock-lookup',
+        Icons.inventory_2_outlined,
+        anyOf: AppPermissions.stockLookup,
+      ),
+      QuickLink(
+        'Low stock',
+        '/low-stock',
+        Icons.warning_amber_outlined,
+        anyOf: AppPermissions.lowStock,
+      ),
     ]),
-
     LinkSection('Production', [
       QuickLink(
         'Dashboard',
         '/production_screen',
         Icons.fingerprint_rounded,
+        anyOf: AppPermissions.productionModule,
       ),
       QuickLink(
         'Orders',
         '/work-orders',
         Icons.precision_manufacturing_outlined,
+        anyOf: AppPermissions.productionModule,
       ),
     ]),
   ];
@@ -71,8 +161,10 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(authProvider).profile;
+    final authState = ref.watch(authProvider);
+    final profile = authState.profile;
     final homeData = ref.watch(homeDataProvider);
+    final drawerSections = filterLinkSections(_sections, authState);
 
     final fullName = profile?.associatesName ?? 'there';
     final firstName = fullName.split(' ').first;
@@ -124,7 +216,7 @@ class HomeScreen extends ConsumerWidget {
       drawer: AppDrawer(
         fullName: fullName,
         initials: initials,
-        sections: _sections,
+        sections: drawerSections,
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -222,38 +314,53 @@ class HomeScreen extends ConsumerWidget {
                 // -----------------------------------------------------------
                 const _SectionLabel('QUICK ACTIONS'),
                 const SizedBox(height: _itemGap),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  children: [
-                    _QuickActionButton(
-                      icon: Icons.fingerprint_rounded,
-                      label: 'Punch',
-                      color: Colors.blue,
-                      onTap: () => Navigator.pushNamed(context, '/punch'),
-                    ),
-                    _QuickActionButton(
-                      icon: Icons.event_available_outlined,
-                      label: 'Apply Leave',
-                      color: Colors.orange,
-                      onTap: () => Navigator.pushNamed(context, '/leave-apply'),
-                    ),
-                    _QuickActionButton(
-                      icon: Icons.leaderboard_outlined,
-                      label: 'Leads',
-                      color: Colors.purple,
-                      onTap: () => Navigator.pushNamed(context, '/crm/leads'),
-                    ),
-                    _QuickActionButton(
-                      icon: Icons.location_on_outlined,
-                      label: 'Visits',
-                      color: Colors.teal,
-                      onTap: () => Navigator.pushNamed(context, '/crm/visits'),
-                    ),
-                  ],
+                Builder(
+                  builder: (context) {
+                    final actions = <Widget>[
+                      if (authState.canAny(AppPermissions.punch))
+                        _QuickActionButton(
+                          icon: Icons.fingerprint_rounded,
+                          label: 'Punch',
+                          color: Colors.blue,
+                          onTap: () => Navigator.pushNamed(context, '/punch'),
+                        ),
+                      if (authState.canAny(AppPermissions.leaveSelf))
+                        _QuickActionButton(
+                          icon: Icons.event_available_outlined,
+                          label: 'Apply Leave',
+                          color: Colors.orange,
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/leave-apply'),
+                        ),
+                      if (authState.canAny(AppPermissions.crmLeads))
+                        _QuickActionButton(
+                          icon: Icons.leaderboard_outlined,
+                          label: 'Leads',
+                          color: Colors.purple,
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/crm/leads'),
+                        ),
+                      if (authState.canAny(AppPermissions.crmVisits))
+                        _QuickActionButton(
+                          icon: Icons.location_on_outlined,
+                          label: 'Visits',
+                          color: Colors.teal,
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/crm/visits'),
+                        ),
+                    ];
+                    if (actions.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      children: actions,
+                    );
+                  },
                 ),
                 const SizedBox(height: _sectionGap),
 
@@ -273,66 +380,101 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
 
-                _ListCardTile(
-                  icon: Icons.bar_chart_rounded,
-                  iconBgColor: const Color(0xFFFAF5FF),
-                  iconColor: const Color(0xFF9333EA),
-                  title: 'CRM',
-                  subtitle: 'Leads, pipeline, and customer info',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const CrmSalesScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-
-                _ListCardTile(
-                  icon: Icons.badge_outlined,
-                  iconBgColor: const Color(0xFFFFF7ED),
-                  iconColor: const Color(0xFFEA580C),
-                  title: 'HRMS',
-                  subtitle: 'Attendance, leaves, and approvals',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HrmsScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-
-                _ListCardTile(
-                  icon: Icons.inventory_2_outlined,
-                  iconBgColor: const Color(0xFFF0FDF4),
-                  iconColor: const Color(0xFF16A34A),
-                  title: 'Inventory',
-                  subtitle: 'Stock lookup and field activities',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const InventorySalesScreen(),
+                Can(
+                  anyOf: AppPermissions.crmModule,
+                  child: Column(
+                    children: [
+                      _ListCardTile(
+                        icon: Icons.bar_chart_rounded,
+                        iconBgColor: const Color(0xFFFAF5FF),
+                        iconColor: const Color(0xFF9333EA),
+                        title: 'CRM',
+                        subtitle: 'Leads, pipeline, and customer info',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CrmSalesScreen(),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                      const SizedBox(height: 10),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                _ListCardTile(
-                  icon: Icons.work_history_outlined,
-                  iconBgColor: const Color.fromARGB(136, 240, 253, 244),
-                  iconColor: const Color.fromARGB(255, 163, 22, 156),
-                  title: 'Production',
-                  subtitle: 'Stock lookup and field activities',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProductionDashboardScreen(),
+
+                Can(
+                  anyOf: AppPermissions.hrmsModule,
+                  child: Column(
+                    children: [
+                      _ListCardTile(
+                        icon: Icons.badge_outlined,
+                        iconBgColor: const Color(0xFFFFF7ED),
+                        iconColor: const Color(0xFFEA580C),
+                        title: 'HRMS',
+                        subtitle: 'Attendance, leaves, and approvals',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HrmsScreen(),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+
+                Can(
+                  anyOf: AppPermissions.inventoryModule,
+                  child: Column(
+                    children: [
+                      _ListCardTile(
+                        icon: Icons.inventory_2_outlined,
+                        iconBgColor: const Color(0xFFF0FDF4),
+                        iconColor: const Color(0xFF16A34A),
+                        title: 'Inventory',
+                        subtitle: 'Stock lookup and field activities',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const InventorySalesScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+
+                Can(
+                  anyOf: AppPermissions.productionModule,
+                  child: Column(
+                    children: [
+                      _ListCardTile(
+                        icon: Icons.work_history_outlined,
+                        iconBgColor: const Color.fromARGB(136, 240, 253, 244),
+                        iconColor: const Color.fromARGB(255, 163, 22, 156),
+                        title: 'Production',
+                        subtitle: 'Stock lookup and field activities',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ProductionDashboardScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 32),
               ],
@@ -706,21 +848,6 @@ class _LogoutDialog extends StatelessWidget {
       ),
     );
   }
-}
-
-class LinkSection {
-  final String title;
-  final List<QuickLink> links;
-
-  const LinkSection(this.title, this.links);
-}
-
-class QuickLink {
-  final String label;
-  final String route;
-  final IconData icon;
-
-  const QuickLink(this.label, this.route, this.icon);
 }
 
 class HomeDashboardData {

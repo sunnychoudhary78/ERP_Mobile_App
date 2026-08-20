@@ -54,12 +54,11 @@ class AuthState {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
-}
 
-extension AuthPermissions on AuthState {
   bool can(String permission) => permissions.contains(permission);
 
-  bool canAny(List<String> required) => required.isEmpty || required.any(can);
+  bool canAny(List<String> required) =>
+      required.isEmpty || required.any(can);
 
   bool canAll(List<String> required) => required.every(can);
 }

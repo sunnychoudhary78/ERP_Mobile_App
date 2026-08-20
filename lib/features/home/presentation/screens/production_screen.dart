@@ -1,7 +1,9 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/production/data/models/production_model.dart';
 import 'package:erp_app/features/production/data/provider/production_service_provider.dart';
 import 'package:erp_app/features/production/presentation/screens/work_orders_screen.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -132,7 +134,9 @@ class _ProductionDashboardScreenState
     final s = state.summary;
     const bg = Color(0xFFF8F7FA); // Vuexy-style soft grey scaffold
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.productionModule,
+      child: Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
         title: const Text(
@@ -202,6 +206,7 @@ class _ProductionDashboardScreenState
                     ],
                   ),
       ),
+    ),
     );
   }
 }

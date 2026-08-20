@@ -1,6 +1,8 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:erp_app/features/hrms/data/model/hrms_model.dart';
 import 'package:erp_app/features/hrms/presentation/provider/hrms_provider.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart'; // Optional: Use fl_chart or custom painters for the donut chart
@@ -15,7 +17,9 @@ class HrmsScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final dashboardAsync = ref.watch(hrmsDashboardProvider);
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.hrmsModule,
+      child: Scaffold(
       backgroundColor: const Color(0xFFF6F8FB),
       appBar: AppBar(
         leading: IconButton(
@@ -36,7 +40,6 @@ class HrmsScreen extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(hrmsPermissionsProvider);
           ref.invalidate(hrmsDashboardProvider);
           await ref.read(hrmsDashboardProvider.future);
         },
@@ -50,6 +53,7 @@ class HrmsScreen extends ConsumerWidget {
               _DashboardBody(model: model, isLoading: authState.isLoading),
         ),
       ),
+    ),
     );
   }
 }
@@ -117,6 +121,11 @@ class _DashboardBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+    final canLeave = auth.canAny(AppPermissions.leaveSelf);
+    final canPunch = auth.canAny(AppPermissions.punch);
+    final canApprove = auth.canAny(AppPermissions.leaveApprovals);
+
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -161,56 +170,60 @@ class _DashboardBody extends ConsumerWidget {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                _buildQuickActionCard(
-                  icon: Icons.calendar_today_rounded,
-                  iconBgColor: const Color(0xFFE8F0FE),
-                  iconColor: const Color(0xFF3B82F6),
-                  title: 'Apply Leave',
-                  subtitle: 'Submit leave request',
-                  onTap: () => Navigator.pushNamed(context, '/leave-apply'),
-                ),
-                _buildQuickActionCard(
-                  icon: Icons.access_time_filled_rounded,
-                  iconBgColor: const Color(0xFFE6F4EA),
-                  iconColor: const Color(0xFF10B981),
-                  title: 'Mark Attendance',
-                  subtitle: 'Punch in/out',
-                  onTap: () async {
-                    await Navigator.pushNamed(context, '/punch');
-                    ref.invalidate(hrmsDashboardProvider);
-                  },
-                ),
-                _buildQuickActionCard(
-                  icon: Icons.receipt_long_rounded,
-                  iconBgColor: const Color(0xFFFCE8E6),
-                  iconColor: const Color(0xFFEF4444),
-                  title: 'Leave Balance',
-                  subtitle: 'Show your leave balance',
-                  onTap: () {
-                    Navigator.pushNamed(context, '/leave-balance');
-                  },
-                ),
-                _buildQuickActionCard(
-                  icon: Icons.description_rounded,
-                  iconBgColor: const Color(0xFFFEF3C7),
-                  iconColor: const Color(0xFFF59E0B),
-                  title: 'Apply Leave',
-                  subtitle: 'Apply your leave',
-                  onTap: () {
-                    Navigator.pushNamed(context, '/leave-apply');
-                  },
-                ),
-
-                _buildQuickActionCard(
-                  icon: Icons.approval_rounded,
-                  iconBgColor: const Color.fromARGB(255, 199, 241, 254),
-                  iconColor: const Color.fromARGB(255, 11, 93, 245),
-                  title: 'Approval',
-                  subtitle: 'Approval Screen',
-                  onTap: () {
-                     Navigator.pushNamed(context, '/approvals');
-                  },
-                ),
+                if (canLeave)
+                  _buildQuickActionCard(
+                    icon: Icons.calendar_today_rounded,
+                    iconBgColor: const Color(0xFFE8F0FE),
+                    iconColor: const Color(0xFF3B82F6),
+                    title: 'Apply Leave',
+                    subtitle: 'Submit leave request',
+                    onTap: () => Navigator.pushNamed(context, '/leave-apply'),
+                  ),
+                if (canPunch)
+                  _buildQuickActionCard(
+                    icon: Icons.access_time_filled_rounded,
+                    iconBgColor: const Color(0xFFE6F4EA),
+                    iconColor: const Color(0xFF10B981),
+                    title: 'Mark Attendance',
+                    subtitle: 'Punch in/out',
+                    onTap: () async {
+                      await Navigator.pushNamed(context, '/punch');
+                      ref.invalidate(hrmsDashboardProvider);
+                    },
+                  ),
+                if (canLeave)
+                  _buildQuickActionCard(
+                    icon: Icons.receipt_long_rounded,
+                    iconBgColor: const Color(0xFFFCE8E6),
+                    iconColor: const Color(0xFFEF4444),
+                    title: 'Leave Balance',
+                    subtitle: 'Show your leave balance',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/leave-balance');
+                    },
+                  ),
+                if (canLeave)
+                  _buildQuickActionCard(
+                    icon: Icons.description_rounded,
+                    iconBgColor: const Color(0xFFFEF3C7),
+                    iconColor: const Color(0xFFF59E0B),
+                    title: 'My Leave',
+                    subtitle: 'Leave status',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/leave-status');
+                    },
+                  ),
+                if (canApprove)
+                  _buildQuickActionCard(
+                    icon: Icons.approval_rounded,
+                    iconBgColor: const Color.fromARGB(255, 199, 241, 254),
+                    iconColor: const Color.fromARGB(255, 11, 93, 245),
+                    title: 'Approval',
+                    subtitle: 'Approval Screen',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/approvals');
+                    },
+                  ),
               ],
             ),
           ),

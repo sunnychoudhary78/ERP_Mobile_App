@@ -1,6 +1,6 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/approvals/data/models/approval_inbox_item.dart';
-import 'package:erp_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,10 +40,8 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    // Screen-level guard: even if this screen is only reachable via a
-    // permission-gated nav entry, a stray deep-link or hardcoded route
-    // should not expose it to a user without approval.view.
-    if (!authState.canAny(['approval.view'])) {
+    // Leave approvals use leave.request.approve (frontend Leave Approval).
+    if (!authState.canAny(AppPermissions.leaveApprovals)) {
       return Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -57,8 +55,8 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
       );
     }
 
-    final canApprove = authState.can('approval.approve');
-    final canReject = authState.can('approval.reject');
+    final canApprove = authState.can(AppPermissions.leaveRequestApprove);
+    final canReject = authState.can(AppPermissions.leaveRequestApprove);
 
     final async = ref.watch(approvalsInboxProvider);
 

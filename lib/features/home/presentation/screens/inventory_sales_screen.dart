@@ -1,4 +1,7 @@
 import 'dart:math';
+import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
@@ -11,7 +14,9 @@ class InventorySalesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(dashboardStatsProvider);
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.inventoryModule,
+      child: Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
         backgroundColor: const Color(0xFFF7F9FC),
@@ -65,17 +70,21 @@ class InventorySalesScreen extends ConsumerWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
 
-class _DashboardBody extends StatelessWidget {
+class _DashboardBody extends ConsumerWidget {
   final InventoryDashboardStats stats;
 
   const _DashboardBody({required this.stats});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+    final canStock = auth.canAny(AppPermissions.stockLookup);
+    final canLowStock = auth.canAny(AppPermissions.lowStock);
     // Dynamic bottom padding ensures bottom cards never collide with system navigation bar
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
@@ -126,31 +135,34 @@ class _DashboardBody extends StatelessWidget {
         ],
 
         // 5. Stock & Low Stock Grid Cards
-        Row(
-          children: const [
-            Expanded(
-              child: _QuickLinkGridCard(
-                title: 'Stock',
-                subtitle: 'Search items & warehouse stock',
-                icon: Icons.inventory_2_rounded,
-                iconBgColor: Color(0xFFEEECFD),
-                iconColor: Color(0xFF6C5CE7),
-                route: '/stock-lookup',
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: _QuickLinkGridCard(
-                title: 'Low Stock',
-                subtitle: 'Items below reorder level',
-                icon: Icons.warning_rounded,
-                iconBgColor: Color(0xFFFFF3E0),
-                iconColor: Color(0xFFFF9800),
-                route: '/low-stock',
-              ),
-            ),
-          ],
-        ),
+        if (canStock || canLowStock)
+          Row(
+            children: [
+              if (canStock)
+                const Expanded(
+                  child: _QuickLinkGridCard(
+                    title: 'Stock',
+                    subtitle: 'Search items & warehouse stock',
+                    icon: Icons.inventory_2_rounded,
+                    iconBgColor: Color(0xFFEEECFD),
+                    iconColor: Color(0xFF6C5CE7),
+                    route: '/stock-lookup',
+                  ),
+                ),
+              if (canStock && canLowStock) const SizedBox(width: 12),
+              if (canLowStock)
+                const Expanded(
+                  child: _QuickLinkGridCard(
+                    title: 'Low Stock',
+                    subtitle: 'Items below reorder level',
+                    icon: Icons.warning_rounded,
+                    iconBgColor: Color(0xFFFFF3E0),
+                    iconColor: Color(0xFFFF9800),
+                    route: '/low-stock',
+                  ),
+                ),
+            ],
+          ),
       ],
     );
   }
@@ -603,10 +615,22 @@ class _StockMovementSection extends StatelessWidget {
                 progress: movementOut / maxVal,
               ),
             ),
-          ],
-        ),
+            ],
+          ),
       ],
     );
+  }
+
+  static String _fmt(num value) {
+    final s = value.round().toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      final posFromEnd = s.length - i;
+      buf.write(s[i]);
+      if (posFromEnd > 1 && posFromEnd <= 3) continue;
+      if (posFromEnd > 3 && (posFromEnd - 3) % 2 == 0) buf.write(',');
+    }
+    return buf.toString();
   }
 }
 

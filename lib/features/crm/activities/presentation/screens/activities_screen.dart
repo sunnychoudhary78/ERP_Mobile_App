@@ -1,6 +1,9 @@
 // activities_screen.dart
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/crm/activities/presentation/screens/follow_up_screen.dart';
+import 'package:erp_app/shared/widgets/can_widget.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,7 +61,9 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(crmActivitiesProvider);
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.crmActivities,
+      child: Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text(
@@ -77,15 +82,18 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        onPressed: () => _showLeadSelectionDialog(context),
-        icon: const Icon(Icons.add, size: 20),
-        label: const Text(
-          'Log Follow-up',
-          style: TextStyle(fontWeight: FontWeight.bold),
+      floatingActionButton: Can(
+        anyOf: AppPermissions.crmActivities,
+        child: FloatingActionButton.extended(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          onPressed: () => _showLeadSelectionDialog(context),
+          icon: const Icon(Icons.add, size: 20),
+          label: const Text(
+            'Log Follow-up',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
       body: CrmAsyncBody(
@@ -246,6 +254,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
           );
         },
       ),
+    ),
     );
   }
 

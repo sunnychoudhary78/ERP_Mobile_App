@@ -1,4 +1,7 @@
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/shared/widgets/can_widget.dart';
+import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
@@ -73,7 +76,9 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(crmContactsProvider);
 
-    return Scaffold(
+    return PermissionGate(
+      anyOf: AppPermissions.crmCustomers,
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Contacts'),
         actions: [
@@ -83,14 +88,17 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onPressed: () {
-          Navigator.pushNamed(context, '/crm/leads/form');
-        },
-        child: const Icon(Icons.person_add_alt_1),
+      floatingActionButton: Can(
+        anyOf: AppPermissions.crmLeadsManage,
+        child: FloatingActionButton(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          onPressed: () {
+            Navigator.pushNamed(context, '/crm/leads/form');
+          },
+          child: const Icon(Icons.person_add_alt_1),
+        ),
       ),
       body: CrmAsyncBody(
         async: async,
@@ -157,6 +165,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
           );
         },
       ),
+    ),
     );
   }
 
