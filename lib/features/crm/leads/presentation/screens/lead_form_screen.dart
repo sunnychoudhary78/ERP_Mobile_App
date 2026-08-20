@@ -148,7 +148,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
   void _onContactChanged() {
     if (_isEdit) return; // edit mode mein re-match nahi karna
     _matchDebounce?.cancel();
-    _matchDebounce = Timer(const Duration(milliseconds: 400), _tryMatchCustomer);
+    _matchDebounce = Timer(
+      const Duration(milliseconds: 400),
+      _tryMatchCustomer,
+    );
   }
 
   Future<void> _tryMatchCustomer() async {
@@ -234,11 +237,9 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     _value.text = lead.value > 0 ? lead.value.toStringAsFixed(0) : '';
     _source = _sourceOptions.contains(lead.source) ? lead.source : 'Phone';
     final type = lead.clientType == 'Existing' ? 'Returning' : lead.clientType;
-    _clientType =
-        _clientTypeOptions.contains(type) ? type : 'New';
+    _clientType = _clientTypeOptions.contains(type) ? type : 'New';
     final temp = lead.temperature ?? 'Later';
-    _temperature =
-        _temperatureOptions.contains(temp) ? temp : 'Later';
+    _temperature = _temperatureOptions.contains(temp) ? temp : 'Later';
     _repeatFreq = _repeatFreqOptions.contains(lead.repeatFrequency)
         ? lead.repeatFrequency
         : 'Once';
@@ -336,7 +337,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                         .map(
                           (p) => DropdownMenuItem(
                             value: p,
-                            child: Text(p.name, overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              p.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         )
                         .toList(),
@@ -429,7 +433,6 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       ],
     );
   }
-  
 
   void _addLine() => setState(() => _lines.add(_RequirementLine()));
 
@@ -451,11 +454,13 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       'source': _source,
       'clientType': _clientType,
       'requirements': _requirement.text.trim(),
-      'requirementLines':
-          _addProducts ? _lines.map((l) => l.toJson()).toList() : [],
+      'requirementLines': _addProducts
+          ? _lines.map((l) => l.toJson()).toList()
+          : [],
       'value': double.tryParse(_value.text) ?? 0,
-      'customerId':
-          _customerId == null ? null : (int.tryParse(_customerId!) ?? _customerId),
+      'customerId': _customerId == null
+          ? null
+          : (int.tryParse(_customerId!) ?? _customerId),
     };
 
     if (includeInitialStage) {
@@ -689,8 +694,9 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                         if (_addProducts) ...[
                           Builder(
                             builder: (context) {
-                              final productsAsync =
-                                  ref.watch(crmProductsProvider);
+                              final productsAsync = ref.watch(
+                                crmProductsProvider,
+                              );
                               return productsAsync.when(
                                 data: (products) =>
                                     _buildProductLines(context, products),
@@ -746,7 +752,8 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
                               label: 'Repeat freq.',
                               value: _repeatFreq,
                               items: _repeatFreqOptions,
-                              onChanged: (v) => setState(() => _repeatFreq = v!),
+                              onChanged: (v) =>
+                                  setState(() => _repeatFreq = v!),
                             ),
                           _textField(
                             controller: _value,
