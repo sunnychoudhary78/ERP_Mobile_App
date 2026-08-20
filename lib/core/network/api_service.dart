@@ -167,13 +167,9 @@ class ApiService {
       return Exception('SUBSCRIPTION_EXPIRED');
     }
 
-    if (errorData is Map) {
-      if (errorData['message'] != null) {
-        return Exception(errorData['message']);
-      }
-      if (errorData['error'] != null) {
-        return Exception(errorData['error']);
-      }
+    final errorMessage = _findErrorMessage(errorData);
+    if (errorMessage != null) {
+      return Exception(errorMessage);
     }
 
     if (e.type == DioExceptionType.connectionTimeout ||
@@ -186,5 +182,29 @@ class ApiService {
     }
 
     return Exception('Something went wrong');
+  }
+
+  String? _findErrorMessage(dynamic value) {
+    if (value is String && value.trim().isNotEmpty) return value;
+    if (value is List) {
+      for (final item in value) {
+        final message = _findErrorMessage(item);
+        if (message != null) return message;
+      }
+      return null;
+    }
+    if (value is! Map) return null;
+
+    for (final key in const ['message', 'error', 'detail']) {
+      final message = _findErrorMessage(value[key]);
+      if (message != null) return message;
+    }
+
+    for (final key in const ['data', 'errors']) {
+      final message = _findErrorMessage(value[key]);
+      if (message != null) return message;
+    }
+
+    return null;
   }
 }

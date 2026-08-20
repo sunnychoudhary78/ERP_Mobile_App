@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:erp_app/features/crm/shared/data/models/sales_product_model.dart';
 import 'package:flutter/material.dart';
 
@@ -38,6 +39,26 @@ class SalesCrmApiService {
     // debugPrint(response.toString());
     return SalesWorkspace.fromApiResponse(response['data']['workspace']);
   }
+
+  // Future<SalesWorkspace> getWorkspace() async {
+  //   final response = await api.get(ApiEndpoints.salesWorkspace);
+  //   final ws = SalesWorkspace.fromApiResponse(response['data']['workspace']);
+
+  //   debugPrint('=== APPROVAL-RELEVANT DATA ===');
+  //   for (final lead in ws.leads.where((l) => l.hasPendingWonApproval)) {
+  //     debugPrint(
+  //       'WON PENDING → ${lead.id} | ${lead.companyName} | ${lead.wonApproval}',
+  //     );
+  //   }
+  //   for (final quote in ws.quotes.where((q) => q.hasPendingApproval)) {
+  //     debugPrint(
+  //       'QUOTE PENDING → ${quote.id} | ${quote.number} | ${quote.approval}',
+  //     );
+  //   }
+  //   debugPrint('===============================');
+
+  //   return ws;
+  // }
 
   Future<Map<String, dynamic>?> getConfig() async {
     final response = await api.get(ApiEndpoints.salesConfig);
@@ -122,26 +143,72 @@ class SalesCrmApiService {
     return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
   }
 
- Future<SalesQuote> approveQuote(
-  String quoteId, [
-  Map<String, dynamic>? payload,
-]) async {
-  final response = await api.post(
-    ApiEndpoints.salesQuoteApprove(quoteId),
-    payload ?? {},
-  );
+  // Future<SalesQuote> approveQuote(
+  //   String quoteId, [
+  //   Map<String, dynamic>? payload,
+  // ]) async {
+  //   try {
+  //     final response = await api.post(
+  //       ApiEndpoints.salesQuoteApprove(quoteId),
+  //       payload ?? {},
+  //     );
 
-  debugPrint('========== APPROVE QUOTE RESPONSE ==========');
-  debugPrint(response);
-  debugPrint('============================================');
+  //     debugPrint('========== APPROVE QUOTE RESPONSE ==========');
+  //     debugPrint(response.toString());
+  //     debugPrint('============================================');
 
-  final map = _asMap(response);
-  final quote = map['quote'] is Map ? map['quote'] : map;
+  //     final map = _asMap(response);
+  //     final quote = map['quote'] is Map ? map['quote'] : map;
 
-  return SalesQuote.fromJson(
-    Map<String, dynamic>.from(quote as Map),
-  );
-}
+  //     return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
+  //   } on DioException catch (e) {
+  //     debugPrint('========== APPROVE QUOTE ERROR ==========');
+  //     debugPrint('STATUS: ${e.response?.statusCode}');
+  //     debugPrint('DATA: ${e.response?.data}');
+  //     debugPrint('==========================================');
+  //     rethrow;
+  //   }
+  // }
+
+  Future<SalesQuote> approveQuote(
+    String quoteId, [
+    Map<String, dynamic>? payload,
+  ]) async {
+    try {
+      print('========== APPROVE QUOTE ==========');
+      print('Quote ID: $quoteId');
+      print('Payload: $payload');
+
+      final response = await api.post(
+        ApiEndpoints.salesQuoteApprove(quoteId),
+        payload ?? {},
+      );
+
+      print('========== APPROVE RESPONSE ==========');
+      print(response);
+      print('======================================');
+
+      final map = _asMap(response);
+      final quote = map['quote'] is Map ? map['quote'] : map;
+
+      return SalesQuote.fromJson(Map<String, dynamic>.from(quote as Map));
+    } catch (e) {
+      print('========== APPROVE ERROR ==========');
+      print(e);
+
+      if (e is DioException) {
+        print('Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+        print('Response Headers: ${e.response?.headers}');
+        print('Request Data: ${e.requestOptions.data}');
+        print('Request URL: ${e.requestOptions.uri}');
+      }
+
+      print('===================================');
+
+      rethrow;
+    }
+  }
 
   Future<SalesQuote> rejectQuote(String quoteId, String reason) async {
     final response = await api.post(ApiEndpoints.salesQuoteReject(quoteId), {

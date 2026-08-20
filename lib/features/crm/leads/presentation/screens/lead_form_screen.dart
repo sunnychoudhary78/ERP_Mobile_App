@@ -440,7 +440,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     });
   }
 
-  Map<String, dynamic> _payload() {
+  Map<String, dynamic> _payload({bool includeInitialStage = false}) {
     final payload = <String, dynamic>{
       'companyName': _company.text.trim(),
       'contactName': _contact.text.trim(),
@@ -457,6 +457,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       'customerId':
           _customerId == null ? null : (int.tryParse(_customerId!) ?? _customerId),
     };
+
+    if (includeInitialStage) {
+      payload['lifecycleStage'] = 'client_type';
+    }
 
     if (_clientType == 'Returning') {
       payload['repeatFrequency'] = _repeatFreq;
@@ -496,7 +500,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       if (_isEdit) {
         await notifier.updateLead(_leadId!, _payload());
       } else {
-        await notifier.createLead(_payload());
+        await notifier.createLead(_payload(includeInitialStage: true));
       }
 
       if (mounted) Navigator.pop(context, true);

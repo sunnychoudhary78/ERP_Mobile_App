@@ -1,5 +1,6 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:erp_app/features/crm/shared/data/models/sales_workspace_model.dart';
 import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -311,7 +312,7 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
   // Modern Item Approval Card
   Widget _buildApprovalCard(
     BuildContext context,
-    dynamic item, {
+    CrmApprovalItem item, {
     required bool canManage,
   }) {
     final isWon = item.kind == 'won';
@@ -383,7 +384,7 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          item.amount ?? '\$42,500.00',
+                          item.subtitle,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -461,14 +462,14 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          item.ownerName ?? 'David Chen',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF1C2833),
-                          ),
-                        ),
+                        // Text(
+                        //   'David Chen',
+                        //   style: const TextStyle(
+                        //     fontSize: 13,
+                        //     fontWeight: FontWeight.w500,
+                        //     color: Color(0xFF1C2833),
+                        //   ),
+                        // ),
                       ],
                     ),
                     Container(

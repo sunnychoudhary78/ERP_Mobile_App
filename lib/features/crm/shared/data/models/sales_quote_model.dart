@@ -56,7 +56,12 @@ class SalesQuote {
 
   bool get hasPendingApproval {
     final s = approval['status']?.toString().toLowerCase();
-    return s == 'pending' || s == 'requested';
+
+    return approval['required'] == true &&
+        (s == 'pending' ||
+            s == 'requested' ||
+            s == 'pending_manager' ||
+            s == 'pending_executive');
   }
 
   factory SalesQuote.fromJson(Map<String, dynamic> json) {

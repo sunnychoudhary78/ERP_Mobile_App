@@ -211,6 +211,34 @@ final crmPipelineProvider =
 final crmApprovalsProvider =
     Provider.autoDispose<AsyncValue<List<CrmApprovalItem>>>((ref) {
       return ref.watch(salesWorkspaceProvider).whenData((ws) {
+        // 🔍 DEBUG: Print workspace data
+        print('========== CRM WORKSPACE ==========');
+        print('Leads count: ${ws.leads.length}');
+        print('Quotes count: ${ws.quotes.length}');
+
+        for (final lead in ws.leads) {
+          print('----- LEAD -----');
+          print('ID: ${lead.id}');
+          print('Company: ${lead.companyName}');
+          print('Contact: ${lead.contactName}');
+          print('Status: ${lead.status}');
+          print('hasPendingWonApproval: ${lead.hasPendingWonApproval}');
+          print('wonApproval: ${lead.wonApproval}');
+        }
+
+        for (final quote in ws.quotes) {
+          print('----- QUOTE -----');
+          print('ID: ${quote.id}');
+          print('Number: ${quote.number}');
+          print('Account: ${quote.account}');
+          print('Status: ${quote.status}');
+          print('hasPendingApproval: ${quote.hasPendingApproval}');
+          print('approval: ${quote.approval}');
+        }
+
+        print('===================================');
+
+        // Your existing logic
         final items = <CrmApprovalItem>[];
 
         for (final lead in ws.leads) {
