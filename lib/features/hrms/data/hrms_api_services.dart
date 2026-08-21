@@ -1,5 +1,6 @@
 import 'package:erp_app/core/network/api_endpoints.dart';
 import 'package:erp_app/core/network/api_service.dart';
+import 'package:flutter/material.dart';
 
 /// Wraps your existing [ApiService] (Dio + CryptoHelper encrypt/decrypt
 /// already handled inside `get()`) for the HRMS dashboard endpoints
@@ -22,13 +23,19 @@ class HrmsApiService {
 
   /// 4.1 Today punch status — GET attendance?from&to
   Future<Map<String, dynamic>> getTodayAttendance() async {
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-    final res = await _api.get(
-      'attendance',
-      queryParams: {'from': today, 'to': today},
-    );
-    return Map<String, dynamic>.from(res as Map);
-  }
+  final today = DateTime.now().toIso8601String().substring(0, 10);
+
+  final res = await _api.get(
+    'attendance',
+    queryParams: {'from': today, 'to': today},
+  );
+
+  debugPrint('========== TODAY ATTENDANCE RESPONSE ==========');
+  debugPrint('$res');
+  debugPrint('===============================================');
+
+  return Map<String, dynamic>.from(res as Map);
+}
 
   /// 4.2 Mobile punch config — GET attendance/mobile-config
   Future<Map<String, dynamic>> getMobileConfig() async {

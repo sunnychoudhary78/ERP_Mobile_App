@@ -370,14 +370,14 @@ class HomeScreen extends ConsumerWidget {
                 const _SectionLabel('MODULES & SETTINGS'),
                 const SizedBox(height: _itemGap),
 
-                _ListCardTile(
-                  icon: Icons.person_outline_rounded,
-                  iconBgColor: const Color(0xFFEFF6FF),
-                  iconColor: const Color(0xFF2563EB),
-                  title: 'Profile',
-                  subtitle: 'Manage your personal details',
-                  onTap: () => Navigator.pushNamed(context, '/profile'),
-                ),
+                // _ListCardTile(
+                //   icon: Icons.person_outline_rounded,
+                //   iconBgColor: const Color(0xFFEFF6FF),
+                //   iconColor: const Color(0xFF2563EB),
+                //   title: 'Profile',
+                //   subtitle: 'Manage your personal details',
+                //   onTap: () => Navigator.pushNamed(context, '/profile'),
+                // ),
                 const SizedBox(height: 10),
 
                 Can(

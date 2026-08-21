@@ -4,6 +4,7 @@
 abstract final class AppPermissions {
   // --- HRMS ---
   static const attendanceRead = 'attendance.read';
+  static const attendanceMark = 'attendance.mark';
   static const leaveRequestRead = 'leave.request.read';
   static const leaveRequestApprove = 'leave.request.approve';
   static const teamDashboardRead = 'team.dashboard.read';
@@ -34,12 +35,17 @@ abstract final class AppPermissions {
 
   static const List<String> hrmsModule = [
     attendanceRead,
+    attendanceMark,
     leaveRequestRead,
     teamDashboardRead,
     statsRead,
   ];
 
-  static const List<String> punch = [attendanceRead];
+  // Punch in/out is controlled by attendance.mark on the backend
+  // (both manager and employee roles carry this). attendance.read
+  // is kept as a fallback for any role that only has read access
+  // but should still see the punch card.
+  static const List<String> punch = [attendanceMark, attendanceRead];
 
   static const List<String> leaveSelf = [leaveRequestRead];
 
