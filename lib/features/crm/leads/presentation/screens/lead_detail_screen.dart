@@ -1767,7 +1767,18 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _snack('View bill'),
+            onPressed: _actionBusy || lead.billId == null
+                ? null
+                : () async {
+                    setState(() => _actionBusy = true);
+                    try {
+                      await saveAndOpenBillPdf(ref, lead.billId!);
+                    } catch (e) {
+                      _snack('Could not open bill: $e', error: true);
+                    } finally {
+                      if (mounted) setState(() => _actionBusy = false);
+                    }
+                  },
             child: const Text(
               'View bill',
               style: TextStyle(

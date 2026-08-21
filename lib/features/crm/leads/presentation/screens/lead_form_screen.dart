@@ -443,7 +443,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
     });
   }
 
-  Map<String, dynamic> _payload({bool includeInitialStage = false}) {
+  Map<String, dynamic> _payload() {
     final payload = <String, dynamic>{
       'companyName': _company.text.trim(),
       'contactName': _contact.text.trim(),
@@ -463,13 +463,12 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
           : (int.tryParse(_customerId!) ?? _customerId),
     };
 
-    if (includeInitialStage) {
-      payload['lifecycleStage'] = 'client_type';
-    }
-
+    // Server owns initial stage: no temperature → Open/client_type;
+    // Hot/Warm/Cold → Qualify. "Later" must not be sent (truthy string
+    // would force Qualify on the backend).
     if (_clientType == 'Returning') {
       payload['repeatFrequency'] = _repeatFreq;
-    } else {
+    } else if (_temperature != 'Later') {
       payload['temperature'] = _temperature;
     }
 
@@ -505,7 +504,7 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       if (_isEdit) {
         await notifier.updateLead(_leadId!, _payload());
       } else {
-        await notifier.createLead(_payload(includeInitialStage: true));
+        await notifier.createLead(_payload());
       }
 
       if (mounted) Navigator.pop(context, true);
