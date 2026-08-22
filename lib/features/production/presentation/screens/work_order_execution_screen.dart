@@ -65,7 +65,7 @@ class _WorkOrderExecutionScreenState
     if (_operatorController.text.trim().isEmpty ||
         _machineController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Operator aur machine bharo')),
+        const SnackBar(content: Text('Fill the Operations and Machine')),
       );
       return;
     }

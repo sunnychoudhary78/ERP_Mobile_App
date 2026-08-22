@@ -358,42 +358,42 @@ class _HeaderCard extends StatelessWidget {
                 color: AppColors.text,
               ),
             ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        WorkOrderExecutionScreen(workOrderId: wo.id),
-                  ),
-                );
-              },
-              icon: const Icon(
-                Icons.play_arrow_rounded,
-                size: 18,
-                color: Colors.white,
-              ),
-              label: const Text(
-                'Start\nProduction',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  height: 1.1,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryDark,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-            ),
+            // ElevatedButton.icon(
+            //   onPressed: () {
+            //     Navigator.of(context).push(
+            //       MaterialPageRoute(
+            //         builder: (_) =>
+            //             WorkOrderExecutionScreen(workOrderId: wo.id),
+            //       ),
+            //     );
+            //   },
+            //   icon: const Icon(
+            //     Icons.play_arrow_rounded,
+            //     size: 18,
+            //     color: Colors.white,
+            //   ),
+            //   label: const Text(
+            //     'Start\nProduction',
+            //     textAlign: TextAlign.center,
+            //     style: TextStyle(
+            //       color: Colors.white,
+            //       fontSize: 11,
+            //       fontWeight: FontWeight.bold,
+            //       height: 1.1,
+            //     ),
+            //   ),
+            //   style: ElevatedButton.styleFrom(
+            //     backgroundColor: AppColors.primaryDark,
+            //     padding: const EdgeInsets.symmetric(
+            //       horizontal: 12,
+            //       vertical: 8,
+            //     ),
+            //     shape: RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(8),
+            //     ),
+            //     elevation: 0,
+            //   ),
+            // ),
           ],
         ),
         const SizedBox(height: 8),
