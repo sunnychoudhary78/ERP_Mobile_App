@@ -200,16 +200,16 @@ class HomeScreen extends ConsumerWidget {
         ),
         actions: [
           _NotificationBellButton(unreadCount: ref.watch(unreadCountProvider)),
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: () async {
-              final confirmed = await showLogoutConfirmationDialog(context);
-              if (confirmed == true && context.mounted) {
-                ref.read(authProvider.notifier).logout();
-              }
-            },
-            icon: const Icon(Icons.logout_rounded, color: Color(0xFF1E293B)),
-          ),
+          // IconButton(
+          //   tooltip: 'Logout',
+          //   onPressed: () async {
+          //     final confirmed = await showLogoutConfirmationDialog(context);
+          //     if (confirmed == true && context.mounted) {
+          //       ref.read(authProvider.notifier).logout();
+          //     }
+          //   },
+          //   icon: const Icon(Icons.logout_rounded, color: Color(0xFF1E293B)),
+          // ),
           const SizedBox(width: 4),
         ],
       ),
