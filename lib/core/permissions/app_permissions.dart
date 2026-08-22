@@ -1,14 +1,22 @@
 /// Exact permission name strings used for mobile UI gating.
 /// Match frontend menu keys for HRMS / Inventory / Production, and
 /// the Mobile Permissions API Guide for CRM.
+///
+/// HRMS groups include both new (frontend) and legacy (seeded role pack /
+/// route middleware) names so UI stays correct while roles migrate.
 abstract final class AppPermissions {
-  // --- HRMS ---
+  // --- HRMS (new + legacy) ---
   static const attendanceRead = 'attendance.read';
   static const attendanceMark = 'attendance.mark';
+  static const attendanceView = 'attendance.view';
   static const leaveRequestRead = 'leave.request.read';
+  static const leaveView = 'leave.view';
   static const leaveRequestApprove = 'leave.request.approve';
+  static const leaveApprove = 'leave.approve';
   static const teamDashboardRead = 'team.dashboard.read';
+  static const teamDashboardView = 'team.dashboard.view';
   static const statsRead = 'stats.read';
+  static const statsView = 'stats.view';
 
   // --- CRM (mobile guide) ---
   static const salesCrmLeadsView = 'sales_crm_leads.view';
@@ -33,23 +41,39 @@ abstract final class AppPermissions {
 
   // --- ANY-of groups for module / feature surfaces ---
 
-  static const List<String> hrmsModule = [
-    attendanceRead,
+  static const List<String> punch = [
     attendanceMark,
-    leaveRequestRead,
-    teamDashboardRead,
-    statsRead,
+    attendanceRead,
+    attendanceView,
   ];
 
-  // Punch in/out is controlled by attendance.mark on the backend
-  // (both manager and employee roles carry this). attendance.read
-  // is kept as a fallback for any role that only has read access
-  // but should still see the punch card.
-  static const List<String> punch = [attendanceMark, attendanceRead];
+  static const List<String> leaveSelf = [
+    leaveRequestRead,
+    leaveView,
+  ];
 
-  static const List<String> leaveSelf = [leaveRequestRead];
+  static const List<String> leaveApprovals = [
+    leaveRequestApprove,
+    leaveApprove,
+  ];
 
-  static const List<String> leaveApprovals = [leaveRequestApprove];
+  static const List<String> teamDashboard = [
+    teamDashboardRead,
+    teamDashboardView,
+  ];
+
+  static const List<String> stats = [
+    statsRead,
+    statsView,
+  ];
+
+  static const List<String> hrmsModule = [
+    ...punch,
+    ...leaveSelf,
+    ...leaveApprovals,
+    ...teamDashboard,
+    ...stats,
+  ];
 
   static const List<String> crmModule = [
     salesCrmLeadsView,

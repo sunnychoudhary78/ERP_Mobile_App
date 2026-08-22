@@ -55,8 +55,8 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
       );
     }
 
-    final canApprove = authState.can(AppPermissions.leaveRequestApprove);
-    final canReject = authState.can(AppPermissions.leaveRequestApprove);
+    final canApprove = authState.canAny(AppPermissions.leaveApprovals);
+    final canReject = authState.canAny(AppPermissions.leaveApprovals);
 
     final async = ref.watch(approvalsInboxProvider);
 

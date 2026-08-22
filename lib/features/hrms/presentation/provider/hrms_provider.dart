@@ -20,13 +20,11 @@ final hrmsPermissionsProvider = Provider<Set<String>>((ref) {
 });
 
 final isManagerProvider = Provider<bool>((ref) {
-  return ref
-      .watch(authProvider)
-      .can(AppPermissions.teamDashboardRead);
+  return ref.watch(authProvider).canAny(AppPermissions.teamDashboard);
 });
 
 final isAdminProvider = Provider<bool>((ref) {
-  return ref.watch(authProvider).can(AppPermissions.statsRead);
+  return ref.watch(authProvider).canAny(AppPermissions.stats);
 });
 
 /// Main dashboard data — refresh by invalidating this provider
@@ -34,8 +32,8 @@ final isAdminProvider = Provider<bool>((ref) {
 final hrmsDashboardProvider =
     FutureProvider.autoDispose<HrmsHomeModel>((ref) async {
   final auth = ref.watch(authProvider);
-  final isManager = auth.can(AppPermissions.teamDashboardRead);
-  final isAdmin = auth.can(AppPermissions.statsRead);
+  final isManager = auth.canAny(AppPermissions.teamDashboard);
+  final isAdmin = auth.canAny(AppPermissions.stats);
 
   return ref.watch(hrmsRepositoryProvider).loadDashboard(
         isManager: isManager,
