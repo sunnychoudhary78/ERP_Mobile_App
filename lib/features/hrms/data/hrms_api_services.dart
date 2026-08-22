@@ -13,9 +13,8 @@ import 'package:flutter/material.dart';
 /// NOTE: `ApiService._extractException` converts DioExceptions into a
 /// plain `Exception(message)` and loses the HTTP status code, so we
 /// can't reliably branch on "403 specifically" here. For the
-/// permission-gated endpoints (month summary, corrections) we instead
-/// catch *any* failure and treat it as "not available" — the caller
-/// (repository) already treats a null result as "hide this card".
+/// permission-gated endpoints we catch *any* failure and treat it as
+/// "not available" — the caller (repository) hides those cards.
 class HrmsApiService {
   final ApiService _api;
 
@@ -23,19 +22,19 @@ class HrmsApiService {
 
   /// 4.1 Today punch status — GET attendance?from&to
   Future<Map<String, dynamic>> getTodayAttendance() async {
-  final today = DateTime.now().toIso8601String().substring(0, 10);
+    final today = DateTime.now().toIso8601String().substring(0, 10);
 
-  final res = await _api.get(
-    'attendance',
-    queryParams: {'from': today, 'to': today},
-  );
+    final res = await _api.get(
+      'attendance',
+      queryParams: {'from': today, 'to': today},
+    );
 
-  debugPrint('========== TODAY ATTENDANCE RESPONSE ==========');
-  debugPrint('$res');
-  debugPrint('===============================================');
+    debugPrint('========== TODAY ATTENDANCE RESPONSE ==========');
+    debugPrint('$res');
+    debugPrint('===============================================');
 
-  return Map<String, dynamic>.from(res as Map);
-}
+    return Map<String, dynamic>.from(res as Map);
+  }
 
   /// 4.2 Mobile punch config — GET attendance/mobile-config
   Future<Map<String, dynamic>> getMobileConfig() async {
@@ -79,16 +78,19 @@ class HrmsApiService {
     }
   }
 
-  
-
-  /// 5.1 Manager — pending leave approvals count
+  /// 5.1 Manager — pending leave approvals count.
+  /// Soft-fails (returns 0) on 403 / any error so dashboard still loads.
   Future<int> getManagerPendingLeavesCount() async {
-    final res = await _api.get(
-      ApiEndpoints.getManagerPendingLeaves,
-      queryParams: {'page': 1, 'limit': 1},
-    );
-    final meta = (res as Map)['meta'] as Map?;
-    return (meta?['total'] as num?)?.toInt() ?? 0;
+    try {
+      final res = await _api.get(
+        ApiEndpoints.getManagerPendingLeaves,
+        queryParams: {'page': 1, 'limit': 1},
+      );
+      final meta = (res as Map)['meta'] as Map?;
+      return (meta?['total'] as num?)?.toInt() ?? 0;
+    } catch (_) {
+      return 0;
+    }
   }
 
   /// 5.2 Manager — pending attendance corrections, permission-gated.
@@ -107,16 +109,29 @@ class HrmsApiService {
     }
   }
 
-  /// 5.3 Team dashboard — { success, data: { stats, employees } }
-  Future<Map<String, dynamic>> getTeamDashboard() async {
-    final res = await _api.get(ApiEndpoints.getTeamDashboard);
-    final data = res as Map;
-    return Map<String, dynamic>.from(data['data'] as Map);
+  /// 5.3 Team dashboard — { success, data: { stats, employees } }.
+  /// Soft-fails to null on 403 / any error.
+  Future<Map<String, dynamic>?> getTeamDashboard() async {
+    try {
+      final res = await _api.get(ApiEndpoints.getTeamDashboard);
+      final data = res as Map;
+      final inner = data['data'];
+      if (inner is Map) {
+        return Map<String, dynamic>.from(inner);
+      }
+      return Map<String, dynamic>.from(data);
+    } catch (_) {
+      return null;
+    }
   }
 
-  /// 6. Admin overview
-  Future<Map<String, dynamic>> getAdminOverview() async {
-    final res = await _api.get(ApiEndpoints.getstatsAdminOverviews);
-    return Map<String, dynamic>.from(res as Map);
+  /// 6. Admin overview — soft-fails to null on 403 / any error.
+  Future<Map<String, dynamic>?> getAdminOverview() async {
+    try {
+      final res = await _api.get(ApiEndpoints.getstatsAdminOverviews);
+      return Map<String, dynamic>.from(res as Map);
+    } catch (_) {
+      return null;
+    }
   }
 }

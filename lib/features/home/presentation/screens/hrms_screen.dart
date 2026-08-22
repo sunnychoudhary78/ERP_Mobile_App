@@ -134,7 +134,9 @@ class _DashboardBody extends ConsumerWidget {
     final canLeave = auth.canAny(AppPermissions.leaveSelf);
     final canPunch = auth.canAny(AppPermissions.punch);
     final canApprove = auth.canAny(AppPermissions.leaveApprovals);
-    final bool isAdminOrManager = model.admin != null || model.manager != null;
+    final isAdmin = model.admin != null;
+    final isManagerOnly = model.manager != null && !isAdmin;
+    final showPersonal = !isAdmin;
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -244,8 +246,8 @@ class _DashboardBody extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // ==================== ADMIN & MANAGER SECTION ====================
-          if (model.admin != null) ...[
+          // ==================== ADMIN ORG STATS (stats.read) ====================
+          if (isAdmin) ...[
             // 2x2 METRICS GRID
             Row(
               children: [
@@ -263,7 +265,7 @@ class _DashboardBody extends ConsumerWidget {
                 Expanded(
                   child: _buildModernMetricCard(
                     title: 'Present Today',
-                    value: '${model.manager?.teamPresent ?? model.admin!.attendanceTodayCount}',
+                    value: '${model.admin!.attendanceTodayCount}',
                     icon: Icons.task_alt_rounded,
                     accentColor: const Color(0xFF10B981),
                     subtitle: 'Active checked-in',
@@ -520,10 +522,40 @@ class _DashboardBody extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
             ],
+
+            // Upcoming Leaves (admin org view — matches web Dashboard)
+            if (model.admin!.upcomingLeaves.isNotEmpty) ...[
+              _buildContainerCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      title: 'Upcoming Leaves',
+                      subtitle: 'Approved leave across the organization',
+                    ),
+                    const SizedBox(height: 16),
+                    for (var i = 0;
+                        i < model.admin!.upcomingLeaves.length;
+                        i++)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: i == model.admin!.upcomingLeaves.length - 1
+                              ? 0
+                              : 12,
+                        ),
+                        child: _buildApprovalItem(
+                          model.admin!.upcomingLeaves[i],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
           ],
 
-          // MANAGER STAFF ATTENDANCE CARD
-          if (model.manager != null) ...[
+          // ==================== MANAGER TEAM (team.dashboard, not admin) =====
+          if (isManagerOnly) ...[
             Builder(builder: (context) {
               final teamTotal = model.manager!.teamTotal;
               final present = model.manager!.teamPresent;
@@ -568,259 +600,266 @@ class _DashboardBody extends ConsumerWidget {
             const SizedBox(height: 20),
           ],
 
-          // ==================== PENDING APPROVALS (MANAGER / ADMIN) ====================
-          if (isAdminOrManager) ...[
-            Builder(builder: (context) {
-              final approvals = model.admin?.upcomingLeaves ??
-                  model.manager?.upcomingLeaves ??
-                  const <UpcomingLeave>[];
-              if (approvals.isEmpty) return const SizedBox.shrink();
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildContainerCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildSectionHeader(
-                              title: 'Pending Approvals',
-                              subtitle: 'Leave requests from your team',
-                            ),
-                            if (canApprove)
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.pushNamed(context, '/approvals'),
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: const Size(50, 30),
-                                ),
-                                child: const Text(
-                                  'View All',
-                                  style: TextStyle(
-                                    color: Color(0xFF2563EB),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        for (var i = 0; i < approvals.length; i++)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: i == approvals.length - 1 ? 0 : 12,
-                            ),
-                            child: _buildApprovalItem(approvals[i]),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              );
-            }),
-          ],
-
-          // ==================== PERSONAL / EMPLOYEE SECTION ====================
-          // Shown for everyone (including managers/admins). Leave-specific
-          // cards stay behind canLeave; month summary hides when API is null.
-          if (canLeave && model.leaveBalances.isNotEmpty) ...[
+          // ==================== PENDING APPROVALS (leave.approve) ============
+          if (canApprove &&
+              model.manager != null &&
+              model.manager!.upcomingLeaves.isNotEmpty) ...[
             _buildContainerCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader(
-                    title: 'Leave Balance Overview',
-                    subtitle: 'Current leave credits available',
-                  ),
-                  const SizedBox(height: 20),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      SizedBox(
-                        width: 110,
-                        height: 110,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            PieChart(
-                              PieChartData(
-                                sectionsSpace: 3,
-                                centerSpaceRadius: 36,
-                                sections: [
-                                  for (var i = 0; i < model.leaveBalances.length; i++)
-                                    PieChartSectionData(
-                                      color: _distributionColor(i),
-                                      value: model.leaveBalances[i].available.toDouble(),
-                                      radius: 14,
-                                      showTitle: false,
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const Text(
-                              'Leave\nBalance',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF334155),
-                              ),
-                            ),
-                          ],
-                        ),
+                      _buildSectionHeader(
+                        title: 'Pending Approvals',
+                        subtitle: 'Leave requests from your team',
                       ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (var i = 0; i < model.leaveBalances.length; i++)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 6.0),
-                                child: _LegendItem(
-                                  color: _distributionColor(i),
-                                  label: model.leaveBalances[i].name,
-                                  value: '${model.leaveBalances[i].available}',
-                                ),
-                              ),
-                          ],
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/approvals'),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(50, 30),
+                        ),
+                        child: const Text(
+                          'View All',
+                          style: TextStyle(
+                            color: Color(0xFF2563EB),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-
-          if (canLeave) ...[
-            const Text(
-              'MY LEAVE',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF64748B),
-                letterSpacing: 1.1,
-              ),
-            ),
-            const SizedBox(height: 10),
-            _buildContainerCard(
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.pending_actions_rounded,
-                      color: Color(0xFFD97706),
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${model.pendingLeavesCount} Pending Request${model.pendingLeavesCount == 1 ? '' : 's'}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Awaiting manager approval',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, '/leave-status'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      backgroundColor: const Color(0xFFEFF6FF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'View',
-                      style: TextStyle(
-                        color: Color(0xFF2563EB),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-
-          if (model.monthSummary != null) ...[
-            _buildContainerCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionHeader(
-                    title: 'Attendance This Month',
-                    subtitle: '${model.monthSummary!.workingHours} logged hours',
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildMiniStat(
-                          label: 'Payable',
-                          value: '${model.monthSummary!.payableDays}',
-                          color: const Color(0xFF10B981),
-                        ),
+                  for (var i = 0; i < model.manager!.upcomingLeaves.length; i++)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: i == model.manager!.upcomingLeaves.length - 1
+                            ? 0
+                            : 12,
                       ),
-                      Expanded(
-                        child: _buildMiniStat(
-                          label: 'Working',
-                          value: '${model.monthSummary!.workingDays}',
-                          color: const Color(0xFF3B82F6),
-                        ),
+                      child: _buildApprovalItem(
+                        model.manager!.upcomingLeaves[i],
                       ),
-                      Expanded(
-                        child: _buildMiniStat(
-                          label: 'Leaves',
-                          value: '${model.monthSummary!.totalLeaves}',
-                          color: const Color(0xFF8B5CF6),
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildMiniStat(
-                          label: 'Absent',
-                          value: '${model.monthSummary!.absentDays}',
-                          color: const Color(0xFFEF4444),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
           ],
 
-          // TODAY'S ACTIVITIES LIST
-          if (model.admin != null && model.admin!.todaysActivities.isNotEmpty) ...[
+          // ==================== PERSONAL (employee + manager, not admin) =====
+          if (showPersonal) ...[
+            if (canLeave && model.leaveBalances.isNotEmpty) ...[
+              _buildContainerCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      title: 'Leave Balance Overview',
+                      subtitle: 'Current leave credits available',
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 110,
+                          height: 110,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              PieChart(
+                                PieChartData(
+                                  sectionsSpace: 3,
+                                  centerSpaceRadius: 36,
+                                  sections: [
+                                    for (var i = 0;
+                                        i < model.leaveBalances.length;
+                                        i++)
+                                      PieChartSectionData(
+                                        color: _distributionColor(i),
+                                        value: model
+                                            .leaveBalances[i].available
+                                            .toDouble(),
+                                        radius: 14,
+                                        showTitle: false,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const Text(
+                                'Leave\nBalance',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF334155),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (var i = 0;
+                                  i < model.leaveBalances.length;
+                                  i++)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6.0),
+                                  child: _LegendItem(
+                                    color: _distributionColor(i),
+                                    label: model.leaveBalances[i].name,
+                                    value:
+                                        '${model.leaveBalances[i].available}',
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            if (canLeave) ...[
+              const Text(
+                'MY LEAVE',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 1.1,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _buildContainerCard(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.pending_actions_rounded,
+                        color: Color(0xFFD97706),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${model.pendingLeavesCount} Pending Request${model.pendingLeavesCount == 1 ? '' : 's'}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Awaiting manager approval',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/leave-status'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        backgroundColor: const Color(0xFFEFF6FF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'View',
+                        style: TextStyle(
+                          color: Color(0xFF2563EB),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            if (model.monthSummary != null) ...[
+              _buildContainerCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      title: 'Attendance This Month',
+                      subtitle:
+                          '${model.monthSummary!.workingHours} logged hours',
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMiniStat(
+                            label: 'Payable',
+                            value: '${model.monthSummary!.payableDays}',
+                            color: const Color(0xFF10B981),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMiniStat(
+                            label: 'Working',
+                            value: '${model.monthSummary!.workingDays}',
+                            color: const Color(0xFF3B82F6),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMiniStat(
+                            label: 'Leaves',
+                            value: '${model.monthSummary!.totalLeaves}',
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMiniStat(
+                            label: 'Absent',
+                            value: '${model.monthSummary!.absentDays}',
+                            color: const Color(0xFFEF4444),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ],
+
+          // TODAY'S ACTIVITIES (admin org view)
+          if (isAdmin && model.admin!.todaysActivities.isNotEmpty) ...[
             _buildContainerCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -833,7 +872,8 @@ class _DashboardBody extends ConsumerWidget {
                         subtitle: 'Scheduled events & timeline',
                       ),
                       TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/calendar'),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/calendar'),
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           minimumSize: const Size(50, 30),
@@ -850,7 +890,9 @@ class _DashboardBody extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
-                  for (var i = 0; i < model.admin!.todaysActivities.length; i++)
+                  for (var i = 0;
+                      i < model.admin!.todaysActivities.length;
+                      i++)
                     _buildActivityItem(
                       '${model.admin!.todaysActivities[i].title} (${model.admin!.todaysActivities[i].time})',
                       isFirst: i == 0,

@@ -167,11 +167,27 @@ class UpcomingLeave {
   });
 
   factory UpcomingLeave.fromJson(Map<String, dynamic> json) {
+    // Team-dashboard flattens leaves; admin-overview returns nested Sequelize rows.
+    final user = json['user'];
+    final leaveTypeRaw = json['leave_type'];
+
+    String leaveTypeName = '—';
+    if (leaveTypeRaw is Map) {
+      leaveTypeName = leaveTypeRaw['name']?.toString() ?? '—';
+    } else if (leaveTypeRaw != null) {
+      leaveTypeName = leaveTypeRaw.toString();
+    }
+
+    final nestedName = user is Map ? user['name']?.toString() : null;
+
     return UpcomingLeave(
-      employeeName: json['employee_name']?.toString() ?? '—',
-      leaveType: json['leave_type']?.toString() ?? '—',
-      startDate: json['start_date']?.toString() ?? '',
-      endDate: json['end_date']?.toString() ?? '',
+      employeeName: json['employee_name']?.toString() ?? nestedName ?? '—',
+      leaveType: leaveTypeName,
+      startDate: json['start_date']?.toString() ??
+          json['startDate']?.toString() ??
+          '',
+      endDate:
+          json['end_date']?.toString() ?? json['endDate']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
     );
   }

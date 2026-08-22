@@ -34,9 +34,11 @@ final hrmsDashboardProvider =
   final auth = ref.watch(authProvider);
   final isManager = auth.canAny(AppPermissions.teamDashboard);
   final isAdmin = auth.canAny(AppPermissions.stats);
+  final canApproveLeaves = auth.canAny(AppPermissions.leaveApprovals);
 
   return ref.watch(hrmsRepositoryProvider).loadDashboard(
         isManager: isManager,
         isAdmin: isAdmin,
+        canApproveLeaves: canApproveLeaves,
       );
 });
