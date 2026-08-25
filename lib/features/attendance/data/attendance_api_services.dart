@@ -49,7 +49,7 @@ class AttendanceApiService {
   Future<AttendanceSession?> fetchTodayStatus() async {
     final today = _formatDate(DateTime.now());
     final response = await api.get(
-      ApiEndpoints.checkIn,
+      ApiEndpoints.attendance,
       queryParams: {'from': today, 'to': today},
     );
     debugPrint("========== TODAY STATUS ==========");
@@ -70,6 +70,10 @@ class AttendanceApiService {
             ),
           );
 
+    // Prefer an open session (checked in, not yet out) — same as HRMS.
+    for (final s in sessions) {
+      if (s.isOpen) return s;
+    }
     return sessions.first;
   }
 
@@ -188,7 +192,7 @@ class AttendanceApiService {
   List<dynamic> _extractList(dynamic response) {
     if (response is List) return response;
     if (response is Map) {
-      for (final key in ['data', 'attendance', 'records', 'result']) {
+      for (final key in ['sessions', 'data', 'attendance', 'records', 'result']) {
         final v = response[key];
         if (v is List) return v;
       }

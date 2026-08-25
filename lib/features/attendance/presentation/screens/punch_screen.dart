@@ -37,6 +37,11 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
     _animController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(attendanceProvider.notifier).refreshStatus();
+    });
   }
 
   @override

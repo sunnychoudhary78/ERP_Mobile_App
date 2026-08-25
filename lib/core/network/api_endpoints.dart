@@ -13,6 +13,7 @@ class ApiEndpoints {
   static const String employeeLeaveBalance = 'employees/leave-balance';
 
   // ───────── ATTENDANCE ─────────
+  static const String attendance = 'attendance';
   static const String checkIn = 'attendance/checkin';
   static const String checkOut = 'attendance/checkout';
   static const String attendanceSummary = 'attendance/summary';
