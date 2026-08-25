@@ -86,6 +86,76 @@ class _RequirementLine {
   }
 }
 
+/// Isolated footer so keyboard-open/close animation frames only rebuild
+/// THIS small widget, not the entire form. This is the actual fix for the
+/// "clicking a field / keyboard opening slows everything down" issue —
+/// reading MediaQuery.viewInsets in a big build() makes the whole subtree
+/// a dependent of that InheritedWidget, so every frame of the keyboard
+/// sliding up/down re-triggers a full rebuild of every field, dropdown and
+/// product line. Reading it here instead scopes the dependency to just
+/// this widget's own BuildContext/Element.
+class _SubmitFooter extends StatelessWidget {
+  final bool isEdit;
+  final bool submitting;
+  final VoidCallback onSubmit;
+
+  const _SubmitFooter({
+    required this.isEdit,
+    required this.submitting,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    if (bottomInset > 0) return const SizedBox.shrink();
+
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: FilledButton(
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 0,
+          ),
+          onPressed: submitting ? null : onSubmit,
+          child: submitting
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  isEdit ? 'Update lead' : 'Save lead',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
 class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
@@ -499,6 +569,10 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
       _error = null;
     });
 
+    // TEMP DEBUG — payload check karne ke liye (stage issue debug).
+    // Isse hata dena jab issue mil jaaye.
+    debugPrint('LEAD_SUBMIT_PAYLOAD => ${_payload()}');
+
     try {
       final notifier = ref.read(salesWorkspaceProvider.notifier);
       if (_isEdit) {
@@ -518,7 +592,6 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     // Retry prefill once workspace data arrives for edit mode.
     if (_isEdit && !_prefilled) {
@@ -796,51 +869,20 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
               ),
 
               // Fixed footer button — animates with keyboard, never gets cut.
-              // KEYBOARD HYDE / SHOW FIX:
-              // Agar keyboard khula hai (bottomInset > 0) toh button dikhane ki zaroorat nahi hai.
-              if (bottomInset == 0)
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 12,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: _submitting ? null : _submit,
-                      child: _submitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              _isEdit ? 'Update lead' : 'Save lead',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
+              // KEYBOARD LAG FIX:
+              // Pehle top-level build() mein MediaQuery.viewInsets.bottom read ho
+              // raha tha — isse keyboard ke har animation frame (open/close) par
+              // POORA form (sab TextFormFields, dropdowns, product lines) rebuild
+              // hota tha, jo ki slow/janky feel deta hai.
+              // Fix: MediaQuery read ko isolate karke ek chhote _SubmitFooter
+              // widget ke andar daal diya — ab sirf yeh widget apne aap ko
+              // rebuild karega keyboard animate hote waqt, baaki form untouched
+              // rehta hai.
+              _SubmitFooter(
+                isEdit: _isEdit,
+                submitting: _submitting,
+                onSubmit: _submit,
+              ),
             ],
           ),
         ),

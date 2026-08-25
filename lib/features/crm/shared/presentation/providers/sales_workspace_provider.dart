@@ -143,7 +143,8 @@ class CrmTeamMember {
         (json['userId'] ?? json['id'] ?? json['_id'] ?? json['ownerId'] ?? '')
             .toString();
     final name =
-        (json['name'] ??
+        (json['rep'] ??
+                json['name'] ??
                 json['ownerName'] ??
                 json['fullName'] ??
                 json['userName'] ??

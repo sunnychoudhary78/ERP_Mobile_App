@@ -419,9 +419,22 @@ class SalesCrmApiService {
 
   Future<List<dynamic>> getTeamStats() async {
     final response = await api.get(ApiEndpoints.salesTeam);
+
     final map = _asMap(response);
-    if (map['team'] is List) return map['team'] as List;
+
+    // Response shape: { success, message, data: { team: [...] } }
+    final data = map['data'];
+    if (data is Map && data['team'] is List) {
+      return data['team'] as List;
+    }
+
+    // Fallbacks, just in case backend shape changes later.
+    if (map['team'] is List) {
+      return map['team'] as List;
+    }
+
     if (response is List) return response;
+
     return const [];
   }
 

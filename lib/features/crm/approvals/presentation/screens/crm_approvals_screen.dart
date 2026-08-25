@@ -565,18 +565,66 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
   // Handlers tied to Riverpod State
   Future<void> _handleApprove(BuildContext context, dynamic item) async {
     final notifier = ref.read(salesWorkspaceProvider.notifier);
-    try {
-      if (item.kind == 'won') {
+
+    if (item.kind == 'won') {
+      try {
         await notifier.approveWon(item.id);
-      } else {
-        await notifier.approveQuote(item.id);
-        // Auto-send the quote right after it's approved.
-        await notifier.sendQuote(item.id);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString().replaceFirst('Exception: ', '')),
+            ),
+          );
+        }
       }
+      return;
+    }
+
+    // The backend's POST /quotes/:id/approve endpoint behaves differently
+    // depending on which stage the quote is at. When the quote is waiting
+    // on manager approval, a plain call works. When it has already cleared
+    // the manager stage and is pending_executive, the same endpoint needs
+    // {asExecutive: true} in the body or it rejects with "Not waiting for
+    // manager approval" — mirroring the web app's "Approve as executive".
+    final approvalLevel = item.quote?.approval['level']?.toString();
+    final payload = approvalLevel == 'executive'
+        ? {'note': '', 'asExecutive': true, 'bypass': false}
+        : null;
+
+    // Step 1: approve the quote. If this fails, the quote is NOT approved —
+    // show the real error.
+    try {
+      await notifier.approveQuote(item.id, payload);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+      return;
+    }
+
+    // Step 2: auto-send the quote email. The quote is ALREADY approved at
+    // this point, so a send failure (e.g. SMTP not configured) should show
+    // as a soft warning, not an approval error.
+    try {
+      await notifier.sendQuote(item.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quote approved and sent.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.orange.shade800,
+            content: Text(
+              'Quote approved, but email could not be sent: '
+              '${e.toString().replaceFirst('Exception: ', '')}',
+            ),
+          ),
         );
       }
     }

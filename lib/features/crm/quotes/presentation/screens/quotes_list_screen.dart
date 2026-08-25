@@ -171,20 +171,20 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Container(
-                      height: 48,
-                      width: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.card,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.tune_outlined,
-                            color: AppColors.text, size: 20),
-                        onPressed: () {},
-                      ),
-                    ),
+                    // Container(
+                    //   height: 48,
+                    //   width: 48,
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.card,
+                    //     borderRadius: BorderRadius.circular(12),
+                    //     border: Border.all(color: AppColors.border),
+                    //   ),
+                    //   child: IconButton(
+                    //     icon: const Icon(Icons.tune_outlined,
+                    //         color: AppColors.text, size: 20),
+                    //     onPressed: () {},
+                    //   ),
+                    // ),
                   ],
                 ),
                 const SizedBox(height: 16),

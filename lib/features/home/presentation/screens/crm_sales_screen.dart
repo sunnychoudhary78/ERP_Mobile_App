@@ -86,6 +86,16 @@ final quickActionsProvider = Provider<List<QuickActionItem>>((ref) {
       route: '/crm/approvals',
       anyOf: AppPermissions.crmApprovals,
     ),
+
+    QuickActionItem(
+      title: 'Quotes',
+      subtitle: 'See All Quotations',
+      icon: Icons.quora_outlined,
+      iconColor: Color.fromARGB(255, 5, 104, 150),
+      backgroundColor: Color.fromARGB(255, 33, 252, 233),
+      route: '/crm/quotes',
+      anyOf: AppPermissions.crmApprovals,
+    ),
     QuickActionItem(
       title: 'Visit Overview',
       subtitle: 'Scheduled visits & tracking',

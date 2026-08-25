@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
 import '../../../shared/presentation/widgets/crm_async_body.dart';
 
-
 class ContactsListScreen extends ConsumerStatefulWidget {
   const ContactsListScreen({super.key});
 
@@ -79,93 +78,140 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
     return PermissionGate(
       anyOf: AppPermissions.crmCustomers,
       child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Contacts'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
+        appBar: AppBar(
+          title: const Text('Contacts'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () =>
+                  ref.read(salesWorkspaceProvider.notifier).refresh(),
+            ),
+          ],
+        ),
+        floatingActionButton: Can(
+          anyOf: AppPermissions.crmLeadsManage,
+          child: FloatingActionButton(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/crm/leads/form');
+            },
+            child: const Icon(Icons.person_add_alt_1),
           ),
-        ],
-      ),
-      floatingActionButton: Can(
-        anyOf: AppPermissions.crmLeadsManage,
-        child: FloatingActionButton(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          onPressed: () {
-            Navigator.pushNamed(context, '/crm/leads/form');
+        ),
+        body: CrmAsyncBody(
+          async: async,
+          onRetry: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
+          builder: (contacts) {
+            // Filter contacts
+            var filteredContacts = contacts.where((c) {
+              final query = _searchQuery.toLowerCase();
+              return c.name.toLowerCase().contains(query) ||
+                  c.account.toLowerCase().contains(query) ||
+                  c.phone.toLowerCase().contains(query) ||
+                  c.email.toLowerCase().contains(query);
+            }).toList();
+
+            // Newest contacts first
+            // Sort contacts
+            if (_isAlphabeticalSort) {
+              filteredContacts.sort((a, b) => a.name.compareTo(b.name));
+            }
+
+            return RefreshIndicator(
+              onRefresh: () =>
+                  ref.read(salesWorkspaceProvider.notifier).refresh(),
+              child: ListView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                children: [
+                  // Search Input Field
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                    decoration: InputDecoration(
+                      hintText: 'Find by name, company, phone or email...',
+                      hintStyle: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 14,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.muted,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      fillColor: Colors.grey.shade100,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Title & Count
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                     
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Total: ${filteredContacts.length}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Empty State or List of Cards
+                  if (filteredContacts.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.person_off_outlined,
+                              size: 48,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No contacts found.',
+                              style: TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    ...filteredContacts.map(
+                      (c) => _buildContactCard(context, c),
+                    ),
+                ],
+              ),
+            );
           },
-          child: const Icon(Icons.person_add_alt_1),
         ),
       ),
-      body: CrmAsyncBody(
-        async: async,
-        onRetry: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
-        builder: (contacts) {
-          // Filter contacts
-          var filteredContacts = contacts.where((c) {
-            final query = _searchQuery.toLowerCase();
-            return c.name.toLowerCase().contains(query) ||
-                c.account.toLowerCase().contains(query) ||
-                c.phone.toLowerCase().contains(query) ||
-                c.email.toLowerCase().contains(query);
-          }).toList();
-
-          // Sort contacts
-          if (_isAlphabeticalSort) {
-            filteredContacts.sort((a, b) => a.name.compareTo(b.name));
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => ref.read(salesWorkspaceProvider.notifier).refresh(),
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              children: [
-                // Search Input Field
-                TextField(
-                  controller: _searchController,
-                  onChanged: (val) => setState(() => _searchQuery = val),
-                  decoration: InputDecoration(
-                    hintText: 'Find by name, company, phone or email...',
-                    hintStyle: const TextStyle(color: AppColors.muted, fontSize: 14),
-                    prefixIcon: const Icon(Icons.search, color: AppColors.muted),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    fillColor: Colors.grey.shade100,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Title & Count
-               
-                // 
-
-                // Empty State or List of Cards
-                if (filteredContacts.isEmpty)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40.0),
-                      child: Column(
-                        children: [
-                          Icon(Icons.person_off_outlined, size: 48, color: Colors.grey.shade400),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'No contacts found.',
-                            style: TextStyle(color: AppColors.muted, fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  ...filteredContacts.map((c) => _buildContactCard(context, c)),
-              ],
-            ),
-          );
-        },
-      ),
-    ),
     );
   }
 
@@ -260,7 +306,10 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
 
                   // Badge Tag
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: badgeStyle['bg'],
                       borderRadius: BorderRadius.circular(6),
@@ -286,7 +335,11 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
               if (phoneText.isNotEmpty) ...[
                 Row(
                   children: [
-                    const Icon(Icons.phone_outlined, size: 15, color: AppColors.muted),
+                    const Icon(
+                      Icons.phone_outlined,
+                      size: 15,
+                      color: AppColors.muted,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -306,7 +359,11 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
               if (emailText.isNotEmpty) ...[
                 Row(
                   children: [
-                    const Icon(Icons.email_outlined, size: 15, color: AppColors.muted),
+                    const Icon(
+                      Icons.email_outlined,
+                      size: 15,
+                      color: AppColors.muted,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
