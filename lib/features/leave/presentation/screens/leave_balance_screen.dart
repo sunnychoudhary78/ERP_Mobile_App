@@ -118,7 +118,7 @@ class LeaveBalanceScreen extends ConsumerWidget {
             height: 52,
             child: ElevatedButton.icon(
               onPressed: () {
-                // TODO: navigate to Apply Leave screen
+                Navigator.pushNamed(context, '/leave-apply');
               },
               icon: const Icon(Icons.add, size: 20, color: Colors.white),
               label: const Text(
