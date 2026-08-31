@@ -1,11 +1,11 @@
-import 'package:erp_app/features/attendance/provider/attendance_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
-
+import 'package:erp_app/features/attendance/provider/attendance_provider.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 
 class PunchScreen extends ConsumerStatefulWidget {
   const PunchScreen({super.key});
@@ -115,11 +115,13 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
     final state = ref.watch(attendanceProvider);
     final isPunchedIn = state.isPunchedIn;
 
+    final authState = ref.watch(authProvider);
+    final profile = authState.profile;
+
     final now = DateTime.now();
     final currentTime = DateFormat('hh:mm a').format(now);
     final currentDate = DateFormat('EEEE, MMM d').format(now);
 
-    // Dynamic Calculations
     final checkIn = state.todaySession?.checkInTime;
     final checkOut = state.todaySession?.checkOutTime;
 
@@ -128,30 +130,81 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
       final endTime = checkOut ?? now;
       workedDuration = endTime.difference(checkIn);
     }
-    final hoursFormatted =
-        '${workedDuration.inHours.toString().padLeft(2, '0')}h ${(workedDuration.inMinutes % 60).toString().padLeft(2, '0')}m';
+
+    final workedHours = workedDuration.inHours.toString().padLeft(2, '0');
+    final workedMinutes = (workedDuration.inMinutes % 60).toString().padLeft(2, '0');
+    final hoursFormatted = '${workedHours}h ${workedMinutes}m';
+
+    // Work schedule values derived dynamically from state/config
+    // final shiftStartTime = state.config.shiftStartTime ?? '09:30 AM';
+    // final shiftEndTime = state.config.shiftEndTime ?? '06:30 PM';
+    // final targetMinutes = state.config.targetWorkMinutes ?? 540;
+    // final targetHours = targetMinutes ~/ 60;
+    // final targetMinsRemaining = targetMinutes % 60;
+    // final shiftDurationStr = '${targetHours}h ${targetMinsRemaining.toString().padLeft(2, '0')}m';
+
+    // final progressPercentage = (workedDuration.inMinutes / (targetMinutes == 0 ? 1 : targetMinutes)).clamp(0.0, 1.0);
+    // final progressDisplay = '${(progressPercentage * 100).toInt()}%';
+
+    final fullName = profile?.associatesName ?? '';
+    final userName = fullName.trim().isEmpty
+        ? 'there'
+        : fullName.trim().split(RegExp(r'\s+')).first;
+    final avatarUrl = authState.profileUrl;
+
+    final greetingText = now.hour < 12
+        ? 'Good Morning,'
+        : now.hour < 17
+            ? 'Good Afternoon,'
+            : 'Good Evening,';
+    const greetingSubtext = 'Stay consistent, keep going!';
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF8FAF7),
       appBar: AppBar(
-        backgroundColor: AppColors.card,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.text),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text(
-          'Punch Attendance',
-          style: TextStyle(
-            color: AppColors.text,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Column(
+          children: const [
+            Text(
+              'Attendance',
+              style: TextStyle(
+                color: Color(0xFF1E293B),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Track your work hours and attendance',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, size: 20, color: AppColors.text),
-            onPressed: () => ref.read(attendanceProvider.notifier).refreshStatus(),
+            icon: state.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF1E293B),
+                    ),
+                  )
+                : const Icon(Icons.refresh_rounded, color: Color(0xFF1E293B)),
+            onPressed: state.isLoading
+                ? null
+                : () => ref.read(attendanceProvider.notifier).refreshStatus(),
           ),
         ],
       ),
@@ -165,293 +218,515 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Compact Header Clock Card
+                  // Greeting Header Banner Card
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                    height: 120,
                     decoration: BoxDecoration(
-                      color: AppColors.card,
+                      color: const Color(0xFFEEF4FF),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border.withOpacity(0.5)),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Stack(
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              currentDate,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.muted,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              currentTime,
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.text,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: (isPunchedIn ? AppColors.success : AppColors.muted).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              CircleAvatar(
-                                radius: 3,
-                                backgroundColor: isPunchedIn ? AppColors.success : AppColors.muted,
-                              ),
-                              const SizedBox(width: 6),
                               Text(
-                                isPunchedIn ? 'On Shift' : 'Off Shift',
-                                style: TextStyle(
+                                greetingText,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    userName,
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Text('👋', style: TextStyle(fontSize: 18)),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                greetingSubtext,
+                                style: const TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: isPunchedIn ? AppColors.success : AppColors.muted,
+                                  color: Color(0xFF64748B),
                                 ),
                               ),
                             ],
                           ),
                         ),
+                        Positioned(
+                          right: 12,
+                          bottom: 0,
+                          top: 0,
+                          child: avatarUrl.isNotEmpty
+                              ? ClipOval(
+                                  child: Image.network(
+                                    avatarUrl,
+                                    fit: BoxFit.cover,
+                                    width: 64,
+                                    height: 64,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.person,
+                                      size: 80,
+                                      color: Color(0xFF3B82F6),
+                                    ),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.person_pin,
+                                  size: 80,
+                                  color: Color(0xFF3B82F6),
+                                ),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Punch Action Card — explicit Punch In / Punch Out buttons.
-                  // Both stay tappable regardless of the locally-known state:
-                  // if the backend and the app ever disagree (e.g. an open
-                  // session already exists), the user can still tap Punch
-                  // Out directly instead of being stuck behind a single
-                  // toggle button that only shows "Punch In".
+                  // Date & Schedule Info Card
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.card,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                      border: Border.all(color: const Color(0xFFF1F5F9)),
                     ),
-                    child: Column(
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _PunchButton(
-                                label: 'PUNCH IN',
-                                icon: Icons.login_rounded,
-                                color: AppColors.primary,
-                                emphasized: !isPunchedIn,
-                                loading: (_actionInFlight || state.isSubmitting) && !isPunchedIn,
-                                onTap: (_actionInFlight || state.isSubmitting || state.isLoading)
-                                    ? null
-                                    : () => _handlePunch(false),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _PunchButton(
-                                label: 'PUNCH OUT',
-                                icon: Icons.logout_rounded,
-                                color: AppColors.danger,
-                                emphasized: isPunchedIn,
-                                loading: (_actionInFlight || state.isSubmitting) && isPunchedIn,
-                                onTap: (_actionInFlight || state.isSubmitting || state.isLoading)
-                                    ? null
-                                    : () => _handlePunch(true),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          isPunchedIn ? 'You are on shift — tap Punch Out to clock out' : 'Tap Punch In to clock in',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.muted,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Compact Stats Summary Grid
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: AppColors.card,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppColors.border.withOpacity(0.5)),
-                          ),
+                        Expanded(
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.08),
+                                  color: const Color(0xFFF0F6FF),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Icon(
-                                  Icons.schedule_rounded,
-                                  color: AppColors.primary,
-                                  size: 18,
+                                  Icons.calendar_today_rounded,
+                                  color: Color(0xFF2563EB),
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'WORKED',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.muted,
-                                      letterSpacing: 0.5,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      currentDate,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    hoursFormatted,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.text,
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      currentTime,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F172A),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: (isPunchedIn ? const Color(0xFF16A34A) : const Color(0xFF94A3B8)).withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 3,
+                                            backgroundColor: isPunchedIn ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            isPunchedIn ? 'On Shift' : 'Off Shift',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: isPunchedIn ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: AppColors.card,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppColors.border.withOpacity(0.5)),
-                          ),
+                        Container(width: 1, height: 70, color: const Color(0xFFF1F5F9)),
+                        const SizedBox(width: 12),
+                        Expanded(
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: (isPunchedIn ? AppColors.success : AppColors.muted)
-                                      .withOpacity(0.08),
+                                  color: const Color(0xFFF0F6FF),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Icon(
-                                  isPunchedIn ? Icons.login_rounded : Icons.logout_rounded,
-                                  color: isPunchedIn ? AppColors.success : AppColors.muted,
-                                  size: 18,
+                                child: const Icon(
+                                  Icons.business_center_outlined,
+                                  color: Color(0xFF2563EB),
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'PUNCH IN TIME',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.muted,
-                                      letterSpacing: 0.5,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Work Schedule',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    checkIn != null
-                                        ? DateFormat('hh:mm a').format(checkIn)
-                                        : '--:--',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.text,
-                                    ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    // Text(
+                                    //   '$shiftStartTime - $shiftEndTime',
+                                    //   style: const TextStyle(
+                                    //     fontSize: 11,
+                                    //     color: Color(0xFF64748B),
+                                    //   ),
+                                    // ),
+                                    // Text(
+                                    //   '( $shiftDurationStr )',
+                                    //   style: const TextStyle(
+                                    //     fontSize: 11,
+                                    //     color: Color(0xFF64748B),
+                                    //   ),
+                                    // ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Circular Punch Button Container
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2FAF5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE2F3E8)),
+                    ),
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                width: 170,
+                                height: 170,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFF16A34A).withOpacity(0.06),
+                                ),
+                              ),
+                              Container(
+                                width: 140,
+                                height: 140,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFF16A34A).withOpacity(0.12),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: (_actionInFlight || state.isSubmitting || state.isLoading)
+                                    ? null
+                                    : () => _handlePunch(isPunchedIn),
+                                child: Container(
+                                  width: 110,
+                                  height: 110,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isPunchedIn ? AppColors.danger : const Color(0xFF16A34A),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (isPunchedIn ? AppColors.danger : const Color(0xFF16A34A)).withOpacity(0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      )
+                                    ],
+                                  ),
+                                  child: (_actionInFlight || state.isSubmitting)
+                                      ? const Center(
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 3,
+                                          ),
+                                        )
+                                      : Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              isPunchedIn ? Icons.logout_rounded : Icons.login_rounded,
+                                              color: Colors.white,
+                                              size: 28,
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              isPunchedIn ? 'PUNCH OUT' : 'PUNCH IN',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          isPunchedIn ? 'Tap to end your work day' : 'Tap to start your work day',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF475569),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.location_on_rounded,
+                              size: 14,
+                              color: Color(0xFF16A34A),
+                            ),
+                            const SizedBox(width: 4),
+                            // Text(
+                            //   state.locationText ?? 'Office location will be recorded',
+                            //   style: const TextStyle(
+                            //     fontSize: 12,
+                            //     color: Color(0xFF64748B),
+                            //   ),
+                            // ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Bottom Metrics Cards
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.access_time_rounded,
+                          iconBgColor: const Color(0xFFDCFCE7),
+                          iconColor: const Color(0xFF16A34A),
+                          title: 'Worked',
+                          value: hoursFormatted,
+                          subtitle: 'Today',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.login_rounded,
+                          iconBgColor: const Color(0xFFDBEAFE),
+                          iconColor: const Color(0xFF2563EB),
+                          title: 'Check In',
+                          value: checkIn != null ? DateFormat('hh:mm a').format(checkIn) : '--:--',
+                          subtitle: 'Today',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.logout_rounded,
+                          iconBgColor: const Color(0xFFFEE2E2),
+                          iconColor: const Color(0xFFEF4444),
+                          title: 'Check Out',
+                          value: checkOut != null ? DateFormat('hh:mm a').format(checkOut) : '--:--',
+                          subtitle: 'Today',
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Today's Activity Card
+                  // Today's Work Progress Card
+                  // Container(
+                  //   padding: const EdgeInsets.all(16),
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.white,
+                  //     borderRadius: BorderRadius.circular(16),
+                  //     border: Border.all(color: const Color(0xFFF1F5F9)),
+                  //   ),
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: [
+                  //       Row(
+                  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //         children: [
+                  //           const Text(
+                  //             "Today's Work Progress",
+                  //             style: TextStyle(
+                  //               fontSize: 13,
+                  //               fontWeight: FontWeight.bold,
+                  //               color: Color(0xFF1E293B),
+                  //             ),
+                  //           ),
+                  //           // Text(
+                  //           //   progressDisplay,
+                  //           //   style: const TextStyle(
+                  //           //     fontSize: 13,
+                  //           //     fontWeight: FontWeight.bold,
+                  //           //     color: Color(0xFF16A34A),
+                  //           //   ),
+                  //           // ),
+                  //         ],
+                  //       ),
+                  //       const SizedBox(height: 4),
+                  //       // Text(
+                  //       //   '$hoursFormatted / $shiftDurationStr',
+                  //       //   style: const TextStyle(
+                  //       //     fontSize: 11,
+                  //       //     color: Color(0xFF64748B),
+                  //       //   ),
+                  //       // ),
+                  //       const SizedBox(height: 10),
+                  //       // ClipRRect(
+                  //       //   borderRadius: BorderRadius.circular(4),
+                  //       //   child: LinearProgressIndicator(
+                  //       //     value: progressPercentage,
+                  //       //     minHeight: 6,
+                  //       //     backgroundColor: const Color(0xFFE2E8F0),
+                  //       //     valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF16A34A)),
+                  //       //   ),
+                  //       // ),
+                  //     ],
+                  //   ),
+                  // ),
+                  const SizedBox(height: 14),
+
+                  // Today's Activity Section
                   Container(
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.card,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                      border: Border.all(color: const Color(0xFFF1F5F9)),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                "TODAY'S LOG",
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Today's Activity",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {},
+                              child: const Text(
+                                'View All',
                                 style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.muted,
-                                  letterSpacing: 0.5,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2563EB),
                                 ),
                               ),
-                              Text(
-                                checkIn != null
-                                    ? (checkOut != null ? '2 entries' : '1 entry')
-                                    : '0 entries',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.muted,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (checkIn == null)
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0FDF4),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.description_outlined,
+                                  color: Color(0xFF16A34A),
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: const [
+                                    Text(
+                                      'No activity logged today yet.',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Your attendance activity will appear here.',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                        const Divider(height: 1, color: AppColors.border),
-                        if (checkIn == null)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 18),
-                            child: Text(
-                              'No activity logged today yet.',
-                              style: TextStyle(color: AppColors.muted, fontSize: 13),
-                            ),
                           )
                         else ...[
-                          _ActivityRow(
+                          _ActivityRowItem(
                             icon: Icons.login_rounded,
                             title: 'Punch In',
                             time: DateFormat('hh:mm a').format(checkIn),
-                            iconColor: AppColors.success,
+                            iconColor: const Color(0xFF16A34A),
                           ),
                           if (checkOut != null) ...[
-                            const Divider(height: 1, indent: 48, color: AppColors.border),
-                            _ActivityRow(
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                            ),
+                            _ActivityRowItem(
                               icon: Icons.logout_rounded,
                               title: 'Punch Out',
                               time: DateFormat('hh:mm a').format(checkOut),
@@ -472,90 +747,86 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
   }
 }
 
-/// A single Punch In / Punch Out action button.
-/// [emphasized] renders it as a solid filled button (the action that
-/// matches current state); otherwise it's an outlined secondary button.
-/// It stays tappable either way — see the note above where it's used.
-class _PunchButton extends StatelessWidget {
-  final String label;
+class _StatCard extends StatelessWidget {
   final IconData icon;
-  final Color color;
-  final bool emphasized;
-  final bool loading;
-  final VoidCallback? onTap;
+  final Color iconBgColor;
+  final Color iconColor;
+  final String title;
+  final String value;
+  final String subtitle;
 
-  const _PunchButton({
-    required this.label,
+  const _StatCard({
     required this.icon,
-    required this.color,
-    required this.emphasized,
-    required this.loading,
-    required this.onTap,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.value,
+    required this.subtitle,
   });
 
   @override
   Widget build(BuildContext context) {
-    final disabled = onTap == null;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: emphasized ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: emphasized ? color : color.withOpacity(disabled ? 0.3 : 0.6),
-            width: 1.4,
-          ),
-        ),
-        child: loading
-            ? Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: emphasized ? Colors.white : color,
-                    strokeWidth: 2.5,
-                  ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              )
-            : Opacity(
-                opacity: disabled && !emphasized ? 0.5 : 1,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      icon,
-                      size: 22,
-                      color: emphasized ? Colors.white : color,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: emphasized ? Colors.white : color,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
+                child: Icon(icon, color: iconColor, size: 14),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 10,
+              color: Color(0xFF94A3B8),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ActivityRow extends StatelessWidget {
+class _ActivityRowItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final String time;
   final Color iconColor;
 
-  const _ActivityRow({
+  const _ActivityRowItem({
     required this.icon,
     required this.title,
     required this.time,
@@ -564,38 +835,35 @@ class _ActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: iconColor, size: 16),
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.text,
-            ),
+          child: Icon(icon, color: iconColor, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E293B),
           ),
-          const Spacer(),
-          Text(
-            time,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.text,
-            ),
+        ),
+        const Spacer(),
+        Text(
+          time,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E293B),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

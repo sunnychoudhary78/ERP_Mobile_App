@@ -4,7 +4,6 @@ import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart
 import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/production_screen.dart';
-import 'package:erp_app/shared/widgets/can_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -156,9 +155,6 @@ class HomeScreen extends ConsumerWidget {
     ]),
   ];
 
-  static const double _sectionGap = 24;
-  static const double _itemGap = 12;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
@@ -168,20 +164,20 @@ class HomeScreen extends ConsumerWidget {
 
     final fullName = profile?.associatesName ?? 'there';
     final firstName = fullName.split(' ').first;
-    final designation = (profile?.designation ?? '').trim();
+    final designation = (profile?.designation ?? 'Employee').trim();
     final initials = fullName.trim().isEmpty
         ? '?'
         : fullName
-              .trim()
-              .split(RegExp(r'\s+'))
-              .take(2)
-              .map((e) => e[0].toUpperCase())
-              .join();
+            .trim()
+            .split(RegExp(r'\s+'))
+            .take(2)
+            .map((e) => e[0].toUpperCase())
+            .join();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF6F8FB),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
@@ -190,26 +186,39 @@ class HomeScreen extends ConsumerWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Dashboard',
+              style: TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              'Overview of your business',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
         actions: [
           _NotificationBellButton(unreadCount: ref.watch(unreadCountProvider)),
-          // IconButton(
-          //   tooltip: 'Logout',
-          //   onPressed: () async {
-          //     final confirmed = await showLogoutConfirmationDialog(context);
-          //     if (confirmed == true && context.mounted) {
-          //       ref.read(authProvider.notifier).logout();
-          //     }
-          //   },
-          //   icon: const Icon(Icons.logout_rounded, color: Color(0xFF1E293B)),
-          // ),
+          IconButton(
+            tooltip: 'Logout',
+            onPressed: () async {
+              final confirmed = await showLogoutConfirmationDialog(context);
+              if (confirmed == true && context.mounted) {
+                ref.read(authProvider.notifier).logout();
+              }
+            },
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFF1E293B)),
+          ),
           const SizedBox(width: 4),
         ],
       ),
@@ -231,252 +240,364 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // -----------------------------------------------------------
-                // TOP WELCOME CARD (Matches Screenshot)
-                // -----------------------------------------------------------
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1B4965), // Deep Slate Teal Accent
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(
-                            0xFF1B4965,
-                          ).withValues(alpha: 0.15),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                // 1. WELCOME CARD
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [ Color(0xFF1B4F72), Color(0xFF154360)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                     ),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/profile'),
-                          child: CircleAvatar(
-                            radius: 26,
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.18,
-                            ),
-                            child: Text(
-                              initials,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Welcome back,',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 15,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text(
+                                  firstName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('👋', style: TextStyle(fontSize: 22)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.person_outline,
+                                      color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    designation,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      CircleAvatar(
+                        radius: 36,
+                        backgroundColor: Colors.white.withValues(alpha: 0.3),
+                        child: Text(
+                          initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Welcome back, $firstName',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                designation.isNotEmpty
-                                    ? designation
-                                    : "Here's your operational status.",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white.withValues(alpha: 0.75),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: _sectionGap),
+                const SizedBox(height: 16),
 
-                // -----------------------------------------------------------
-                // QUICK ACTIONS (Preserved Layout & Compact Tight Gaps)
-                // -----------------------------------------------------------
-                const _SectionLabel('QUICK ACTIONS'),
-                const SizedBox(height: _itemGap),
+                // 2. METRICS ROW
+                // SingleChildScrollView(
+                //   scrollDirection: Axis.horizontal,
+                //   child: Row(
+                //     children: [
+                //       _MetricCard(
+                //         title: 'Total Employees',
+                //         value: data.totalEmployees,
+                //         growth: data.totalEmployeesGrowth,
+                //         icon: Icons.people_outline,
+                //         iconBg: const Color(0xFFEFF6FF),
+                //         iconColor: const Color(0xFF3B82F6),
+                //       ),
+                //       const SizedBox(width: 12),
+                //       _MetricCard(
+                //         title: 'Leads',
+                //         value: data.leadsCount,
+                //         growth: data.leadsGrowth,
+                //         icon: Icons.bar_chart_outlined,
+                //         iconBg: const Color(0xFFFAF5FF),
+                //         iconColor: const Color(0xFFA855F7),
+                //       ),
+                //       const SizedBox(width: 12),
+                //       _MetricCard(
+                //         title: 'Low Stock Items',
+                //         value: data.lowStockCount,
+                //         growth: data.lowStockGrowth,
+                //         icon: Icons.inventory_2_outlined,
+                //         iconBg: const Color(0xFFF0FDF4),
+                //         iconColor: const Color(0xFF22C55E),
+                //       ),
+                //       const SizedBox(width: 12),
+                //       _MetricCard(
+                //         title: 'Production Orders',
+                //         value: data.productionOrdersCount,
+                //         growth: data.productionOrdersGrowth,
+                //         icon: Icons.assessment_outlined,
+                //         iconBg: const Color(0xFFFFF7ED),
+                //         iconColor: const Color(0xFFF97316),
+                //       ),
+                //     ],
+                //   ),
+                // ),
+                //const SizedBox(height: 24),
+
+                // 3. QUICK ACTIONS
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    // TextButton(
+                    //   onPressed: () {},
+                    //   child: const Text('View All'),
+                    // ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.85,
+                  children: [
+                    if (authState.canAny(AppPermissions.punch))
+                      _QuickActionTile(
+                        icon: Icons.access_time,
+                        title: 'Punch In',
+                        subtitle: 'Mark attendance',
+                        iconColor: const Color(0xFF3B82F6),
+                        onTap: () => Navigator.pushNamed(context, '/punch'),
+                      ),
+                    if (authState.canAny(AppPermissions.crmLeads))
+                      _QuickActionTile(
+                        icon: Icons.person,
+                        title: 'View Lead',
+                        subtitle: 'View lead',
+                        iconColor: const Color(0xFFA855F7),
+                        onTap: () => Navigator.pushNamed(context, '/crm/leads'),
+                      ),
+                    if (authState.canAny(AppPermissions.stockLookup))
+                      _QuickActionTile(
+                        icon: Icons.search,
+                        title: 'Stock Lookup',
+                        subtitle: 'Check inventory',
+                        iconColor: const Color(0xFF22C55E),
+                        onTap: () => Navigator.pushNamed(context, '/stock-lookup'),
+                      ),
+                    if (authState.canAny(AppPermissions.productionModule))
+                      _QuickActionTile(
+                        icon: Icons.show_chart,
+                        title: 'Production',
+                        subtitle: 'See order',
+                        iconColor: const Color(0xFFF97316),
+                        onTap: () => Navigator.pushNamed(context, '/work-orders'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // 4. MODULES SECTION
+                const Text(
+                  'Modules',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Builder(
                   builder: (context) {
-                    final actions = <Widget>[
-                      if (authState.canAny(AppPermissions.punch))
-                        _QuickActionButton(
-                          icon: Icons.fingerprint_rounded,
-                          label: 'Punch',
-                          color: Colors.blue,
-                          onTap: () => Navigator.pushNamed(context, '/punch'),
+                    // Only build cards for modules the user actually has
+                    // permission to see — no permission check, no blank
+                    // gap left behind in the grid.
+                    final modules = <_ModuleCard>[
+                      if (authState.canAny(AppPermissions.crmModule))
+                        _ModuleCard(
+                          title: 'CRM',
+                          description:
+                              'Manage leads, pipeline and customer relationships',
+                          icon: Icons.person_outline_rounded,
+                          decorativeIcon: Icons.groups_rounded,
+                          accentColor: const Color(0xFF8B5CF6),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const CrmSalesScreen()),
+                          ),
                         ),
-                      if (authState.canAny(AppPermissions.leaveSelf))
-                        _QuickActionButton(
-                          icon: Icons.event_available_outlined,
-                          label: 'Apply Leave',
-                          color: Colors.orange,
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/leave-apply'),
+                      if (authState.canAny(AppPermissions.hrmsModule))
+                        _ModuleCard(
+                          title: 'HRMS',
+                          description:
+                              'Attendance, leaves, approvals and employee management',
+                          icon: Icons.person_outline_rounded,
+                          decorativeIcon: Icons.calendar_month_rounded,
+                          accentColor: const Color(0xFFF97316),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const HrmsScreen()),
+                          ),
                         ),
-                      if (authState.canAny(AppPermissions.crmLeads))
-                        _QuickActionButton(
-                          icon: Icons.leaderboard_outlined,
-                          label: 'Leads',
-                          color: Colors.purple,
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/crm/leads'),
+                      if (authState.canAny(AppPermissions.inventoryModule))
+                        _ModuleCard(
+                          title: 'Inventory',
+                          description:
+                              'Stock lookup, transfers and field activities',
+                          icon: Icons.inventory_2_rounded,
+                          decorativeIcon: Icons.inventory_2_rounded,
+                          accentColor: const Color(0xFF22C55E),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const InventorySalesScreen()),
+                          ),
                         ),
-                      if (authState.canAny(AppPermissions.crmVisits))
-                        _QuickActionButton(
-                          icon: Icons.location_on_outlined,
-                          label: 'Visits',
-                          color: Colors.teal,
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/crm/visits'),
+                      if (authState.canAny(AppPermissions.productionModule))
+                        _ModuleCard(
+                          title: 'Production',
+                          description:
+                              'Production orders, planning and tracking',
+                          icon: Icons.precision_manufacturing_rounded,
+                          decorativeIcon: Icons.factory_rounded,
+                          accentColor: const Color(0xFF3B82F6),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const ProductionDashboardScreen()),
+                          ),
                         ),
                     ];
-                    if (actions.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
+
+                    if (modules.isEmpty) return const SizedBox.shrink();
+
                     return GridView.count(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      children: actions,
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.92,
+                      children: modules,
                     );
                   },
                 ),
-                const SizedBox(height: _sectionGap),
+                const SizedBox(height: 24),
 
-                // -----------------------------------------------------------
-                // MODULES & SETTINGS LIST TILES
-                // -----------------------------------------------------------
-                const _SectionLabel('MODULES & SETTINGS'),
-                const SizedBox(height: _itemGap),
-
-                // _ListCardTile(
-                //   icon: Icons.person_outline_rounded,
-                //   iconBgColor: const Color(0xFFEFF6FF),
-                //   iconColor: const Color(0xFF2563EB),
-                //   title: 'Profile',
-                //   subtitle: 'Manage your personal details',
-                //   onTap: () => Navigator.pushNamed(context, '/profile'),
+                // 5. TODAY'S SUMMARY FOOTER CARD
+                // Container(
+                //   padding: const EdgeInsets.all(16),
+                //   decoration: BoxDecoration(
+                //     color: Colors.white,
+                //     borderRadius: BorderRadius.circular(16),
+                //     border: Border.all(color: const Color(0xFFE2E8F0)),
+                //   ),
+                //   child: Column(
+                //     children: [
+                //       Row(
+                //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //         children: [
+                //           const Text(
+                //             "Today's Summary",
+                //             style: TextStyle(
+                //               fontWeight: FontWeight.bold,
+                //               fontSize: 14,
+                //               color: Color(0xFF0F172A),
+                //             ),
+                //           ),
+                //           Row(
+                //             children: [
+                //               Text(
+                //                 data.summaryDate,
+                //                 style: const TextStyle(
+                //                   color: Color(0xFF64748B),
+                //                   fontSize: 12,
+                //                 ),
+                //               ),
+                //               const SizedBox(width: 4),
+                //               const Icon(Icons.calendar_today_outlined,
+                //                   size: 14, color: Color(0xFF64748B)),
+                //             ],
+                //           )
+                //         ],
+                //       ),
+                //       const SizedBox(height: 16),
+                //       Row(
+                //         mainAxisAlignment: MainAxisAlignment.spaceAround,
+                //         children: [
+                //           _SummaryItem(
+                //             icon: Icons.check_circle_outline,
+                //             iconColor: const Color(0xFF3B82F6),
+                //             title: 'Attendance',
+                //             value: data.attendancePercentage,
+                //             subtitle: 'Present',
+                //           ),
+                //           _SummaryItem(
+                //             icon: Icons.access_time,
+                //             iconColor: const Color(0xFFA855F7),
+                //             title: 'Leaves',
+                //             value: data.pendingLeaves,
+                //             subtitle: 'Pending',
+                //           ),
+                //           _SummaryItem(
+                //             icon: Icons.widgets_outlined,
+                //             iconColor: const Color(0xFF22C55E),
+                //             title: 'Low Stock',
+                //             value: data.lowStockItemsCount,
+                //             subtitle: 'Items',
+                //           ),
+                //           _SummaryItem(
+                //             icon: Icons.show_chart,
+                //             iconColor: const Color(0xFFF97316),
+                //             title: 'Production',
+                //             value: data.productionOrdersTotal,
+                //             subtitle: 'Orders',
+                //           ),
+                //         ],
+                //       ),
+                //     ],
+                //   ),
                 // ),
-                const SizedBox(height: 10),
-
-                Can(
-                  anyOf: AppPermissions.crmModule,
-                  child: Column(
-                    children: [
-                      _ListCardTile(
-                        icon: Icons.bar_chart_rounded,
-                        iconBgColor: const Color(0xFFFAF5FF),
-                        iconColor: const Color(0xFF9333EA),
-                        title: 'CRM',
-                        subtitle: 'Leads, pipeline, and customer info',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CrmSalesScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                ),
-
-                Can(
-                  anyOf: AppPermissions.hrmsModule,
-                  child: Column(
-                    children: [
-                      _ListCardTile(
-                        icon: Icons.badge_outlined,
-                        iconBgColor: const Color(0xFFFFF7ED),
-                        iconColor: const Color(0xFFEA580C),
-                        title: 'HRMS',
-                        subtitle: 'Attendance, leaves, and approvals',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HrmsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                ),
-
-                Can(
-                  anyOf: AppPermissions.inventoryModule,
-                  child: Column(
-                    children: [
-                      _ListCardTile(
-                        icon: Icons.inventory_2_outlined,
-                        iconBgColor: const Color(0xFFF0FDF4),
-                        iconColor: const Color(0xFF16A34A),
-                        title: 'Inventory',
-                        subtitle: 'Stock lookup and field activities',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const InventorySalesScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                ),
-
-                Can(
-                  anyOf: AppPermissions.productionModule,
-                  child: Column(
-                    children: [
-                      _ListCardTile(
-                        icon: Icons.work_history_outlined,
-                        iconBgColor: const Color.fromARGB(136, 240, 253, 244),
-                        iconColor: const Color.fromARGB(255, 163, 22, 156),
-                        title: 'Production',
-                        subtitle: 'Stock lookup and field activities',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const ProductionDashboardScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -490,37 +611,96 @@ class HomeScreen extends ConsumerWidget {
 // Helper Widgets
 // ---------------------------------------------------------------------------
 
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  const _SectionLabel(this.text);
+class _MetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String growth;
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+
+  const _MetricCard({
+    required this.title,
+    required this.value,
+    required this.growth,
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: const Color(0xFF64748B),
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-          letterSpacing: 0.8,
-        ),
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                growth,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF22C55E),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            'vs last month',
+            style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _QuickActionButton extends StatelessWidget {
+class _QuickActionTile extends StatelessWidget {
   final IconData icon;
-  final String label;
-  final Color color;
+  final String title;
+  final String subtitle;
+  final Color iconColor;
   final VoidCallback onTap;
 
-  const _QuickActionButton({
+  const _QuickActionTile({
     required this.icon,
-    required this.label,
-    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.iconColor,
     required this.onTap,
   });
 
@@ -533,34 +713,39 @@ class _QuickActionButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(7),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
-                label,
+                title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E293B),
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                maxLines: 1,
               ),
             ],
           ),
@@ -570,91 +755,178 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-class _ListCardTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconBgColor;
-  final Color iconColor;
+class _ModuleCard extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String description;
+  final IconData icon;
+  final IconData decorativeIcon;
+  final Color accentColor;
   final VoidCallback onTap;
 
-  const _ListCardTile({
-    required this.icon,
-    required this.iconBgColor,
-    required this.iconColor,
+  const _ModuleCard({
     required this.title,
-    required this.subtitle,
+    required this.description,
+    required this.icon,
+    required this.decorativeIcon,
+    required this.accentColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE8ECF3)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: iconBgColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: iconColor, size: 22),
+          child: Stack(
+            children: [
+              // Faint decorative icon watermark, bleeding off the
+              // bottom-right corner of the card.
+              Positioned(
+                right: -18,
+                bottom: -14,
+                child: Icon(
+                  decorativeIcon,
+                  size: 96,
+                  color: accentColor.withValues(alpha: 0.06),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: Color(0xFF0F172A),
-                        ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          color: Color(0xFF64748B),
-                        ),
+                      child: Icon(icon, color: accentColor, size: 22),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        height: 1.35,
+                        color: Color(0xFF64748B),
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 44),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'View Details',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: accentColor,
+                          ),
+                        ),
+                        Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: accentColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFF94A3B8),
-                  size: 20,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SummaryItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String value;
+  final String subtitle;
+
+  const _SummaryItem({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 14),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        Text(
+          subtitle,
+          style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+        ),
+      ],
     );
   }
 }
@@ -686,8 +958,10 @@ class _NotificationBellButton extends StatelessWidget {
               top: -3,
               right: -3,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                constraints:
+                    const BoxConstraints(minWidth: 16, minHeight: 16),
                 decoration: BoxDecoration(
                   color: AppColors.danger,
                   borderRadius: BorderRadius.circular(20),
@@ -850,25 +1124,37 @@ class _LogoutDialog extends StatelessWidget {
   }
 }
 
+// Data model dynamically backfilling card details
 class HomeDashboardData {
-  final String punchTime;
-  final String punchBadgeText;
-  final bool isLoggedIn;
-  final String pendingCount;
-  final String pendingBadgeText;
-  final String nextFollowUpTitle;
-  final String nextFollowUpTime;
-  final String followUpRoute;
+  final String totalEmployees;
+  final String totalEmployeesGrowth;
+  final String leadsCount;
+  final String leadsGrowth;
+  final String lowStockCount;
+  final String lowStockGrowth;
+  final String productionOrdersCount;
+  final String productionOrdersGrowth;
+
+  final String summaryDate;
+  final String attendancePercentage;
+  final String pendingLeaves;
+  final String lowStockItemsCount;
+  final String productionOrdersTotal;
 
   const HomeDashboardData({
-    required this.punchTime,
-    required this.punchBadgeText,
-    required this.isLoggedIn,
-    required this.pendingCount,
-    required this.pendingBadgeText,
-    required this.nextFollowUpTitle,
-    required this.nextFollowUpTime,
-    required this.followUpRoute,
+    required this.totalEmployees,
+    required this.totalEmployeesGrowth,
+    required this.leadsCount,
+    required this.leadsGrowth,
+    required this.lowStockCount,
+    required this.lowStockGrowth,
+    required this.productionOrdersCount,
+    required this.productionOrdersGrowth,
+    required this.summaryDate,
+    required this.attendancePercentage,
+    required this.pendingLeaves,
+    required this.lowStockItemsCount,
+    required this.productionOrdersTotal,
   });
 }
 
@@ -876,13 +1162,18 @@ final homeDataProvider = FutureProvider.autoDispose<HomeDashboardData>((
   ref,
 ) async {
   return const HomeDashboardData(
-    punchTime: '-',
-    punchBadgeText: 'LOGGED IN',
-    isLoggedIn: true,
-    pendingCount: '-',
-    pendingBadgeText: '',
-    nextFollowUpTitle: 'No follow-ups scheduled',
-    nextFollowUpTime: '',
-    followUpRoute: '/crm/activities',
+    totalEmployees: '124',
+    totalEmployeesGrowth: '↑ 8%',
+    leadsCount: '132',
+    leadsGrowth: '↑ 12%',
+    lowStockCount: '18',
+    lowStockGrowth: '↑ 5%',
+    productionOrdersCount: '32',
+    productionOrdersGrowth: '↑ 7%',
+    summaryDate: '23 Aug, 2026',
+    attendancePercentage: '89%',
+    pendingLeaves: '6',
+    lowStockItemsCount: '18',
+    productionOrdersTotal: '32',
   );
 });
