@@ -16,10 +16,16 @@ class AppRoot extends ConsumerStatefulWidget {
 
 class _AppRootState extends ConsumerState<AppRoot> {
   bool _autoLoginAttempted = false;
+  bool _splashReviewComplete = false;
 
   @override
   void initState() {
     super.initState();
+    Future<void>.delayed(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      setState(() => _splashReviewComplete = true);
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_autoLoginAttempted) return;
       _autoLoginAttempted = true;
@@ -35,7 +41,7 @@ class _AppRootState extends ConsumerState<AppRoot> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    if (authState.isInitializing) {
+    if (authState.isInitializing || !_splashReviewComplete) {
       return const SplashLoadingScreen();
     }
 
