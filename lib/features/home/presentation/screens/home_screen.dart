@@ -413,49 +413,78 @@ class HomeScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.85,
-                  children: [
-                    if (authState.canAny(AppPermissions.punch))
-                      _QuickActionTile(
-                        icon: Icons.access_time,
-                        title: 'Punch In',
-                        subtitle: 'Mark attendance',
-                        iconColor: const Color(0xFF3B82F6),
-                        onTap: () => Navigator.pushNamed(context, '/punch'),
-                      ),
-                    if (authState.canAny(AppPermissions.crmLeads))
-                      _QuickActionTile(
-                        icon: Icons.person,
-                        title: 'View Lead',
-                        subtitle: 'View lead',
-                        iconColor: const Color(0xFFA855F7),
-                        onTap: () => Navigator.pushNamed(context, '/crm/leads'),
-                      ),
-                    if (authState.canAny(AppPermissions.stockLookup))
-                      _QuickActionTile(
-                        icon: Icons.search,
-                        title: 'Stock Lookup',
-                        subtitle: 'Check inventory',
-                        iconColor: const Color(0xFF22C55E),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/stock-lookup'),
-                      ),
-                    if (authState.canAny(AppPermissions.productionModule))
-                      _QuickActionTile(
-                        icon: Icons.show_chart,
-                        title: 'Production',
-                        subtitle: 'See order',
-                        iconColor: const Color(0xFFF97316),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/work-orders'),
-                      ),
-                  ],
+                Builder(
+                  builder: (context) {
+                    final quickActions = <Widget>[
+                      if (authState.canAny(AppPermissions.punch))
+                        _QuickActionTile(
+                          icon: Icons.access_time,
+                          title: 'Punch In',
+                          subtitle: 'Mark attendance',
+                          iconColor: const Color(0xFF3B82F6),
+                          onTap: () => Navigator.pushNamed(context, '/punch'),
+                        ),
+                      if (authState.canAny(AppPermissions.crmLeads))
+                        _QuickActionTile(
+                          icon: Icons.person,
+                          title: 'View Lead',
+                          subtitle: 'View lead',
+                          iconColor: const Color(0xFFA855F7),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/crm/leads'),
+                        ),
+                      if (authState.canAny(AppPermissions.stockLookup))
+                        _QuickActionTile(
+                          icon: Icons.search,
+                          title: 'Stock Lookup',
+                          subtitle: 'Check inventory',
+                          iconColor: const Color(0xFF22C55E),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/stock-lookup'),
+                        ),
+                      if (authState.canAny(AppPermissions.productionModule))
+                        _QuickActionTile(
+                          icon: Icons.show_chart,
+                          title: 'Production',
+                          subtitle: 'See order',
+                          iconColor: const Color(0xFFF97316),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/work-orders'),
+                        ),
+                    ];
+
+                    if (quickActions.isEmpty) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Text(
+                          'No quick actions are available for your account yet. '
+                          'Please contact your administrator for access.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFF475569),
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.85,
+                      children: quickActions,
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -537,7 +566,37 @@ class HomeScreen extends ConsumerWidget {
                         ),
                     ];
 
-                    if (modules.isEmpty) return const SizedBox.shrink();
+                    if (modules.isEmpty) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Column(
+                          children: [
+                            Icon(
+                              Icons.widgets_outlined,
+                              size: 40,
+                              color: Color(0xFF64748B),
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'No modules are assigned to your account yet. '
+                              'Please contact your administrator for access.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF475569),
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
 
                     return GridView.count(
                       shrinkWrap: true,

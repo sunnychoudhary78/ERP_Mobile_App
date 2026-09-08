@@ -30,12 +30,10 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
       duration: const Duration(milliseconds: 500),
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.03),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
-    );
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
     _animController.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -132,7 +130,10 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
     }
 
     final workedHours = workedDuration.inHours.toString().padLeft(2, '0');
-    final workedMinutes = (workedDuration.inMinutes % 60).toString().padLeft(2, '0');
+    final workedMinutes = (workedDuration.inMinutes % 60).toString().padLeft(
+      2,
+      '0',
+    );
     final hoursFormatted = '${workedHours}h ${workedMinutes}m';
 
     // Work schedule values derived dynamically from state/config
@@ -155,12 +156,12 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
     final greetingText = now.hour < 12
         ? 'Good Morning,'
         : now.hour < 17
-            ? 'Good Afternoon,'
-            : 'Good Evening,';
+        ? 'Good Afternoon,'
+        : 'Good Evening,';
     const greetingSubtext = 'Stay consistent, keep going!';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF7),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -227,6 +228,34 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                     ),
                     child: Stack(
                       children: [
+                        // Decorative background circles
+                        Positioned(
+                          right: -20,
+                          top: -30,
+                          child: Container(
+                            width: 125,
+                            height: 125,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFFDCE9FF),
+                            ),
+                          ),
+                        ),
+
+                        Positioned(
+                          right: 55,
+                          bottom: -45,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFFE4EEFF),
+                            ),
+                          ),
+                        ),
+
+                        // Main greeting content
                         Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
@@ -241,7 +270,9 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
+
                               const SizedBox(height: 4),
+
                               Row(
                                 children: [
                                   Text(
@@ -253,10 +284,15 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  const Text('👋', style: TextStyle(fontSize: 18)),
+                                  const Text(
+                                    '👋',
+                                    style: TextStyle(fontSize: 18),
+                                  ),
                                 ],
                               ),
+
                               const SizedBox(height: 6),
+
                               Text(
                                 greetingSubtext,
                                 style: const TextStyle(
@@ -267,29 +303,233 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                             ],
                           ),
                         ),
+
+                        // Right-side business illustration
                         Positioned(
-                          right: 12,
-                          bottom: 0,
-                          top: 0,
-                          child: avatarUrl.isNotEmpty
-                              ? ClipOval(
-                                  child: Image.network(
-                                    avatarUrl,
-                                    fit: BoxFit.cover,
-                                    width: 64,
-                                    height: 64,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.person,
-                                      size: 80,
+                          right: 10,
+                          bottom: 8,
+                          child: SizedBox(
+                            width: 125,
+                            height: 100,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Small analytics card
+                                Positioned(
+                                  right: 5,
+                                  top: 12,
+                                  child: Container(
+                                    width: 70,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.06),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 5),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(9),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              width: 7,
+                                              height: 7,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF3B82F6),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 5),
+                                            const Text(
+                                              'Sales',
+                                              style: TextStyle(
+                                                fontSize: 8,
+                                                color: Color(0xFF64748B),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        const Spacer(),
+
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Container(
+                                              width: 6,
+                                              height: 13,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFBFDBFE),
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Container(
+                                              width: 6,
+                                              height: 21,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF93C5FD),
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Container(
+                                              width: 6,
+                                              height: 28,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF3B82F6),
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Container(
+                                              width: 6,
+                                              height: 18,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF60A5FA),
+                                                borderRadius:
+                                                    BorderRadius.circular(3),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                // Laptop / workspace illustration
+                                Positioned(
+                                  left: 5,
+                                  bottom: 3,
+                                  child: Container(
+                                    width: 82,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFCBD5E1),
+                                      borderRadius: BorderRadius.circular(7),
+                                    ),
+                                    child: Container(
+                                      margin: const EdgeInsets.all(3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            width: 32,
+                                            height: 5,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF93C5FD),
+                                              borderRadius:
+                                                  BorderRadius.circular(3),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Container(
+                                                width: 14,
+                                                height: 10,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(
+                                                    0xFFDBEAFE,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(2),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Container(
+                                                width: 24,
+                                                height: 10,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(
+                                                    0xFFE0F2FE,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(2),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // Small plant
+                                Positioned(
+                                  right: 0,
+                                  bottom: 2,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.eco_rounded,
+                                        size: 25,
+                                        color: Color(0xFF22C55E),
+                                      ),
+                                      Container(
+                                        width: 18,
+                                        height: 12,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF8FAFC),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Floating notification dot
+                                Positioned(
+                                  left: 2,
+                                  top: 5,
+                                  child: Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 8,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.auto_graph_rounded,
+                                      size: 13,
                                       color: Color(0xFF3B82F6),
                                     ),
                                   ),
-                                )
-                              : const Icon(
-                                  Icons.person_pin,
-                                  size: 80,
-                                  color: Color(0xFF3B82F6),
                                 ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -344,9 +584,16 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                                     ),
                                     const SizedBox(height: 6),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: (isPunchedIn ? const Color(0xFF16A34A) : const Color(0xFF94A3B8)).withOpacity(0.12),
+                                        color:
+                                            (isPunchedIn
+                                                    ? const Color(0xFF16A34A)
+                                                    : const Color(0xFF94A3B8))
+                                                .withOpacity(0.12),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
@@ -354,15 +601,21 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                                         children: [
                                           CircleAvatar(
                                             radius: 3,
-                                            backgroundColor: isPunchedIn ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
+                                            backgroundColor: isPunchedIn
+                                                ? const Color(0xFF16A34A)
+                                                : const Color(0xFF94A3B8),
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            isPunchedIn ? 'On Shift' : 'Off Shift',
+                                            isPunchedIn
+                                                ? 'On Shift'
+                                                : 'Off Shift',
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
-                                              color: isPunchedIn ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                                              color: isPunchedIn
+                                                  ? const Color(0xFF16A34A)
+                                                  : const Color(0xFF64748B),
                                             ),
                                           ),
                                         ],
@@ -374,7 +627,11 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                             ],
                           ),
                         ),
-                        Container(width: 1, height: 70, color: const Color(0xFFF1F5F9)),
+                        Container(
+                          width: 1,
+                          height: 70,
+                          color: const Color(0xFFF1F5F9),
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Row(
@@ -432,115 +689,157 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
 
                   // Circular Punch Button Container
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF2FAF5),
+                      color: isPunchedIn
+                          ? const Color(0xFFF0FDF4)
+                          : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFE2F3E8)),
+                      border: Border.all(
+                        color: isPunchedIn
+                            ? const Color(0xFFD7F3DF)
+                            : const Color(0xFFE2E8F0),
+                      ),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 170,
-                                height: 170,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: const Color(0xFF16A34A).withOpacity(0.06),
-                                ),
-                              ),
-                              Container(
-                                width: 140,
-                                height: 140,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: const Color(0xFF16A34A).withOpacity(0.12),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: (_actionInFlight || state.isSubmitting || state.isLoading)
-                                    ? null
-                                    : () => _handlePunch(isPunchedIn),
-                                child: Container(
-                                  width: 110,
-                                  height: 110,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: isPunchedIn ? AppColors.danger : const Color(0xFF16A34A),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: (isPunchedIn ? AppColors.danger : const Color(0xFF16A34A)).withOpacity(0.3),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      )
-                                    ],
-                                  ),
-                                  child: (_actionInFlight || state.isSubmitting)
-                                      ? const Center(
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 3,
-                                          ),
-                                        )
-                                      : Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              isPunchedIn ? Icons.logout_rounded : Icons.login_rounded,
-                                              color: Colors.white,
-                                              size: 28,
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              isPunchedIn ? 'PUNCH OUT' : 'PUNCH IN',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 0.5,
+                        // Main punch button — soft circular neumorphic style
+                        Builder(
+                          builder: (context) {
+                            final bool isDisabled =
+                                _actionInFlight ||
+                                state.isSubmitting ||
+                                state.isLoading;
+                            final bool isBusy =
+                                _actionInFlight || state.isSubmitting;
+                            final Color accent = isPunchedIn
+                                ? AppColors.danger
+                                : const Color(0xFF16A34A);
+
+                            return Center(
+                              child: Column(
+                                children: [
+                                  GestureDetector(
+                                    onTap: isDisabled
+                                        ? null
+                                        : () => _handlePunch(isPunchedIn),
+                                    child: AnimatedOpacity(
+                                      duration: const Duration(
+                                        milliseconds: 150,
+                                      ),
+                                      opacity: isDisabled ? 0.55 : 1,
+                                      child: Container(
+                                        width: 132,
+                                        height: 132,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: const Color(0xFFF1F5F9),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.white.withOpacity(
+                                                0.9,
                                               ),
+                                              offset: const Offset(-6, -6),
+                                              blurRadius: 12,
+                                            ),
+                                            BoxShadow(
+                                              color: const Color(
+                                                0xFF94A3B8,
+                                              ).withOpacity(0.35),
+                                              offset: const Offset(6, 6),
+                                              blurRadius: 14,
                                             ),
                                           ],
                                         ),
-                                ),
+                                        child: Center(
+                                          child: Container(
+                                            width: 94,
+                                            height: 94,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.white,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(
+                                                    0xFF94A3B8,
+                                                  ).withOpacity(0.25),
+                                                  offset: const Offset(0, 3),
+                                                  blurRadius: 8,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Center(
+                                              child: isBusy
+                                                  ? SizedBox(
+                                                      width: 26,
+                                                      height: 26,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            color: accent,
+                                                            strokeWidth: 2.5,
+                                                          ),
+                                                    )
+                                                  : Icon(
+                                                      isPunchedIn
+                                                          ? Icons.logout_rounded
+                                                          : Icons
+                                                                .touch_app_rounded,
+                                                      size: 38,
+                                                      color: accent,
+                                                    ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 14),
+
+                                  Text(
+                                    isPunchedIn ? 'Check Out' : 'Check In',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 6),
+
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isPunchedIn
+                                            ? Icons.info_outline_rounded
+                                            : Icons.touch_app_rounded,
+                                        size: 13,
+                                        color: const Color(0xFF94A3B8),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        isPunchedIn
+                                            ? 'Tap to end your work day'
+                                            : 'Tap to start your work day',
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          color: Color(0xFF64748B),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          isPunchedIn ? 'Tap to end your work day' : 'Tap to start your work day',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF475569),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.location_on_rounded,
-                              size: 14,
-                              color: Color(0xFF16A34A),
-                            ),
-                            const SizedBox(width: 4),
-                            // Text(
-                            //   state.locationText ?? 'Office location will be recorded',
-                            //   style: const TextStyle(
-                            //     fontSize: 12,
-                            //     color: Color(0xFF64748B),
-                            //   ),
-                            // ),
-                          ],
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
+
                   const SizedBox(height: 14),
 
                   // Bottom Metrics Cards
@@ -563,7 +862,9 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                           iconBgColor: const Color(0xFFDBEAFE),
                           iconColor: const Color(0xFF2563EB),
                           title: 'Check In',
-                          value: checkIn != null ? DateFormat('hh:mm a').format(checkIn) : '--:--',
+                          value: checkIn != null
+                              ? DateFormat('hh:mm a').format(checkIn)
+                              : '--:--',
                           subtitle: 'Today',
                         ),
                       ),
@@ -574,7 +875,9 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                           iconBgColor: const Color(0xFFFEE2E2),
                           iconColor: const Color(0xFFEF4444),
                           title: 'Check Out',
-                          value: checkOut != null ? DateFormat('hh:mm a').format(checkOut) : '--:--',
+                          value: checkOut != null
+                              ? DateFormat('hh:mm a').format(checkOut)
+                              : '--:--',
                           subtitle: 'Today',
                         ),
                       ),
@@ -659,17 +962,17 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                                 color: Color(0xFF1E293B),
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () {},
-                              child: const Text(
-                                'View All',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2563EB),
-                                ),
-                              ),
-                            ),
+                            // GestureDetector(
+                            //   onTap: () {},
+                            //   child: const Text(
+                            //     'View All',
+                            //     style: TextStyle(
+                            //       fontSize: 12,
+                            //       fontWeight: FontWeight.w600,
+                            //       color: Color(0xFF2563EB),
+                            //     ),
+                            //   ),
+                            // ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -724,7 +1027,10 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                           if (checkOut != null) ...[
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 8),
-                              child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                              child: Divider(
+                                height: 1,
+                                color: Color(0xFFF1F5F9),
+                              ),
                             ),
                             _ActivityRowItem(
                               icon: Icons.logout_rounded,
@@ -809,10 +1115,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: const TextStyle(
-              fontSize: 10,
-              color: Color(0xFF94A3B8),
-            ),
+            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
           ),
         ],
       ),
