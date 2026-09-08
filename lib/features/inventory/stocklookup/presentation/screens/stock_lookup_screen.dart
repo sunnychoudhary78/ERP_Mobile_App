@@ -818,10 +818,15 @@ class _WarehouseStockCard extends StatelessWidget {
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
             ),
-            error: (e, _) => Text(
-              'Error: $e',
-              style: const TextStyle(color: AppColors.danger),
-            ),
+            error: (e, _) {
+              final isForbidden = e.toString().contains('403');
+              return Text(
+                isForbidden
+                    ? 'You do not have permission to view warehouse stock.'
+                    : 'Error: $e',
+                style: const TextStyle(color: AppColors.danger),
+              );
+            },
           ),
         ],
       ),

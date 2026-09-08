@@ -168,6 +168,13 @@ class ApiService {
     }
 
     final errorMessage = _findErrorMessage(errorData);
+    final statusCode = e.response?.statusCode;
+    if (statusCode != null) {
+      return Exception(
+        'HTTP $statusCode${errorMessage == null ? '' : ': $errorMessage'}',
+      );
+    }
+
     if (errorMessage != null) {
       return Exception(errorMessage);
     }

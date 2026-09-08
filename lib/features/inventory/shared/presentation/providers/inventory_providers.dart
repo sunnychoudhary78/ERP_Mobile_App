@@ -1,4 +1,6 @@
 import 'package:erp_app/core/providers/network_providers.dart';
+import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:erp_app/features/inventory/shared/data/inventory_api_service.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
@@ -208,6 +210,11 @@ final itemDetailProvider = FutureProvider.family<InventoryItem, int>((
 
 final warehouseStockForItemProvider =
     FutureProvider.family<List<WarehouseStockRow>, int>((ref, itemId) async {
+      final auth = ref.read(authProvider);
+      if (!auth.can(AppPermissions.inventoryReportView)) {
+        throw Exception('HTTP 403: No inventory access');
+      }
+
       final repo = ref.read(inventoryRepositoryProvider);
       return repo.getWarehouseStockForItem(itemId);
     });
