@@ -153,6 +153,22 @@ class HomeScreen extends ConsumerWidget {
         anyOf: AppPermissions.productionModule,
       ),
     ]),
+
+    // LinkSection('Tracking', [
+    //   QuickLink(
+    //     'Dashboard',
+    //     '/tracking-dashboard',
+    //     Icons.map_outlined,
+    //     anyOf: AppPermissions.productionModule,
+    //   ),
+
+    //   QuickLink(
+    //     'Live Tracking',
+    //     '/tracking_screen',
+    //     Icons.my_location_rounded,
+    //     anyOf: AppPermissions.productionModule,
+    //   ),
+    // ]),
   ];
 
   @override
@@ -168,11 +184,11 @@ class HomeScreen extends ConsumerWidget {
     final initials = fullName.trim().isEmpty
         ? '?'
         : fullName
-            .trim()
-            .split(RegExp(r'\s+'))
-            .take(2)
-            .map((e) => e[0].toUpperCase())
-            .join();
+              .trim()
+              .split(RegExp(r'\s+'))
+              .take(2)
+              .map((e) => e[0].toUpperCase())
+              .join();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FB),
@@ -246,7 +262,7 @@ class HomeScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [ Color(0xFF1B4F72), Color(0xFF154360)],
+                      colors: [Color(0xFF1B4F72), Color(0xFF154360)],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -277,13 +293,18 @@ class HomeScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Text('👋', style: TextStyle(fontSize: 22)),
+                                const Text(
+                                  '👋',
+                                  style: TextStyle(fontSize: 22),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(20),
@@ -291,8 +312,11 @@ class HomeScreen extends ConsumerWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.person_outline,
-                                      color: Colors.white, size: 14),
+                                  const Icon(
+                                    Icons.person_outline,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     designation,
@@ -419,7 +443,8 @@ class HomeScreen extends ConsumerWidget {
                         title: 'Stock Lookup',
                         subtitle: 'Check inventory',
                         iconColor: const Color(0xFF22C55E),
-                        onTap: () => Navigator.pushNamed(context, '/stock-lookup'),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/stock-lookup'),
                       ),
                     if (authState.canAny(AppPermissions.productionModule))
                       _QuickActionTile(
@@ -427,7 +452,8 @@ class HomeScreen extends ConsumerWidget {
                         title: 'Production',
                         subtitle: 'See order',
                         iconColor: const Color(0xFFF97316),
-                        onTap: () => Navigator.pushNamed(context, '/work-orders'),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/work-orders'),
                       ),
                   ],
                 ),
@@ -460,7 +486,8 @@ class HomeScreen extends ConsumerWidget {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => const CrmSalesScreen()),
+                              builder: (_) => const CrmSalesScreen(),
+                            ),
                           ),
                         ),
                       if (authState.canAny(AppPermissions.hrmsModule))
@@ -474,7 +501,8 @@ class HomeScreen extends ConsumerWidget {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => const HrmsScreen()),
+                              builder: (_) => const HrmsScreen(),
+                            ),
                           ),
                         ),
                       if (authState.canAny(AppPermissions.inventoryModule))
@@ -488,7 +516,8 @@ class HomeScreen extends ConsumerWidget {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => const InventorySalesScreen()),
+                              builder: (_) => const InventorySalesScreen(),
+                            ),
                           ),
                         ),
                       if (authState.canAny(AppPermissions.productionModule))
@@ -502,8 +531,8 @@ class HomeScreen extends ConsumerWidget {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) =>
-                                    const ProductionDashboardScreen()),
+                              builder: (_) => const ProductionDashboardScreen(),
+                            ),
                           ),
                         ),
                     ];
@@ -958,10 +987,8 @@ class _NotificationBellButton extends StatelessWidget {
               top: -3,
               right: -3,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                constraints:
-                    const BoxConstraints(minWidth: 16, minHeight: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 decoration: BoxDecoration(
                   color: AppColors.danger,
                   borderRadius: BorderRadius.circular(20),

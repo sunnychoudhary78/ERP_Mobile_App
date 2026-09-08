@@ -472,6 +472,10 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         t.contains('field') ||
         t.contains('stock')) {
       return Icons.inventory_2_outlined;
+    } else if (t.contains('tracking')) {
+      return Icons.location_on_outlined;
+    } else if (t.contains('production')) {
+      return Icons.precision_manufacturing_outlined;
     } else if (t.contains('setting')) {
       return Icons.settings_outlined;
     }

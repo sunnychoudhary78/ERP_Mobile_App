@@ -3,9 +3,12 @@ import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart
 import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/production_screen.dart';
+import 'package:erp_app/features/home/presentation/screens/tracking_dashboard_screen.dart';
 import 'package:erp_app/features/inventory/lowstock/presentations/screen/low_stock_screen.dart';
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
+import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
+import 'package:erp_app/features/tracking/presentation/tracking_screen.dart';
 import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 
@@ -98,6 +101,13 @@ class AppRoutes {
     '/low-stock': (_) =>
         _gate(AppPermissions.lowStock, const LowStockScreen()),
     '/production_screen': (_) => const ProductionDashboardScreen(),
+
+
+    // Tracking 
+
+    '/tracking-dashboard': (_) => const TrackingDashboardScreen(),
+    '/tracking_screen': (_) => const TrackingScreen(),
+    '/claim_reward_screen': (_) => const ClaimRewardScreen(),
 
     // profile
     '/profile': (_) => const ProfileScreen(),

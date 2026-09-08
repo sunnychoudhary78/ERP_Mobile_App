@@ -36,8 +36,11 @@ abstract final class AppPermissions {
   static const inventoryReportView = 'inventory_report.view';
 
   // --- Production ---
+  static const productionPlanningManage = 'production_planning.manage';
   static const productionView = 'production.view';
   static const productionOrderView = 'production_order.view';
+  static const productionOrdersView = 'production_orders.view';
+  static const workOrderView = 'work_order.view';
 
   // --- ANY-of groups for module / feature surfaces ---
 
@@ -47,10 +50,7 @@ abstract final class AppPermissions {
     attendanceView,
   ];
 
-  static const List<String> leaveSelf = [
-    leaveRequestRead,
-    leaveView,
-  ];
+  static const List<String> leaveSelf = [leaveRequestRead, leaveView];
 
   static const List<String> leaveApprovals = [
     leaveRequestApprove,
@@ -62,10 +62,7 @@ abstract final class AppPermissions {
     teamDashboardView,
   ];
 
-  static const List<String> stats = [
-    statsRead,
-    statsView,
-  ];
+  static const List<String> stats = [statsRead, statsView];
 
   static const List<String> hrmsModule = [
     ...punch,
@@ -80,10 +77,7 @@ abstract final class AppPermissions {
     salesCrmLeadsManage,
   ];
 
-  static const List<String> crmLeads = [
-    salesCrmLeadsView,
-    salesCrmLeadsManage,
-  ];
+  static const List<String> crmLeads = [salesCrmLeadsView, salesCrmLeadsManage];
 
   static const List<String> crmLeadsManage = [salesCrmLeadsManage];
 
@@ -112,9 +106,10 @@ abstract final class AppPermissions {
   static const List<String> lowStock = [inventoryReportView];
 
   static const List<String> productionModule = [
+    productionPlanningManage,
     productionView,
     productionOrderView,
-    inventoryView,
-    dashboardView,
+    productionOrdersView,
+    workOrderView,
   ];
 }

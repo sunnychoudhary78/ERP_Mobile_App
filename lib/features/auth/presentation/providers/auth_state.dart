@@ -55,10 +55,11 @@ class AuthState {
     );
   }
 
-  bool can(String permission) => permissions.contains(permission);
+  bool can(String permission) => permissions.any(
+    (granted) => granted.trim().toLowerCase() == permission.toLowerCase(),
+  );
 
-  bool canAny(List<String> required) =>
-      required.isEmpty || required.any(can);
+  bool canAny(List<String> required) => required.isEmpty || required.any(can);
 
   bool canAll(List<String> required) => required.every(can);
 }

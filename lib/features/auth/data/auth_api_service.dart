@@ -39,8 +39,28 @@ class AuthApiService {
 
   Future<List<String>> fetchPermissions() async {
     final response = await api.get(ApiEndpoints.permissions);
-    final List list = response['permissions'] ?? [];
-    return list.map((p) => p['name'] as String).toList();
+    final dynamic rawPermissions = response is Map
+        ? response['permissions']
+        : response;
+
+    if (rawPermissions is! List) {
+      return const [];
+    }
+
+    return rawPermissions
+        .map((permission) {
+          if (permission is String) {
+            return permission;
+          }
+          if (permission is Map && permission['name'] is String) {
+            return permission['name'] as String;
+          }
+          return null;
+        })
+        .whereType<String>()
+        .map((permission) => permission.trim())
+        .where((permission) => permission.isNotEmpty)
+        .toList(growable: false);
   }
 
   Future<void> registerFcmToken({
