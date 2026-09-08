@@ -9,6 +9,7 @@ abstract final class AppPermissions {
   static const attendanceRead = 'attendance.read';
   static const attendanceMark = 'attendance.mark';
   static const attendanceView = 'attendance.view';
+  static const attendanceSummaryView = 'attendance.summary.view';
   static const leaveRequestRead = 'leave.request.read';
   static const leaveView = 'leave.view';
   static const leaveRequestApprove = 'leave.request.approve';
@@ -71,6 +72,8 @@ abstract final class AppPermissions {
     ...teamDashboard,
     ...stats,
   ];
+
+  static const List<String> hrmsDashboard = [attendanceSummaryView];
 
   static const List<String> crmModule = [
     salesCrmLeadsView,

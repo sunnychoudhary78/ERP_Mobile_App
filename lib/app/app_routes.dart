@@ -89,8 +89,10 @@ class AppRoutes {
         _gate(AppPermissions.crmVisits, const VisitCheckInScreen()),
     '/crm/tracking': (_) =>
         _gate(AppPermissions.crmVisits, const VisitTrackingScreen()),
-    '/crm/crm_sales_screen': (_) => const CrmSalesScreen(),
-    '/crm/hrms_sales_screen': (_) => const HrmsScreen(),
+    '/crm/crm_sales_screen': (_) =>
+        _gate(AppPermissions.crmModule, const CrmSalesScreen()),
+    '/crm/hrms_sales_screen': (_) =>
+        _gate(AppPermissions.hrmsDashboard, const HrmsScreen()),
     '/crm/inventory_sales_screen': (_) => const InventorySalesScreen(),
 
     // Inventory / Production
@@ -98,13 +100,10 @@ class AppRoutes {
         _gate(AppPermissions.stockLookup, const StockLookupScreen()),
     '/work-orders': (_) =>
         _gate(AppPermissions.productionModule, const WorkOrdersScreen()),
-    '/low-stock': (_) =>
-        _gate(AppPermissions.lowStock, const LowStockScreen()),
+    '/low-stock': (_) => _gate(AppPermissions.lowStock, const LowStockScreen()),
     '/production_screen': (_) => const ProductionDashboardScreen(),
 
-
-    // Tracking 
-
+    // Tracking
     '/tracking-dashboard': (_) => const TrackingDashboardScreen(),
     '/tracking_screen': (_) => const TrackingScreen(),
     '/claim_reward_screen': (_) => const ClaimRewardScreen(),

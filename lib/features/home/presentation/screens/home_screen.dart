@@ -24,7 +24,7 @@ class HomeScreen extends ConsumerWidget {
         'Dashboard',
         '/crm/hrms_sales_screen',
         Icons.fingerprint_rounded,
-        anyOf: AppPermissions.hrmsModule,
+        anyOf: AppPermissions.hrmsDashboard,
       ),
       QuickLink(
         'Punch',
@@ -118,7 +118,7 @@ class HomeScreen extends ConsumerWidget {
         Icons.map_outlined,
         anyOf: AppPermissions.crmVisits,
       ),
-    ]),
+    ], anyOf: AppPermissions.crmModule),
     LinkSection('Inventory', [
       QuickLink(
         'Dashboard',
@@ -490,7 +490,7 @@ class HomeScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                      if (authState.canAny(AppPermissions.hrmsModule))
+                      if (authState.canAny(AppPermissions.hrmsDashboard))
                         _ModuleCard(
                           title: 'HRMS',
                           description:

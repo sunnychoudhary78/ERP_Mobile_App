@@ -48,22 +48,22 @@ class SplashLoadingScreen extends StatelessWidget {
                       .scale(
                         begin: const Offset(0.88, 0.88),
                         end: const Offset(1.08, 1.08),
-                        duration: 2800.ms,
+                        duration: 2200.ms,
                         curve: Curves.easeInOut,
                       )
-                      .fade(begin: 0.5, end: 1, duration: 2800.ms),
+                      .fade(begin: 0.5, end: 1, duration: 2200.ms),
                   Image.asset('assets/logo.png', width: 180, height: 180)
                       .animate()
-                      .fadeIn(duration: 1100.ms, curve: Curves.easeOut)
+                      .fadeIn(duration: 900.ms, curve: Curves.easeOut)
                       .scale(
                         begin: const Offset(0.45, 0.45),
                         end: const Offset(1, 1),
-                        duration: 1400.ms,
+                        duration: 1100.ms,
                         curve: Curves.easeOutBack,
                       )
-                      .then(delay: 700.ms)
+                      .then(delay: 500.ms)
                       .shimmer(
-                        duration: 1800.ms,
+                        duration: 1400.ms,
                         color: Colors.white.withValues(alpha: 0.75),
                       ),
                 ],
@@ -71,7 +71,7 @@ class SplashLoadingScreen extends StatelessWidget {
             ).animate().slideY(
               begin: 0.1,
               end: 0,
-              duration: 1200.ms,
+              duration: 900.ms,
               curve: Curves.easeOutCubic,
             ),
             const SizedBox(height: 2),
@@ -84,12 +84,12 @@ class SplashLoadingScreen extends StatelessWidget {
                   ),
                 )
                 .animate()
-                .fadeIn(delay: 1000.ms, duration: 800.ms)
+                .fadeIn(delay: 700.ms, duration: 650.ms)
                 .slideY(
                   begin: 0.25,
                   end: 0,
-                  delay: 1000.ms,
-                  duration: 800.ms,
+                  delay: 700.ms,
+                  duration: 650.ms,
                   curve: Curves.easeOutCubic,
                 ),
             const SizedBox(height: 3),
@@ -102,12 +102,12 @@ class SplashLoadingScreen extends StatelessWidget {
                   ),
                 )
                 .animate()
-                .fadeIn(delay: 1500.ms, duration: 700.ms)
+                .fadeIn(delay: 1100.ms, duration: 550.ms)
                 .slideY(
                   begin: 0.2,
                   end: 0,
-                  delay: 1500.ms,
-                  duration: 700.ms,
+                  delay: 1100.ms,
+                  duration: 550.ms,
                   curve: Curves.easeOutCubic,
                 ),
             const SizedBox(height: 28),
@@ -117,12 +117,12 @@ class SplashLoadingScreen extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2.5),
                 )
                 .animate()
-                .fadeIn(delay: 2300.ms, duration: 600.ms)
+                .fadeIn(delay: 1800.ms, duration: 500.ms)
                 .scale(
                   begin: const Offset(0.7, 0.7),
                   end: const Offset(1, 1),
-                  delay: 2300.ms,
-                  duration: 600.ms,
+                  delay: 1800.ms,
+                  duration: 500.ms,
                   curve: Curves.easeOutBack,
                 ),
           ],

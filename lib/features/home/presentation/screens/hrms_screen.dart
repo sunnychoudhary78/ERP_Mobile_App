@@ -15,15 +15,26 @@ class HrmsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    if (!authState.canAny(AppPermissions.hrmsDashboard)) {
+      return PermissionGate(
+        anyOf: AppPermissions.hrmsDashboard,
+        child: const SizedBox.shrink(),
+      );
+    }
+
     final dashboardAsync = ref.watch(hrmsDashboardProvider);
 
     return PermissionGate(
-      anyOf: AppPermissions.hrmsModule,
+      anyOf: AppPermissions.hrmsDashboard,
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F6F9),
         appBar: AppBar(
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87,
+              size: 20,
+            ),
             onPressed: () => Navigator.maybePop(context),
           ),
           title: const Text(
@@ -157,7 +168,6 @@ class _DashboardBody extends ConsumerWidget {
                   letterSpacing: 1.1,
                 ),
               ),
-             
             ],
           ),
           const SizedBox(height: 10),
@@ -358,12 +368,22 @@ class _DashboardBody extends ConsumerWidget {
                               centerSpaceRadius: 36,
                               startDegreeOffset: 270,
                               sections: [
-                                for (var i = 0;
-                                    i < model.admin!.departmentDistribution.length;
-                                    i++)
+                                for (
+                                  var i = 0;
+                                  i <
+                                      model
+                                          .admin!
+                                          .departmentDistribution
+                                          .length;
+                                  i++
+                                )
                                   PieChartSectionData(
                                     color: _distributionColor(i),
-                                    value: model.admin!.departmentDistribution[i].count.toDouble(),
+                                    value: model
+                                        .admin!
+                                        .departmentDistribution[i]
+                                        .count
+                                        .toDouble(),
                                     radius: 16,
                                     showTitle: false,
                                   ),
@@ -376,17 +396,29 @@ class _DashboardBody extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              for (var i = 0;
-                                  i < model.admin!.departmentDistribution.length;
-                                  i++)
+                              for (
+                                var i = 0;
+                                i < model.admin!.departmentDistribution.length;
+                                i++
+                              )
                                 Padding(
                                   padding: EdgeInsets.only(
-                                    bottom: i == model.admin!.departmentDistribution.length - 1 ? 0 : 8,
+                                    bottom:
+                                        i ==
+                                            model
+                                                    .admin!
+                                                    .departmentDistribution
+                                                    .length -
+                                                1
+                                        ? 0
+                                        : 8,
                                   ),
                                   child: _LegendItem(
                                     color: _distributionColor(i),
-                                    label: '${model.admin!.departmentDistribution[i].name}',
-                                    value: '${model.admin!.departmentDistribution[i].count}',
+                                    label:
+                                        '${model.admin!.departmentDistribution[i].name}',
+                                    value:
+                                        '${model.admin!.departmentDistribution[i].count}',
                                   ),
                                 ),
                             ],
@@ -402,80 +434,83 @@ class _DashboardBody extends ConsumerWidget {
 
             // EMPLOYEE DISTRIBUTION CARD (PERMANENT / CONTRACT / INTERN)
             if (model.admin!.employeeDistribution.total > 0) ...[
-              Builder(builder: (context) {
-                final dist = model.admin!.employeeDistribution;
-                final slices = <_LegendItem>[
-                  _LegendItem(
-                    color: const Color(0xFF3B82F6),
-                    label: 'Permanent',
-                    value: '${dist.permanent}',
-                  ),
-                  _LegendItem(
-                    color: const Color(0xFFF59E0B),
-                    label: 'Contract',
-                    value: '${dist.contract}',
-                  ),
-                  _LegendItem(
-                    color: const Color(0xFF8B5CF6),
-                    label: 'Intern',
-                    value: '${dist.intern}',
-                  ),
-                ];
-                final values = [dist.permanent, dist.contract, dist.intern];
-                return _buildContainerCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionHeader(
-                        title: 'Employee Distribution',
-                        subtitle: 'Employment type breakdown (${dist.total} total)',
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 110,
-                            height: 110,
-                            child: PieChart(
-                              PieChartData(
-                                sectionsSpace: 3,
-                                centerSpaceRadius: 34,
-                                startDegreeOffset: 270,
-                                sections: [
-                                  for (var i = 0; i < values.length; i++)
-                                    if (values[i] > 0)
-                                      PieChartSectionData(
-                                        color: slices[i].color,
-                                        value: values[i].toDouble(),
-                                        radius: 16,
-                                        showTitle: false,
+              Builder(
+                builder: (context) {
+                  final dist = model.admin!.employeeDistribution;
+                  final slices = <_LegendItem>[
+                    _LegendItem(
+                      color: const Color(0xFF3B82F6),
+                      label: 'Permanent',
+                      value: '${dist.permanent}',
+                    ),
+                    _LegendItem(
+                      color: const Color(0xFFF59E0B),
+                      label: 'Contract',
+                      value: '${dist.contract}',
+                    ),
+                    _LegendItem(
+                      color: const Color(0xFF8B5CF6),
+                      label: 'Intern',
+                      value: '${dist.intern}',
+                    ),
+                  ];
+                  final values = [dist.permanent, dist.contract, dist.intern];
+                  return _buildContainerCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader(
+                          title: 'Employee Distribution',
+                          subtitle:
+                              'Employment type breakdown (${dist.total} total)',
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 110,
+                              height: 110,
+                              child: PieChart(
+                                PieChartData(
+                                  sectionsSpace: 3,
+                                  centerSpaceRadius: 34,
+                                  startDegreeOffset: 270,
+                                  sections: [
+                                    for (var i = 0; i < values.length; i++)
+                                      if (values[i] > 0)
+                                        PieChartSectionData(
+                                          color: slices[i].color,
+                                          value: values[i].toDouble(),
+                                          radius: 16,
+                                          showTitle: false,
+                                        ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  for (var i = 0; i < slices.length; i++)
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom: i == slices.length - 1 ? 0 : 8,
                                       ),
+                                      child: slices[i],
+                                    ),
                                 ],
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (var i = 0; i < slices.length; i++)
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: i == slices.length - 1 ? 0 : 8,
-                                    ),
-                                    child: slices[i],
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              }),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 20),
             ],
 
@@ -490,15 +525,27 @@ class _DashboardBody extends ConsumerWidget {
                       subtitle: "Today's attendance rate by department",
                     ),
                     const SizedBox(height: 18),
-                    for (var i = 0; i < model.admin!.departmentAttendance.length; i++)
+                    for (
+                      var i = 0;
+                      i < model.admin!.departmentAttendance.length;
+                      i++
+                    )
                       Padding(
                         padding: EdgeInsets.only(
-                          bottom: i == model.admin!.departmentAttendance.length - 1 ? 0 : 14,
+                          bottom:
+                              i == model.admin!.departmentAttendance.length - 1
+                              ? 0
+                              : 14,
                         ),
                         child: _buildAttendanceBar(
-                          label: model.admin!.departmentAttendance[i].name.toUpperCase(),
-                          count: '${model.admin!.departmentAttendance[i].percent.toStringAsFixed(0)}%',
-                          ratio: (model.admin!.departmentAttendance[i].percent / 100).clamp(0.0, 1.0),
+                          label: model.admin!.departmentAttendance[i].name
+                              .toUpperCase(),
+                          count:
+                              '${model.admin!.departmentAttendance[i].percent.toStringAsFixed(0)}%',
+                          ratio:
+                              (model.admin!.departmentAttendance[i].percent /
+                                      100)
+                                  .clamp(0.0, 1.0),
                           barColor: _distributionColor(i),
                         ),
                       ),
@@ -519,9 +566,7 @@ class _DashboardBody extends ConsumerWidget {
                       subtitle: 'Approved leave across the organization',
                     ),
                     const SizedBox(height: 16),
-                    for (var i = 0;
-                        i < model.admin!.upcomingLeaves.length;
-                        i++)
+                    for (var i = 0; i < model.admin!.upcomingLeaves.length; i++)
                       Padding(
                         padding: EdgeInsets.only(
                           bottom: i == model.admin!.upcomingLeaves.length - 1
@@ -541,47 +586,50 @@ class _DashboardBody extends ConsumerWidget {
 
           // ==================== MANAGER TEAM (team.dashboard, not admin) =====
           if (isManagerOnly) ...[
-            Builder(builder: (context) {
-              final teamTotal = model.manager!.teamTotal;
-              final present = model.manager!.teamPresent;
-              final absent = model.manager!.teamAbsent;
-              final presentRatio = teamTotal == 0 ? 0.0 : present / teamTotal;
-              final absentRatio = teamTotal == 0 ? 0.0 : absent / teamTotal;
+            Builder(
+              builder: (context) {
+                final teamTotal = model.manager!.teamTotal;
+                final present = model.manager!.teamPresent;
+                final absent = model.manager!.teamAbsent;
+                final presentRatio = teamTotal == 0 ? 0.0 : present / teamTotal;
+                final absentRatio = teamTotal == 0 ? 0.0 : absent / teamTotal;
 
-              return _buildContainerCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSectionHeader(
-                      title: 'Team Attendance',
-                      subtitle: 'Live status of your direct reports ($teamTotal Total)',
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildAttendanceBar(
-                            label: 'PRESENT',
-                            count: '$present staff',
-                            ratio: presentRatio,
-                            barColor: const Color(0xFF10B981),
+                return _buildContainerCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionHeader(
+                        title: 'Team Attendance',
+                        subtitle:
+                            'Live status of your direct reports ($teamTotal Total)',
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildAttendanceBar(
+                              label: 'PRESENT',
+                              count: '$present staff',
+                              ratio: presentRatio,
+                              barColor: const Color(0xFF10B981),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildAttendanceBar(
-                            label: 'ABSENT / LEAVE',
-                            count: '$absent staff',
-                            ratio: absentRatio,
-                            barColor: const Color(0xFFEF4444),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildAttendanceBar(
+                              label: 'ABSENT / LEAVE',
+                              count: '$absent staff',
+                              ratio: absentRatio,
+                              barColor: const Color(0xFFEF4444),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 20),
           ],
 
@@ -661,13 +709,14 @@ class _DashboardBody extends ConsumerWidget {
                                   sectionsSpace: 3,
                                   centerSpaceRadius: 36,
                                   sections: [
-                                    for (var i = 0;
-                                        i < model.leaveBalances.length;
-                                        i++)
+                                    for (
+                                      var i = 0;
+                                      i < model.leaveBalances.length;
+                                      i++
+                                    )
                                       PieChartSectionData(
                                         color: _distributionColor(i),
-                                        value: model
-                                            .leaveBalances[i].available
+                                        value: model.leaveBalances[i].available
                                             .toDouble(),
                                         radius: 14,
                                         showTitle: false,
@@ -692,9 +741,11 @@ class _DashboardBody extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              for (var i = 0;
-                                  i < model.leaveBalances.length;
-                                  i++)
+                              for (
+                                var i = 0;
+                                i < model.leaveBalances.length;
+                                i++
+                              )
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 6.0),
                                   child: _LegendItem(
@@ -875,9 +926,7 @@ class _DashboardBody extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
-                  for (var i = 0;
-                      i < model.admin!.todaysActivities.length;
-                      i++)
+                  for (var i = 0; i < model.admin!.todaysActivities.length; i++)
                     _buildActivityItem(
                       '${model.admin!.todaysActivities[i].title} (${model.admin!.todaysActivities[i].time})',
                       isFirst: i == 0,
@@ -908,7 +957,10 @@ class _DashboardBody extends ConsumerWidget {
       _distributionPalette[index % _distributionPalette.length];
 
   // SECTION HEADER COMPONENT
-  Widget _buildSectionHeader({required String title, required String subtitle}) {
+  Widget _buildSectionHeader({
+    required String title,
+    required String subtitle,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -924,10 +976,7 @@ class _DashboardBody extends ConsumerWidget {
         const SizedBox(height: 2),
         Text(
           subtitle,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF64748B),
-          ),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
         ),
       ],
     );
@@ -996,7 +1045,7 @@ class _DashboardBody extends ConsumerWidget {
                       ),
                     ),
                   ],
-                )
+                ),
               // else
               //   Icon(Icons.trending_flat_rounded, size: 16, color: trendColor),
             ],
@@ -1024,10 +1073,7 @@ class _DashboardBody extends ConsumerWidget {
           ),
           Text(
             subtitle,
-            style: const TextStyle(
-              fontSize: 10,
-              color: Color(0xFF94A3B8),
-            ),
+            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
           ),
         ],
       ),
