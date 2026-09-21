@@ -403,36 +403,39 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.danger.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+          Material(
+            color: Colors.transparent,
+            child: ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.danger.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.logout_rounded,
+                  size: 18,
+                  color: AppColors.danger,
+                ),
               ),
-              child: Icon(
-                Icons.logout_rounded,
-                size: 18,
-                color: AppColors.danger,
+              title: const Text(
+                'Logout',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.danger,
+                ),
               ),
+              onTap: () async {
+                final confirmed = await showLogoutConfirmationDialog(context);
+                if (confirmed == true && context.mounted) {
+                  Navigator.pop(context);
+                  ref.read(authProvider.notifier).logout();
+                }
+              },
             ),
-            title: const Text(
-              'Logout',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.danger,
-              ),
-            ),
-            onTap: () async {
-              final confirmed = await showLogoutConfirmationDialog(context);
-              if (confirmed == true && context.mounted) {
-                Navigator.pop(context);
-                ref.read(authProvider.notifier).logout();
-              }
-            },
           ),
           const SizedBox(height: 4),
           Row(

@@ -1,3 +1,5 @@
+import 'package:erp_app/features/inventory/product/data/model/cost_history_model.dart';
+import 'package:erp_app/features/inventory/product/data/model/product_category_model.dart';
 import 'package:erp_app/features/inventory/shared/data/inventory_api_service.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
@@ -6,6 +8,7 @@ import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
+
 
 class InventoryRepository {
   final InventoryApiService _api;
@@ -78,5 +81,73 @@ class InventoryRepository {
   Future<List<ItemLookupResult>> lookupItems(String query, {int limit = 200}) {
     if (query.trim().isEmpty) return Future.value(const []);
     return _api.lookupItems(query, limit: limit);
+  }
+
+  // ───────── Products (section 5) ─────────
+
+  Future<PagedItems> getItems({
+    String search = '',
+    int page = 1,
+    int limit = 25,
+  }) {
+    return _api.getItems(search: search, page: page, limit: limit);
+  }
+
+  Future<Map<String, dynamic>> createItem(
+    Map<String, dynamic> body, {
+    String? imagePath,
+    String? imageFilename,
+  }) {
+    return _api.createItem(
+      body,
+      imagePath: imagePath,
+      imageFilename: imageFilename,
+    );
+  }
+
+  Future<Map<String, dynamic>> updateItem(
+    int id,
+    Map<String, dynamic> body, {
+    String? imagePath,
+    String? imageFilename,
+  }) {
+    return _api.updateItem(
+      id,
+      body,
+      imagePath: imagePath,
+      imageFilename: imageFilename,
+    );
+  }
+
+  Future<Map<String, dynamic>> updateItemStock(
+    int id, {
+    required num quantity,
+    String? warehouseHint,
+  }) {
+    return _api.updateItemStock(
+      id,
+      quantity: quantity,
+      warehouseHint: warehouseHint,
+    );
+  }
+
+  Future<String?> getNextProductCode() {
+    return _api.getNextProductCode();
+  }
+
+  Future<List<CostHistoryEntry>> getItemCostHistory(int id) {
+    return _api.getItemCostHistory(id);
+  }
+
+  // Categories rarely change mid-session — cache for the form's dropdown.
+  List<ProductCategoryLite>? _categoriesCache;
+
+  Future<List<ProductCategoryLite>> getProductCategories({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _categoriesCache != null) return _categoriesCache!;
+    final list = await _api.getProductCategories();
+    _categoriesCache = list;
+    return list;
   }
 }

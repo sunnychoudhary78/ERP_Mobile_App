@@ -24,6 +24,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is required to capture attendance photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access is required to select product images.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Location access is required for attendance and visit check-ins.</string>
 	<key>LSRequiresIPhoneOS</key>

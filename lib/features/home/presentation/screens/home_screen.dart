@@ -138,6 +138,13 @@ class HomeScreen extends ConsumerWidget {
         Icons.warning_amber_outlined,
         anyOf: AppPermissions.lowStock,
       ),
+
+       QuickLink(
+        'Products',
+        '/products_screen',
+        Icons.warning_amber_outlined,
+        anyOf: AppPermissions.lowStock,
+      ),
     ]),
     LinkSection('Production', [
       QuickLink(

@@ -5,6 +5,7 @@ import 'package:erp_app/features/home/presentation/screens/inventory_sales_scree
 import 'package:erp_app/features/home/presentation/screens/production_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/tracking_dashboard_screen.dart';
 import 'package:erp_app/features/inventory/lowstock/presentations/screen/low_stock_screen.dart';
+import 'package:erp_app/features/inventory/product/presentations/products_screen.dart';
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
 import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
@@ -102,6 +103,7 @@ class AppRoutes {
         _gate(AppPermissions.productionModule, const WorkOrdersScreen()),
     '/low-stock': (_) => _gate(AppPermissions.lowStock, const LowStockScreen()),
     '/production_screen': (_) => const ProductionDashboardScreen(),
+    '/products_screen': (_) => const ProductsScreen(),
 
     // Tracking
     '/tracking-dashboard': (_) => const TrackingDashboardScreen(),

@@ -8,6 +8,7 @@ import 'package:erp_app/features/inventory/shared/data/models/inventory_item_mod
 import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
+import 'package:erp_app/features/inventory/shared/data/models/warehouse_model.dart';
 import 'package:erp_app/features/inventory/shared/data/repository/inventory_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -22,6 +23,13 @@ final inventoryApiServiceProvider = Provider<InventoryApiService>((ref) {
 final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
   final api = ref.read(inventoryApiServiceProvider);
   return InventoryRepository(api);
+});
+
+final productWarehousesProvider = FutureProvider<List<Warehouse>>((ref) async {
+  final warehouses = await ref.read(inventoryRepositoryProvider).getWarehouses();
+  return warehouses
+      .where((warehouse) => warehouse.status?.toUpperCase() != 'INACTIVE')
+      .toList();
 });
 
 // ───────── Stock Lookup (search) state ─────────
