@@ -412,7 +412,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             DropdownButtonFormField<String>(
               value: _sourcing,
               decoration: const InputDecoration(
-                labelText: 'Sourcing *',
+                labelText: 'Sourcing',
                 border: OutlineInputBorder(),
               ),
               items: _sourcingOptions.entries

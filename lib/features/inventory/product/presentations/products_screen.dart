@@ -1,13 +1,9 @@
-// lib/features/inventory/products/presentation/screens/products_screen.dart
-//
-// NOTE: adjust the AppColors / ApiConstants import paths below if they
-// don't match your project (assumed core/theme/app_theme.dart and
-// core/network/api_constants.dart per existing conventions).
-
 import 'dart:async';
 
 import 'package:erp_app/core/network/api_constants.dart';
+import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:erp_app/features/inventory/product/data/provider/product_provider.dart';
 import 'package:erp_app/features/inventory/product/presentations/product_details_screen.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
@@ -83,23 +79,28 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(productsListProvider);
+    final canManage = ref.watch(authProvider).canAny(
+          AppPermissions.productManageAccess,
+        );
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Products'),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final created = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(builder: (_) => const ProductFormScreen()),
-          );
-          if (created == true) {
-            ref.read(productsListProvider.notifier).refresh();
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canManage
+          ? FloatingActionButton(
+              onPressed: () async {
+                final created = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(builder: (_) => const ProductFormScreen()),
+                );
+                if (created == true) {
+                  ref.read(productsListProvider.notifier).refresh();
+                }
+              },
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: Column(
         children: [
           _SearchBar(controller: _searchController, onChanged: _onSearchChanged),

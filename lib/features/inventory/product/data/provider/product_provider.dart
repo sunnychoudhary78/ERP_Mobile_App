@@ -7,9 +7,9 @@
 import 'package:erp_app/features/inventory/product/data/model/cost_history_model.dart';
 import 'package:erp_app/features/inventory/product/data/model/product_category_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
+import 'package:erp_app/features/inventory/shared/data/repository/inventory_repository.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 // ───────── Status tabs (client-side — /items has no status query param) ─────────
 
@@ -189,6 +189,106 @@ final productCategoriesProvider =
   final repo = ref.read(inventoryRepositoryProvider);
   return repo.getProductCategories();
 });
+
+class ProductCategoriesState {
+  final bool isLoading;
+  final List<ProductCategory> categories;
+  final String query;
+  final String? errorMessage;
+
+  const ProductCategoriesState({
+    this.isLoading = false,
+    this.categories = const [],
+    this.query = '',
+    this.errorMessage,
+  });
+
+  List<ProductCategory> get filteredCategories {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return categories;
+    return categories.where((category) {
+      return category.name.toLowerCase().contains(normalized) ||
+          (category.type ?? '').toLowerCase().contains(normalized) ||
+          (category.hsnSac ?? '').toLowerCase().contains(normalized);
+    }).toList();
+  }
+
+  ProductCategoriesState copyWith({
+    bool? isLoading,
+    List<ProductCategory>? categories,
+    String? query,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return ProductCategoriesState(
+      isLoading: isLoading ?? this.isLoading,
+      categories: categories ?? this.categories,
+      query: query ?? this.query,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+final productCategoriesManagementProvider = NotifierProvider<
+    ProductCategoriesNotifier, ProductCategoriesState>(
+  ProductCategoriesNotifier.new,
+);
+
+class ProductCategoriesNotifier extends Notifier<ProductCategoriesState> {
+  late final InventoryRepository _repo;
+
+  @override
+  ProductCategoriesState build() {
+    _repo = ref.read(inventoryRepositoryProvider);
+    Future.microtask(load);
+    return const ProductCategoriesState();
+  }
+
+  Future<void> load() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final categories = await _repo.getCategoryManagementList();
+      state = state.copyWith(
+        isLoading: false,
+        categories: categories,
+        clearError: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+    }
+  }
+
+  void search(String query) {
+    state = state.copyWith(query: query);
+  }
+
+  Future<Map<String, dynamic>> create(Map<String, dynamic> body) async {
+    final result = await _repo.createCategory(body);
+    await load();
+    ref.invalidate(productCategoriesProvider);
+    return result;
+  }
+
+  Future<Map<String, dynamic>> update(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
+    final result = await _repo.updateCategory(id, body);
+    await load();
+    ref.invalidate(productCategoriesProvider);
+    return result;
+  }
+
+  Future<Map<String, dynamic>> delete(int id) async {
+    final result = await _repo.deleteCategory(id);
+    await load();
+    ref.invalidate(productCategoriesProvider);
+    return result;
+  }
+}
 
 // ───────── Cost history (product detail screen) ─────────
 

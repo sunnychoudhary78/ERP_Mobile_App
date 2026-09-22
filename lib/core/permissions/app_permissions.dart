@@ -31,9 +31,13 @@ abstract final class AppPermissions {
   // --- Inventory ---
   static const dashboardView = 'dashboard.view';
   static const inventoryView = 'inventory.view';
+  static const inventoryManage = 'inventory.manage';
   static const productView = 'product.view';
   static const productManage = 'product.manage';
+  static const productCategoryView = 'product_category.view';
+  static const productCategoryManage = 'product_category.manage';
   static const bomView = 'bom.view';
+  static const bomManage = 'bom.manage';
   static const inventoryReportView = 'inventory_report.view';
 
   // --- Production ---
@@ -105,6 +109,33 @@ abstract final class AppPermissions {
     productManage,
     bomView,
   ];
+
+  static const List<String> productAccess = [
+    productView,
+    productManage,
+    inventoryView,
+  ];
+
+  static const List<String> productManageAccess = [productManage];
+
+  static const List<String> productStockManageAccess = [
+    productManage,
+    inventoryManage,
+  ];
+
+  static const List<String> productCategories = [
+    productCategoryView,
+    productCategoryManage,
+    productView,
+    productManage,
+  ];
+
+  static const List<String> productCategoriesManage = [
+    productCategoryManage,
+    productManage,
+  ];
+
+  static const List<String> bomAccess = [bomView, bomManage];
 
   static const List<String> lowStock = [inventoryReportView];
 

@@ -1,5 +1,6 @@
 import 'package:erp_app/features/inventory/product/data/model/cost_history_model.dart';
 import 'package:erp_app/features/inventory/product/data/model/product_category_model.dart';
+import 'package:erp_app/features/inventory/bom/data/models/bom_model.dart';
 import 'package:erp_app/features/inventory/shared/data/inventory_api_service.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
@@ -8,7 +9,6 @@ import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
-
 
 class InventoryRepository {
   final InventoryApiService _api;
@@ -78,10 +78,28 @@ class InventoryRepository {
   }
 
   /// Compact typeahead lookup (6.1b) — lighter than searchItems(), no stock qty.
-  Future<List<ItemLookupResult>> lookupItems(String query, {int limit = 200}) {
+  Future<List<ItemLookupResult>> lookupItems(
+    String query, {
+    int limit = 200,
+    String? purpose,
+  }) {
     if (query.trim().isEmpty) return Future.value(const []);
-    return _api.lookupItems(query, limit: limit);
+    return _api.lookupItems(query, limit: limit, purpose: purpose);
   }
+
+  Future<List<ItemLookupResult>> lookupBomItems() => _api.lookupBomItems();
+
+  Future<List<BillOfMaterials>> getBoms() => _api.getBoms();
+
+  Future<BillOfMaterials> getBom(int id) => _api.getBom(id);
+
+  Future<Map<String, dynamic>> createBom(Map<String, dynamic> body) =>
+      _api.createBom(body);
+
+  Future<Map<String, dynamic>> updateBom(int id, Map<String, dynamic> body) =>
+      _api.updateBom(id, body);
+
+  Future<Map<String, dynamic>> deleteBom(int id) => _api.deleteBom(id);
 
   // ───────── Products (section 5) ─────────
 
@@ -149,5 +167,30 @@ class InventoryRepository {
     final list = await _api.getProductCategories();
     _categoriesCache = list;
     return list;
+  }
+
+  Future<List<ProductCategory>> getCategoryManagementList() {
+    return _api.getCategoryManagementList();
+  }
+
+  Future<Map<String, dynamic>> createCategory(Map<String, dynamic> body) async {
+    final result = await _api.createCategory(body);
+    _categoriesCache = null;
+    return result;
+  }
+
+  Future<Map<String, dynamic>> updateCategory(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
+    final result = await _api.updateCategory(id, body);
+    _categoriesCache = null;
+    return result;
+  }
+
+  Future<Map<String, dynamic>> deleteCategory(int id) async {
+    final result = await _api.deleteCategory(id);
+    _categoriesCache = null;
+    return result;
   }
 }

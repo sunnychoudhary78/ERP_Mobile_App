@@ -1,5 +1,6 @@
 import 'package:erp_app/features/inventory/product/data/model/cost_history_model.dart';
 import 'package:erp_app/features/inventory/product/data/model/product_category_model.dart';
+import 'package:erp_app/features/inventory/bom/data/models/bom_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/financial_report.dart';
 import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
@@ -115,16 +116,62 @@ class InventoryApiService {
   Future<List<ItemLookupResult>> lookupItems(
     String query, {
     int limit = 200,
+    String? purpose,
   }) async {
     final res = await _api.get(
       ApiEndpoints.lookupItems,
-      queryParams: {'search': query, 'limit': limit},
+      queryParams: {
+        'search': query,
+        'limit': limit,
+        if (purpose != null) 'purpose': purpose,
+      },
       headers: _companyHeader,
     );
     final list = res['data'] as List? ?? [];
     return list
         .map((e) => ItemLookupResult.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<List<BillOfMaterials>> getBoms() async {
+    final res = await _api.get(ApiEndpoints.boms, headers: _companyHeader);
+    final data = res['data'];
+    final list = (data is Map ? data['data'] : data) as List? ?? [];
+    return list
+        .map((e) => BillOfMaterials.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<BillOfMaterials> getBom(int id) async {
+    final res = await _api.get(
+      ApiEndpoints.bomById(id.toString()),
+      headers: _companyHeader,
+    );
+    return BillOfMaterials.fromJson(
+      Map<String, dynamic>.from(res['data'] as Map),
+    );
+  }
+
+  Future<List<ItemLookupResult>> lookupBomItems() {
+    return lookupItems('', limit: 1000, purpose: 'bom');
+  }
+
+  Future<Map<String, dynamic>> createBom(Map<String, dynamic> body) async {
+    final res = await _api.post(ApiEndpoints.boms, body);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> updateBom(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _api.put(ApiEndpoints.bomById(id.toString()), body);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> deleteBom(int id) async {
+    final res = await _api.deleteNoBody(ApiEndpoints.bomById(id.toString()));
+    return Map<String, dynamic>.from(res as Map);
   }
 
   // ───────── Products (doc section 5) ─────────
@@ -165,8 +212,7 @@ class InventoryApiService {
   /// `PUT /api/items/:id` — JSON or multipart when [imagePath] is supplied.
   Future<Map<String, dynamic>> updateItem(
     int id,
-    Map<String, dynamic> body,
-    {
+    Map<String, dynamic> body, {
     String? imagePath,
     String? imageFilename,
   }) async {
@@ -241,5 +287,37 @@ class InventoryApiService {
     return list
         .map((e) => ProductCategoryLite.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<List<ProductCategory>> getCategoryManagementList() async {
+    final res = await _api.get(
+      ApiEndpoints.categories,
+      headers: _companyHeader,
+    );
+    final data = res['data'];
+    final list = (data is Map ? data['data'] : data) as List? ?? [];
+    return list
+        .map((e) => ProductCategory.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> createCategory(Map<String, dynamic> body) async {
+    final res = await _api.post(ApiEndpoints.categories, body);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> updateCategory(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _api.put(ApiEndpoints.categoryById(id.toString()), body);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> deleteCategory(int id) async {
+    final res = await _api.deleteNoBody(
+      ApiEndpoints.categoryById(id.toString()),
+    );
+    return Map<String, dynamic>.from(res as Map);
   }
 }

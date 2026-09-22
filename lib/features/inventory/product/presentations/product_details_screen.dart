@@ -1,6 +1,8 @@
 // lib/features/inventory/products/presentation/screens/product_detail_screen.dart
 
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:erp_app/features/inventory/product/data/provider/product_provider.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
@@ -18,35 +20,44 @@ class ProductDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final canManage = ref.watch(authProvider).canAny(
+          AppPermissions.productManageAccess,
+        );
+    final canAdjustStock = ref.watch(authProvider).canAny(
+      AppPermissions.productStockManageAccess,
+    );
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Product Detail'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () async {
-              final updated = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(
-                  builder: (_) => ProductFormScreen(existing: item),
+        actions: canManage
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () async {
+                    final updated = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) => ProductFormScreen(existing: item),
+                      ),
+                    );
+                    if (updated == true && context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
+                  },
                 ),
-              );
-              if (updated == true && context.mounted) {
-                Navigator.of(context).pop(true);
-              }
-            },
-          ),
-        ],
+              ]
+            : null,
       ),
-      body: _DetailBody(item: item),
+      body: _DetailBody(item: item, canAdjustStock: canAdjustStock),
     );
   }
 }
 
 class _DetailBody extends ConsumerWidget {
   final InventoryItem item;
+  final bool canAdjustStock;
 
-  const _DetailBody({required this.item});
+  const _DetailBody({required this.item, required this.canAdjustStock});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -132,11 +143,13 @@ class _DetailBody extends ConsumerWidget {
             MapEntry('Reorder level', '${item.reorderLevel ?? '-'}'),
             MapEntry('Opening stock', '${item.openingStock ?? '-'}'),
           ],
-          trailing: TextButton.icon(
-            icon: const Icon(Icons.edit_note),
-            label: const Text('Adjust'),
-            onPressed: () => _showAdjustStockSheet(context, ref, item),
-          ),
+          trailing: canAdjustStock
+              ? TextButton.icon(
+                  icon: const Icon(Icons.edit_note),
+                  label: const Text('Adjust'),
+                  onPressed: () => _showAdjustStockSheet(context, ref, item),
+                )
+              : null,
         ),
         if (item.stocks.isNotEmpty) ...[
           const SizedBox(height: 8),
