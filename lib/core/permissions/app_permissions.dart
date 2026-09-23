@@ -36,6 +36,12 @@ abstract final class AppPermissions {
   static const productManage = 'product.manage';
   static const productCategoryView = 'product_category.view';
   static const productCategoryManage = 'product_category.manage';
+  static const vendorView = 'vendor.view';
+  static const vendorManage = 'vendor.manage';
+  static const purchaseOrderView = 'purchase_order.view';
+  static const approvalView = 'approval.view';
+  static const approvalApprove = 'approval.approve';
+  static const approvalReject = 'approval.reject';
   static const bomView = 'bom.view';
   static const bomManage = 'bom.manage';
   static const inventoryReportView = 'inventory_report.view';
@@ -133,6 +139,22 @@ abstract final class AppPermissions {
   static const List<String> productCategoriesManage = [
     productCategoryManage,
     productManage,
+  ];
+
+  static const List<String> vendors = [vendorView, vendorManage];
+
+  static const List<String> vendorsManage = [vendorManage];
+
+  static const List<String> purchaseDemand = [purchaseOrderView, approvalView];
+
+  static const List<String> purchaseDemandApprove = [
+    approvalApprove,
+    approvalView,
+  ];
+
+  static const List<String> purchaseDemandReject = [
+    approvalReject,
+    approvalApprove,
   ];
 
   static const List<String> bomAccess = [bomView, bomManage];

@@ -91,7 +91,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         TextEditingController(text: e?.sellingPrice?.toString() ?? '');
     _costPrice = TextEditingController(text: e?.costPrice?.toString() ?? '');
     _description = TextEditingController(text: e?.description ?? '');
-    _openingStock = TextEditingController(text: e?.openingStock?.toString() ?? '0');
+    _openingStock =
+        TextEditingController(text: e?.openingStock?.toString() ?? '0');
     _categoryId = e?.categoryId;
     _dimensions.addAll(e?.productDimensions.map((dimension) {
           return _ProductDimensionDraft(
@@ -102,11 +103,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         }) ?? const <_ProductDimensionDraft>[]);
     _status = e?.status?.toUpperCase() ?? 'ACTIVE';
     _productType = _productTypeOptions.contains(e?.productType)
-      ? e!.productType!
-      : 'Physical';
+        ? e!.productType!
+        : 'Physical';
     _sourcing = _sourcingOptions.containsValue(e?.sourcing?.toUpperCase())
-      ? e!.sourcing!.toUpperCase()
-      : 'BUY';
+        ? e!.sourcing!.toUpperCase()
+        : 'BUY';
   }
 
   @override
@@ -167,20 +168,46 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   Future<void> _chooseImageSource() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take a photo'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Wrap(
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: Icon(Icons.photo_library_outlined,
+                      color: AppColors.primary),
+                ),
+                title: const Text('Choose from gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child:
+                      Icon(Icons.camera_alt_outlined, color: AppColors.primary),
+                ),
+                title: const Text('Take a photo'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -206,8 +233,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_categoryId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Please select a category')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a category')));
       return;
     }
 
@@ -272,6 +299,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       final wentToApproval = res['approvalId'] != null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: wentToApproval ? AppColors.accent : Colors.green,
           content: Text(
             wentToApproval
                 ? (res['message']?.toString() ?? 'Sent for approval')
@@ -283,7 +312,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.danger,
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+          ),
         );
       }
     } finally {
@@ -299,181 +332,268 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: Text(widget.isEdit ? 'Edit Product' : 'Add Product'),
+        elevation: 0,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.text,
+        title: Text(
+          widget.isEdit ? 'Edit Product' : 'Add Product',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: Stack(
           children: [
-            _buildImagePicker(),
-            const SizedBox(height: 16),
-            _field(_name, 'Name *', validator: _requiredValidator),
-            _field(_sku, 'SKU *', validator: _requiredValidator),
-            _field(_unit, 'Unit * (e.g. Nos, Kg)', validator: _requiredValidator),
-            const SizedBox(height: 8),
-            categoriesAsync.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (e, _) => Text(
-                'Could not load categories: ${e.toString().replaceFirst('Exception: ', '')}',
-                style: TextStyle(color: AppColors.danger),
-              ),
-              data: (categories) {
-                final validValue = categories.any((c) => c.id == _categoryId)
-                    ? _categoryId
-                    : null;
-                return DropdownButtonFormField<int>(
-                  value: validValue,
-                  decoration: const InputDecoration(
-                    labelText: 'Category *',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: categories
-                      .map((c) => DropdownMenuItem(
-                            value: c.id,
-                            child: Text(c.name),
-                          ))
-                      .toList(),
-                  onChanged: (v) => setState(() => _categoryId = v),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            Row(
+            ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               children: [
-                Expanded(child: _field(_productCode, 'Product code')),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: _fetchingCode ? null : _fetchNextCode,
-                  child: _fetchingCode
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Auto'),
+                _buildImagePicker(),
+                const SizedBox(height: 16),
+                _sectionCard(
+                  icon: Icons.info_outline,
+                  title: 'Basic details',
+                  children: [
+                    _field(_name, 'Name *', validator: _requiredValidator),
+                    _field(_sku, 'SKU *', validator: _requiredValidator),
+                    _field(_unit, 'Unit * (e.g. Nos, Kg)',
+                        validator: _requiredValidator),
+                    categoriesAsync.when(
+                      loading: () => const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: LinearProgressIndicator(),
+                      ),
+                      error: (e, _) => Text(
+                        'Could not load categories: ${e.toString().replaceFirst('Exception: ', '')}',
+                        style: TextStyle(color: AppColors.danger, fontSize: 12),
+                      ),
+                      data: (categories) {
+                        final validValue = categories.any((c) => c.id == _categoryId)
+                            ? _categoryId
+                            : null;
+                        return _dropdown<int>(
+                          label: 'Category *',
+                          value: validValue,
+                          items: categories
+                              .map((c) => DropdownMenuItem(
+                                    value: c.id,
+                                    child: Text(c.name),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() => _categoryId = v),
+                        );
+                      },
+                    ),
+                    Row(
+                      children: [
+                        Expanded(child: _field(_productCode, 'Product code')),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              side: BorderSide(color: AppColors.primary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: _fetchingCode ? null : _fetchNextCode,
+                            child: _fetchingCode
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child:
+                                        CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text('Auto'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _field(_brandName, 'Brand'),
+                    _statusChips(),
+                  ],
                 ),
-              ],
-            ),
-            _field(_brandName, 'Brand'),
-            DropdownButtonFormField<String>(
-              value: _status,
-              decoration: const InputDecoration(
-                labelText: 'Status',
-                border: OutlineInputBorder(),
-              ),
-              items: _statusOptions
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                  .toList(),
-              onChanged: (v) => setState(() => _status = v ?? _status),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _field(_mrp, 'MRP', keyboardType: TextInputType.number),
+                const SizedBox(height: 14),
+                _sectionCard(
+                  icon: Icons.sell_outlined,
+                  title: 'Pricing',
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _field(_mrp, 'MRP',
+                              keyboardType: TextInputType.number, prefix: '₹'),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _field(_b2bPrice, 'B2B Price',
+                              keyboardType: TextInputType.number, prefix: '₹'),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _field(_costPrice, 'Cost Price',
+                              keyboardType: TextInputType.number, prefix: '₹'),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _field(_sellingPrice, 'Selling Price',
+                              keyboardType: TextInputType.number, prefix: '₹'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _field(_b2bPrice, 'B2B Price',
-                      keyboardType: TextInputType.number),
+                const SizedBox(height: 14),
+                _sectionCard(
+                  icon: Icons.category_outlined,
+                  title: 'Classification',
+                  children: [
+                    Text('Product type',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.muted)),
+                    const SizedBox(height: 6),
+                    _segmented(
+                      options: _productTypeOptions,
+                      selected: _productType,
+                      onSelected: (v) => setState(() => _productType = v),
+                    ),
+                    const SizedBox(height: 14),
+                    Text('Sourcing',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.muted)),
+                    const SizedBox(height: 6),
+                    _segmented(
+                      options: _sourcingOptions.keys.toList(),
+                      selected: _sourcingOptions.entries
+                          .firstWhere((e) => e.value == _sourcing)
+                          .key,
+                      onSelected: (label) =>
+                          setState(() => _sourcing = _sourcingOptions[label]!),
+                    ),
+                    const SizedBox(height: 14),
+                    warehousesAsync.when(
+                      loading: () => const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: LinearProgressIndicator(),
+                      ),
+                      error: (e, _) => Text(
+                        'Could not load warehouses: ${e.toString().replaceFirst('Exception: ', '')}',
+                        style: TextStyle(color: AppColors.danger, fontSize: 12),
+                      ),
+                      data: (warehouses) => _dropdown<int>(
+                        label: 'Warehouse *',
+                        value: _warehouseId,
+                        validator: (value) =>
+                            value == null ? 'Please select a warehouse' : null,
+                        items: [
+                          const DropdownMenuItem<int>(
+                            value: null,
+                            child: Text('No warehouse selected'),
+                          ),
+                          ...warehouses.map(
+                            (warehouse) => DropdownMenuItem<int>(
+                              value: warehouse.id,
+                              child: Text(warehouse.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _warehouseId = value),
+                      ),
+                    ),
+                    _field(_openingStock, 'Opening stock',
+                        keyboardType: TextInputType.number),
+                  ],
                 ),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: _field(_costPrice, 'Cost Price',
-                      keyboardType: TextInputType.number),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _field(_sellingPrice, 'Selling Price',
-                      keyboardType: TextInputType.number),
-                ),
-              ],
-            ),
-            DropdownButtonFormField<String>(
-              value: _productType,
-              decoration: const InputDecoration(
-                labelText: 'Product type *',
-                border: OutlineInputBorder(),
-              ),
-              items: _productTypeOptions
-                  .map((type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type),
-                      ))
-                  .toList(),
-              onChanged: (value) =>
-                  setState(() => _productType = value ?? _productType),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _sourcing,
-              decoration: const InputDecoration(
-                labelText: 'Sourcing',
-                border: OutlineInputBorder(),
-              ),
-              items: _sourcingOptions.entries
-                  .map((option) => DropdownMenuItem(
-                        value: option.value,
-                        child: Text(option.key),
-                      ))
-                  .toList(),
-              onChanged: (value) =>
-                  setState(() => _sourcing = value ?? _sourcing),
-            ),
-            const SizedBox(height: 12),
-            _field(_openingStock, 'Opening stock',
-                keyboardType: TextInputType.number),
-            warehousesAsync.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (e, _) => Text(
-                'Could not load warehouses: ${e.toString().replaceFirst('Exception: ', '')}',
-                style: TextStyle(color: AppColors.danger),
-              ),
-              data: (warehouses) => DropdownButtonFormField<int>(
-                value: _warehouseId,
-                decoration: const InputDecoration(
-                  labelText: 'Warehouse *',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  const DropdownMenuItem<int>(
-                    value: null,
-                    child: Text('No warehouse selected'),
-                  ),
-                  ...warehouses.map(
-                    (warehouse) => DropdownMenuItem<int>(
-                      value: warehouse.id,
-                      child: Text(warehouse.name),
+                const SizedBox(height: 14),
+                _sectionCard(
+                  icon: Icons.straighten_outlined,
+                  title: 'Dimensions',
+                  trailing: TextButton.icon(
+                    onPressed: _saving ? null : _addDimension,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
                     ),
                   ),
-                ],
-                validator: (value) =>
-                  value == null ? 'Please select a warehouse' : null,
-                onChanged: (value) => setState(() => _warehouseId = value),
-              ),
+                  children: [_buildDimensions()],
+                ),
+                const SizedBox(height: 14),
+                _sectionCard(
+                  icon: Icons.notes_outlined,
+                  title: 'Description',
+                  children: [
+                    _field(_description, 'Add product notes or details',
+                        maxLines: 4, showLabel: false),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            _buildDimensions(),
-            _field(_description, 'Description', maxLines: 3),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saving ? null : _submit,
-              child: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(widget.isEdit ? 'Save changes' : 'Create product'),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildBottomBar(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _saving ? null : _submit,
+            child: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    widget.isEdit ? 'Save changes' : 'Create product',
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+          ),
         ),
       ),
     );
@@ -484,74 +604,287 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     return null;
   }
 
+  Widget _statusChips() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Status',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _statusOptions.map((status) {
+              final selected = _status == status;
+              final color = _statusColor(status);
+              return ChoiceChip(
+                label: Text(status),
+                selected: selected,
+                onSelected: (_) => setState(() => _status = status),
+                labelStyle: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Colors.white : color,
+                ),
+                selectedColor: color,
+                backgroundColor: color.withOpacity(0.1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: color.withOpacity(0.4)),
+                ),
+                showCheckmark: false,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'ACTIVE':
+        return Colors.green;
+      case 'PENDING':
+        return Colors.orange;
+      case 'REJECTED':
+        return AppColors.danger;
+      case 'INACTIVE':
+      default:
+        return AppColors.muted;
+    }
+  }
+
+  Widget _segmented({
+    required List<String> options,
+    required String selected,
+    required ValueChanged<String> onSelected,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: options.map((option) {
+          final isSelected = option == selected;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onSelected(option),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  option,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : AppColors.text,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _sectionCard({
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+    Widget? trailing,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 18, color: AppColors.primary),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
+    );
+  }
+
   Widget _buildImagePicker() {
     final existingImageUrl = resolveImageUrl(widget.existing?.imageUrl);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Product image', style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(
-                width: 88,
-                height: 88,
-                child: _selectedImage != null
-                    ? Image.file(File(_selectedImage!.path), fit: BoxFit.cover)
-                    : existingImageUrl != null
-                        ? Image.network(existingImageUrl, fit: BoxFit.cover)
-                        : ColoredBox(
-                            color: AppColors.surface,
-                            child: Icon(Icons.image_outlined,
-                                color: AppColors.muted, size: 34),
-                          ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 84,
+                  height: 84,
+                  child: _selectedImage != null
+                      ? Image.file(File(_selectedImage!.path), fit: BoxFit.cover)
+                      : existingImageUrl != null
+                          ? Image.network(existingImageUrl, fit: BoxFit.cover)
+                          : ColoredBox(
+                              color: AppColors.surface,
+                              child: Icon(Icons.inventory_2_outlined,
+                                  color: AppColors.muted, size: 30),
+                            ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            OutlinedButton.icon(
-              onPressed: _saving ? null : _chooseImageSource,
-              icon: const Icon(Icons.add_photo_alternate_outlined),
-              label: Text(_selectedImage == null ? 'Add image' : 'Change image'),
-            ),
-            if (_selectedImage != null)
-              IconButton(
-                tooltip: 'Remove selected image',
-                onPressed: _saving
-                    ? null
-                    : () => setState(() => _selectedImage = null),
-                icon: const Icon(Icons.delete_outline),
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: GestureDetector(
+                  onTap: _saving ? null : _chooseImageSource,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(Icons.camera_alt,
+                        size: 14, color: Colors.white),
+                  ),
+                ),
               ),
-          ],
-        ),
-      ],
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Product image',
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text(
+                  'PNG or JPG, up to 5 MB',
+                  style: TextStyle(fontSize: 12, color: AppColors.muted),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: _saving ? null : _chooseImageSource,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        foregroundColor: AppColors.primary,
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                          _selectedImage == null ? 'Upload' : 'Replace'),
+                    ),
+                    if (_selectedImage != null) ...[
+                      const SizedBox(width: 14),
+                      TextButton(
+                        onPressed: _saving
+                            ? null
+                            : () => setState(() => _selectedImage = null),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          foregroundColor: AppColors.danger,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text('Remove'),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildDimensions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    if (_dimensions.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border, style: BorderStyle.solid),
+        ),
+        child: Column(
           children: [
-            Text('Product dimensions (optional)',
-                style: Theme.of(context).textTheme.titleSmall),
-            TextButton.icon(
-              onPressed: _saving ? null : _addDimension,
-              icon: const Icon(Icons.add),
-              label: const Text('Add'),
+            Icon(Icons.straighten, color: AppColors.muted, size: 22),
+            const SizedBox(height: 6),
+            Text(
+              'Add attributes such as length, width, weight, or grade',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted, fontSize: 12.5),
             ),
           ],
         ),
-        if (_dimensions.isEmpty)
-          Text('Add attributes such as length, width, weight, or grade.',
-              style: TextStyle(color: AppColors.muted)),
-        ..._dimensions.asMap().entries.map((entry) {
-          final index = entry.key;
-          final dimension = entry.value;
-          return Row(
+      );
+    }
+
+    return Column(
+      children: _dimensions.asMap().entries.map((entry) {
+        final index = entry.key;
+        final dimension = entry.value;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.fromLTRB(12, 10, 4, 0),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: _field(dimension.label, 'Name')),
@@ -562,12 +895,49 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               IconButton(
                 tooltip: 'Remove dimension',
                 onPressed: _saving ? null : () => _removeDimension(index),
-                icon: const Icon(Icons.delete_outline),
+                icon: Icon(Icons.close, size: 18, color: AppColors.muted),
               ),
             ],
-          );
-        }),
-      ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _dropdown<T>({
+    required String label,
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+    String? Function(T?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<T>(
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: AppColors.surface,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+        ),
+      ),
     );
   }
 
@@ -577,6 +947,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     String? Function(String?)? validator,
     TextInputType? keyboardType,
     int maxLines = 1,
+    String? prefix,
+    bool showLabel = true,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -586,8 +958,29 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         keyboardType: keyboardType,
         maxLines: maxLines,
         decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+          labelText: showLabel ? label : null,
+          hintText: showLabel ? null : label,
+          prefixText: prefix,
+          filled: true,
+          fillColor: AppColors.surface,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.danger),
+          ),
         ),
       ),
     );

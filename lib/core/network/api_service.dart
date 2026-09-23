@@ -6,6 +6,20 @@ import '../providers/network_providers.dart';
 import '../services/crypto_helper.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 
+class ApiException implements Exception {
+  final int? statusCode;
+  final String? message;
+  final dynamic payload;
+
+  const ApiException({this.statusCode, this.message, this.payload});
+
+  @override
+  String toString() => [
+        if (statusCode != null) 'HTTP $statusCode',
+        if (message != null && message!.isNotEmpty) message!,
+      ].join(': ');
+}
+
 class ApiService {
   final Dio _dio;
   final Ref ref;
@@ -44,6 +58,10 @@ class ApiService {
   //     throw _extractException(e);
   //   }
   // }
+
+
+
+  
 
   Future<dynamic> get(
     String endpoint, {
@@ -170,13 +188,15 @@ class ApiService {
     final errorMessage = _findErrorMessage(errorData);
     final statusCode = e.response?.statusCode;
     if (statusCode != null) {
-      return Exception(
-        'HTTP $statusCode${errorMessage == null ? '' : ': $errorMessage'}',
+      return ApiException(
+        statusCode: statusCode,
+        message: errorMessage,
+        payload: errorData,
       );
     }
 
     if (errorMessage != null) {
-      return Exception(errorMessage);
+      return ApiException(message: errorMessage, payload: errorData);
     }
 
     if (e.type == DioExceptionType.connectionTimeout ||

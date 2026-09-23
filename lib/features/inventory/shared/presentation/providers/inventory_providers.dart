@@ -9,6 +9,9 @@ import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_model.dart';
+import 'package:erp_app/features/inventory/purchase/vendors/data/model/vendor_model.dart';
+import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_demand_model.dart';
+import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_order_model.dart';
 import 'package:erp_app/features/inventory/shared/data/repository/inventory_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -26,11 +29,105 @@ final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
 });
 
 final productWarehousesProvider = FutureProvider<List<Warehouse>>((ref) async {
-  final warehouses = await ref.read(inventoryRepositoryProvider).getWarehouses();
+  final warehouses = await ref
+      .read(inventoryRepositoryProvider)
+      .getWarehouses();
   return warehouses
       .where((warehouse) => warehouse.status?.toUpperCase() != 'INACTIVE')
       .toList();
 });
+
+// ───────── Vendors ─────────
+
+final vendorsProvider = FutureProvider.family<PagedVendors, VendorListQuery>((
+  ref,
+  query,
+) async {
+  return ref
+      .read(inventoryRepositoryProvider)
+      .getVendors(page: query.page, limit: query.limit, query: query.search);
+});
+
+final vendorProvider = FutureProvider.family<Vendor, int>((ref, id) {
+  return ref.read(inventoryRepositoryProvider).getVendor(id);
+});
+
+class VendorListQuery {
+  final int page;
+  final int limit;
+  final String search;
+
+  const VendorListQuery({this.page = 1, this.limit = 25, this.search = ''});
+
+  @override
+  bool operator ==(Object other) {
+    return other is VendorListQuery &&
+        other.page == page &&
+        other.limit == limit &&
+        other.search == search;
+  }
+
+  @override
+  int get hashCode => Object.hash(page, limit, search);
+}
+
+class PurchaseDemandQuery {
+  final int page;
+  final int limit;
+  final String status;
+
+  const PurchaseDemandQuery({this.page = 1, this.limit = 25, this.status = ''});
+
+  @override
+  bool operator ==(Object other) =>
+      other is PurchaseDemandQuery &&
+      other.page == page &&
+      other.limit == limit &&
+      other.status == status;
+
+  @override
+  int get hashCode => Object.hash(page, limit, status);
+}
+
+final purchaseDemandsProvider =
+    FutureProvider.family<PagedPurchaseDemands, PurchaseDemandQuery>(
+      (ref, query) => ref
+          .read(inventoryRepositoryProvider)
+          .getPurchaseDemands(
+            page: query.page,
+            limit: query.limit,
+            status: query.status.isEmpty ? null : query.status,
+          ),
+    );
+
+class PurchaseOrderQuery {
+  final int page;
+  final int limit;
+  final String search;
+
+  const PurchaseOrderQuery({this.page = 1, this.limit = 25, this.search = ''});
+
+  @override
+  bool operator ==(Object other) =>
+      other is PurchaseOrderQuery &&
+      other.page == page &&
+      other.limit == limit &&
+      other.search == search;
+
+  @override
+  int get hashCode => Object.hash(page, limit, search);
+}
+
+final purchaseOrdersProvider =
+    FutureProvider.family<PagedPurchaseOrders, PurchaseOrderQuery>(
+      (ref, query) => ref
+          .read(inventoryRepositoryProvider)
+          .getPurchaseOrders(
+            page: query.page,
+            limit: query.limit,
+            query: query.search,
+          ),
+    );
 
 // ───────── Stock Lookup (search) state ─────────
 

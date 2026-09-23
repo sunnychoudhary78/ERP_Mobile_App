@@ -14,6 +14,9 @@ import 'models/inventory_item_model.dart';
 import 'models/warehouse_stock_model.dart';
 import 'models/warehouse_model.dart';
 import 'models/dashboard_stats_model.dart';
+import '../../purchase/vendors/data/model/vendor_model.dart';
+import '../../purchase/orders/data/model/purchase_demand_model.dart';
+import '../../purchase/orders/data/model/purchase_order_model.dart';
 
 class InventoryApiService {
   final ApiService _api;
@@ -318,6 +321,168 @@ class InventoryApiService {
     final res = await _api.deleteNoBody(
       ApiEndpoints.categoryById(id.toString()),
     );
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  // ───────── Vendors (section 8) ─────────
+
+  Future<PagedVendors> getVendors({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) async {
+    final res = await _api.get(
+      ApiEndpoints.vendors,
+      queryParams: {
+        'page': page,
+        'limit': limit,
+        if (query.trim().isNotEmpty) 'q': query.trim(),
+      },
+      headers: _companyHeader,
+    );
+    final data = res['data'];
+    if (data is Map) {
+      return PagedVendors.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const PagedVendors(
+      vendors: [],
+      page: 1,
+      limit: 0,
+      total: 0,
+      totalPages: 1,
+    );
+  }
+
+  Future<Vendor> getVendor(int id) async {
+    final res = await _api.get(
+      ApiEndpoints.vendorById(id.toString()),
+      headers: _companyHeader,
+    );
+    return Vendor.fromJson(Map<String, dynamic>.from(res['data'] as Map));
+  }
+
+  Future<Map<String, dynamic>> createVendor(
+    Map<String, dynamic> body, {
+    String? panCardPath,
+    String? aadharCardPath,
+    String? panCardFilename,
+    String? aadharCardFilename,
+  }) async {
+    final formData = FormData.fromMap({
+      ...body,
+      if (panCardPath != null)
+        'panCard': await MultipartFile.fromFile(
+          panCardPath,
+          filename: panCardFilename,
+        ),
+      if (aadharCardPath != null)
+        'aadharCard': await MultipartFile.fromFile(
+          aadharCardPath,
+          filename: aadharCardFilename,
+        ),
+    });
+    final res = await _api.postMultipart(ApiEndpoints.vendors, formData);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> updateVendor(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _api.put(ApiEndpoints.vendorById(id.toString()), body);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> importVendors(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    final res = await _api.post(ApiEndpoints.importVendors, {'rows': rows});
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  // ───────── Purchase Demand (section 9) ─────────
+
+  Future<PagedPurchaseDemands> getPurchaseDemands({
+    int page = 1,
+    int limit = 25,
+    String? status,
+  }) async {
+    final res = await _api.get(
+      ApiEndpoints.purchaseDemands,
+      queryParams: {
+        'page': page,
+        'limit': limit,
+        if (status != null && status.isNotEmpty) 'status': status,
+      },
+      headers: _companyHeader,
+    );
+    return PagedPurchaseDemands.fromResponse(res);
+  }
+
+  Future<Map<String, dynamic>> raisePurchases(
+    String workOrderId, {
+    required Map<String, dynamic> vendorByItemId,
+    bool persistVendorOnItems = false,
+  }) async {
+    final res = await _api.post(ApiEndpoints.raisePurchases(workOrderId), {
+      'vendorByItemId': vendorByItemId,
+      'persistVendorOnItems': persistVendorOnItems,
+    });
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> approvePurchaseDemand(
+    dynamic requestId, {
+    String? note,
+  }) async {
+    final res = await _api.post(ApiEndpoints.approvalApprove, {
+      'requestId': requestId,
+      if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+    });
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> rejectPurchaseDemand(
+    dynamic requestId, {
+    String? note,
+  }) async {
+    final res = await _api.post(ApiEndpoints.approvalReject, {
+      'requestId': requestId,
+      if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+    });
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  // ───────── Purchase Orders (section 10) ─────────
+
+  Future<PagedPurchaseOrders> getPurchaseOrders({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) async {
+    final res = await _api.get(
+      ApiEndpoints.purchases,
+      queryParams: {
+        'page': page,
+        'limit': limit,
+        if (query.trim().isNotEmpty) 'q': query.trim(),
+      },
+      headers: _companyHeader,
+    );
+    return PagedPurchaseOrders.fromResponse(res);
+  }
+
+  Future<Map<String, dynamic>> createPurchaseOrder(
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _api.post(ApiEndpoints.purchases, body);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> importPurchaseOrders(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    final res = await _api.post(ApiEndpoints.importPurchases, {'rows': rows});
     return Map<String, dynamic>.from(res as Map);
   }
 }

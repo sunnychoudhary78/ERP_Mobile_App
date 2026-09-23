@@ -157,6 +157,24 @@ class HomeScreen extends ConsumerWidget {
         Icons.account_tree_outlined,
         anyOf: AppPermissions.bomAccess,
       ),
+      QuickLink(
+        'Vendors',
+        '/vendors',
+        Icons.business_outlined,
+        anyOf: AppPermissions.vendors,
+      ),
+      QuickLink(
+        'Purchase demand',
+        '/purchase-demand',
+        Icons.shopping_cart_checkout_outlined,
+        anyOf: AppPermissions.purchaseDemand,
+      ),
+      QuickLink(
+        'Purchase orders',
+        '/purchase-orders',
+        Icons.receipt_long_outlined,
+        anyOf: [AppPermissions.purchaseOrderView],
+      ),
     ]),
     LinkSection('Production', [
       QuickLink(

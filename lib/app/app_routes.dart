@@ -8,6 +8,9 @@ import 'package:erp_app/features/inventory/lowstock/presentations/screen/low_sto
 import 'package:erp_app/features/inventory/product/presentations/products_screen.dart';
 import 'package:erp_app/features/inventory/product/presentations/product_categories_screen.dart';
 import 'package:erp_app/features/inventory/bom/presentation/bom_screen.dart';
+import 'package:erp_app/features/inventory/purchase/vendors/presentations/vendors_screen.dart';
+import 'package:erp_app/features/inventory/purchase/orders/presentation/purchase_demand_screen.dart';
+import 'package:erp_app/features/inventory/purchase/orders/presentation/purchase_orders_screen.dart';
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
 import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
@@ -112,6 +115,11 @@ class AppRoutes {
       const ProductCategoriesScreen(),
     ),
     '/bom': (_) => _gate(AppPermissions.bomAccess, const BomScreen()),
+    '/vendors': (_) => _gate(AppPermissions.vendors, const VendorsScreen()),
+    '/purchase-demand': (_) =>
+        _gate(AppPermissions.purchaseDemand, const PurchaseDemandScreen()),
+    '/purchase-orders': (_) =>
+        _gate([AppPermissions.purchaseOrderView], const PurchaseOrdersScreen()),
 
     // Tracking
     '/tracking-dashboard': (_) => const TrackingDashboardScreen(),

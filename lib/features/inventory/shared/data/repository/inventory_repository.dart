@@ -9,6 +9,9 @@ import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_model.dart';
+import 'package:erp_app/features/inventory/purchase/vendors/data/model/vendor_model.dart';
+import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_demand_model.dart';
+import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_order_model.dart';
 
 class InventoryRepository {
   final InventoryApiService _api;
@@ -193,4 +196,79 @@ class InventoryRepository {
     _categoriesCache = null;
     return result;
   }
+
+  // ───────── Vendors (section 8) ─────────
+
+  Future<PagedVendors> getVendors({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) {
+    return _api.getVendors(page: page, limit: limit, query: query);
+  }
+
+  Future<Vendor> getVendor(int id) => _api.getVendor(id);
+
+  Future<Map<String, dynamic>> createVendor(
+    Map<String, dynamic> body, {
+    String? panCardPath,
+    String? aadharCardPath,
+    String? panCardFilename,
+    String? aadharCardFilename,
+  }) {
+    return _api.createVendor(
+      body,
+      panCardPath: panCardPath,
+      aadharCardPath: aadharCardPath,
+      panCardFilename: panCardFilename,
+      aadharCardFilename: aadharCardFilename,
+    );
+  }
+
+  Future<Map<String, dynamic>> updateVendor(
+    int id,
+    Map<String, dynamic> body,
+  ) => _api.updateVendor(id, body);
+
+  Future<Map<String, dynamic>> importVendors(List<Map<String, dynamic>> rows) =>
+      _api.importVendors(rows);
+
+  Future<PagedPurchaseDemands> getPurchaseDemands({
+    int page = 1,
+    int limit = 25,
+    String? status,
+  }) => _api.getPurchaseDemands(page: page, limit: limit, status: status);
+
+  Future<Map<String, dynamic>> raisePurchases(
+    String workOrderId, {
+    required Map<String, dynamic> vendorByItemId,
+    bool persistVendorOnItems = false,
+  }) => _api.raisePurchases(
+    workOrderId,
+    vendorByItemId: vendorByItemId,
+    persistVendorOnItems: persistVendorOnItems,
+  );
+
+  Future<Map<String, dynamic>> approvePurchaseDemand(
+    dynamic requestId, {
+    String? note,
+  }) => _api.approvePurchaseDemand(requestId, note: note);
+
+  Future<Map<String, dynamic>> rejectPurchaseDemand(
+    dynamic requestId, {
+    String? note,
+  }) => _api.rejectPurchaseDemand(requestId, note: note);
+
+  Future<PagedPurchaseOrders> getPurchaseOrders({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) => _api.getPurchaseOrders(page: page, limit: limit, query: query);
+
+  Future<Map<String, dynamic>> createPurchaseOrder(Map<String, dynamic> body) =>
+      _api.createPurchaseOrder(body);
+
+  Future<Map<String, dynamic>> importPurchaseOrders(
+    List<Map<String, dynamic>> rows,
+  ) => _api.importPurchaseOrders(rows);
 }

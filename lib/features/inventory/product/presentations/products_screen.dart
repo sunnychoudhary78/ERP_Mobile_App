@@ -23,9 +23,9 @@ String? resolveImageUrl(String? path) {
 Color statusColor(String? status) {
   switch ((status ?? '').toUpperCase()) {
     case 'ACTIVE':
-      return Colors.green;
+      return const Color(0xFF16A34A);
     case 'PENDING':
-      return Colors.orange;
+      return const Color(0xFFD97706);
     case 'REJECTED':
       return AppColors.danger;
     case 'INACTIVE':
@@ -74,6 +74,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     _debounce = Timer(const Duration(milliseconds: 400), () {
       ref.read(productsListProvider.notifier).search(value.trim());
     });
+    setState(() {}); // refresh clear-icon visibility
   }
 
   @override
@@ -84,12 +85,21 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         );
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        title: const Text('Products'),
+        elevation: 0,
+        backgroundColor: const Color(0xFFF7F8FA),
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: AppColors.text,
+        title: const Text(
+          'Products',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+        ),
       ),
       floatingActionButton: canManage
           ? FloatingActionButton(
+              elevation: 1,
+              backgroundColor: AppColors.primary,
               onPressed: () async {
                 final created = await Navigator.of(context).push<bool>(
                   MaterialPageRoute(builder: (_) => const ProductFormScreen()),
@@ -98,14 +108,15 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                   ref.read(productsListProvider.notifier).refresh();
                 }
               },
-              child: const Icon(Icons.add),
+              child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
       body: Column(
         children: [
           _SearchBar(controller: _searchController, onChanged: _onSearchChanged),
+          const SizedBox(height: 4),
           _StatusTabs(state: state),
-          const Divider(height: 1),
+          const SizedBox(height: 4),
           Expanded(child: _buildBody(state)),
         ],
       ),
@@ -114,7 +125,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
   Widget _buildBody(ProductsListState state) {
     if (state.isLoading && state.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
 
     if (state.errorMessage != null && state.items.isEmpty) {
@@ -130,9 +141,17 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
       return RefreshIndicator(
         onRefresh: () => ref.read(productsListProvider.notifier).refresh(),
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           children: const [
-            SizedBox(height: 120),
-            Center(child: Text('No products found')),
+            SizedBox(height: 100),
+            Icon(Icons.inventory_2_outlined, size: 40, color: Color(0xFFB0B5BD)),
+            SizedBox(height: 12),
+            Center(
+              child: Text(
+                'No products found',
+                style: TextStyle(color: Color(0xFF8A8F98), fontSize: 14),
+              ),
+            ),
           ],
         ),
       );
@@ -140,15 +159,16 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
     return RefreshIndicator(
       onRefresh: () => ref.read(productsListProvider.notifier).refresh(),
-      child: ListView.builder(
+      child: ListView.separated(
         controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
         itemCount: filtered.length + (state.isLoadingMore ? 1 : 0),
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           if (index >= filtered.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
             );
           }
           final item = filtered[index];
@@ -180,17 +200,19 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
+        style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'Search products by name / SKU / code',
-          prefixIcon: const Icon(Icons.search),
+          hintText: 'Search by name, SKU or code',
+          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9AA0A8)),
+          prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF9AA0A8)),
           suffixIcon: controller.text.isEmpty
               ? null
               : IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(Icons.close, size: 18, color: Color(0xFF9AA0A8)),
                   onPressed: () {
                     controller.clear();
                     onChanged('');
@@ -198,10 +220,19 @@ class _SearchBar extends StatelessWidget {
                 ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: AppColors.border),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFECEDF0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.primary, width: 1.4),
           ),
         ),
       ),
@@ -218,23 +249,35 @@ class _StatusTabs extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final counts = state.statusCounts;
     return SizedBox(
-      height: 44,
+      height: 38,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         children: ProductStatusFilter.values.map((f) {
           final selected = state.statusFilter == f;
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ChoiceChip(
-              label: Text('${f.label} (${counts[f] ?? 0})'),
-              selected: selected,
-              onSelected: (_) =>
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () =>
                   ref.read(productsListProvider.notifier).setStatusFilter(f),
-              selectedColor: AppColors.primary.withOpacity(0.15),
-              labelStyle: TextStyle(
-                color: selected ? AppColors.primary : AppColors.text,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.primary : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: selected ? AppColors.primary : const Color(0xFFECEDF0),
+                  ),
+                ),
+                child: Text(
+                  '${f.label} · ${counts[f] ?? 0}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : const Color(0xFF6B7078),
+                  ),
+                ),
               ),
             ),
           );
@@ -254,106 +297,142 @@ class _ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final imageUrl = resolveImageUrl(item.imageUrl);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: AppColors.border),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.035),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: imageUrl != null
-                      ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _placeholderImage(),
-                        )
-                      : _placeholderImage(),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 58,
+                    height: 58,
+                    child: imageUrl != null
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _placeholderImage(),
+                          )
+                        : _placeholderImage(),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14.5,
+                                height: 1.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        _StatusChip(status: item.status),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      [
-                        if (item.productCode != null) item.productCode!,
-                        if (item.categoryName != null) item.categoryName!,
-                        if (item.brandName != null) item.brandName!,
-                      ].join(' • '),
-                      style: TextStyle(color: AppColors.muted, fontSize: 12),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 2,
-                      children: [
-                        _priceLabel('MRP', item.mrp),
-                        _priceLabel('B2B', item.b2bPrice),
-                        _priceLabel('Cost', item.costPrice),
-                        _priceLabel('Sell', item.sellingPrice),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Stock: ${item.currentStock} ${item.unit ?? ''}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: item.isLowStock ? AppColors.danger : AppColors.muted,
-                        fontWeight: item.isLowStock ? FontWeight.w600 : FontWeight.normal,
+                          const SizedBox(width: 8),
+                          _StatusChip(status: item.status),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 3),
+                      Text(
+                        [
+                          if (item.productCode != null) item.productCode!,
+                          if (item.categoryName != null) item.categoryName!,
+                          if (item.brandName != null) item.brandName!,
+                        ].join('  ·  '),
+                        style: const TextStyle(color: Color(0xFF9AA0A8), fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          if (item.mrp != null) _priceTag('MRP', item.mrp!),
+                          if (item.b2bPrice != null) _priceTag('B2B', item.b2bPrice!),
+                          if (item.costPrice != null) _priceTag('Cost', item.costPrice!),
+                          if (item.sellingPrice != null)
+                            _priceTag('Sell', item.sellingPrice!, highlight: true),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            item.isLowStock ? Icons.warning_amber_rounded : Icons.inventory_2_outlined,
+                            size: 13,
+                            color: item.isLowStock ? AppColors.danger : const Color(0xFF9AA0A8),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Stock: ${item.currentStock} ${item.unit ?? ''}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: item.isLowStock ? AppColors.danger : const Color(0xFF9AA0A8),
+                              fontWeight: item.isLowStock ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _priceLabel(String label, num? value) {
-    if (value == null) return const SizedBox.shrink();
-    return Text(
-      '$label ₹$value',
-      style: const TextStyle(fontSize: 12),
+  Widget _priceTag(String label, num value, {bool highlight = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: highlight ? AppColors.primary.withOpacity(0.10) : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        '$label ₹$value',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
+          color: highlight ? AppColors.primary : const Color(0xFF6B7078),
+        ),
+      ),
     );
   }
 
   Widget _placeholderImage() {
     return Container(
-      color: AppColors.surface,
+      color: const Color(0xFFF3F4F6),
       alignment: Alignment.center,
-      child: Icon(Icons.inventory_2_outlined, color: AppColors.muted, size: 24),
+      child: const Icon(Icons.inventory_2_outlined, color: Color(0xFFB0B5BD), size: 22),
     );
   }
 }
@@ -368,14 +447,14 @@ class _StatusChip extends StatelessWidget {
     if (status == null || status!.isEmpty) return const SizedBox.shrink();
     final color = statusColor(status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         status!.toUpperCase(),
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
+        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.2),
       ),
     );
   }
@@ -395,11 +474,25 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+            Icon(Icons.error_outline, color: AppColors.danger, size: 36),
             const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF6B7078)),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: const Text('Retry'),
+            ),
           ],
         ),
       ),
