@@ -267,6 +267,89 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     );
   }
 
+    List<Widget> _buildLinkItems(List<QuickLink> links) {
+    final widgets = <Widget>[];
+    String? lastGroup;
+
+    for (final link in links) {
+      if (link.group != lastGroup) {
+        if (link.group != null) {
+          widgets.add(
+            Padding(
+              padding: EdgeInsets.only(top: lastGroup == null ? 4 : 12, bottom: 4),
+              child: Text(
+                link.group!.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: AppColors.muted.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          );
+        }
+        lastGroup = link.group;
+      }
+      widgets.add(_buildLinkRow(link));
+    }
+    return widgets;
+  }
+
+  Widget _buildLinkRow(QuickLink link) {
+    final bool isSelected = _selectedRoute == link.route;
+
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          Container(
+            width: 2,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primary
+                  : AppColors.border.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () {
+                setState(() => _selectedRoute = link.route);
+                Navigator.pop(context);
+                Navigator.pushNamed(context, link.route);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 10,
+                ),
+                margin: const EdgeInsets.symmetric(vertical: 2),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.08)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  link.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.text.withValues(alpha: 0.85),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSectionTile(BuildContext context, LinkSection section) {
     final bool isExpanded = _expandedState[section.title] ?? false;
     final String displayTitle = _displayTitle(section.title);
@@ -321,66 +404,13 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         ),
 
         // Animated expansion container
+                // Animated expansion container
         AnimatedCrossFade(
           firstChild: const SizedBox(width: double.infinity),
           secondChild: Padding(
             padding: const EdgeInsets.only(left: 28, top: 4, bottom: 8),
             child: Column(
-              children: section.links.map((link) {
-                final bool isSelected = _selectedRoute == link.route;
-
-                return IntrinsicHeight(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 2,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.border.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(1),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () {
-                            setState(() => _selectedRoute = link.route);
-                            Navigator.pop(context);
-                            Navigator.pushNamed(context, link.route);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                              horizontal: 10,
-                            ),
-                            margin: const EdgeInsets.symmetric(vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary.withValues(alpha: 0.08)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              link.label,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : AppColors.text.withValues(alpha: 0.85),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+              children: _buildLinkItems(section.links),
             ),
           ),
           crossFadeState: isExpanded

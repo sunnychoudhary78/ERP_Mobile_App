@@ -33,24 +33,46 @@ class _ProductCategoriesScreenState
     final canView = ref.watch(authProvider).canAny(AppPermissions.productCategories);
 
     if (!canView) {
-      return const Scaffold(
-        body: Center(child: Text("You don't have permission to view categories")),
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        body: Center(
+          child: Text(
+            "You don't have permission to view categories",
+            style: TextStyle(color: AppColors.muted),
+          ),
+        ),
       );
     }
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Product Categories')),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.text,
+        centerTitle: true,
+        title: const Text(
+          'Product Categories',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
       floatingActionButton: _canManage
-          ? FloatingActionButton(
+          ? FloatingActionButton.extended(
+              backgroundColor: AppColors.accent,
+              foregroundColor: Colors.white,
               onPressed: () => _openForm(context),
-              child: const Icon(Icons.add),
+              icon: const Icon(Icons.add),
+              label: const Text('New Category'),
             )
           : null,
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: TextField(
               controller: _searchController,
               onChanged: (value) => ref
@@ -58,7 +80,8 @@ class _ProductCategoriesScreenState
                   .search(value),
               decoration: InputDecoration(
                 hintText: 'Search categories, type, or HSN/SAC',
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: TextStyle(color: AppColors.muted, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: AppColors.muted),
                 suffixIcon: _searchController.text.isEmpty
                     ? null
                     : IconButton(
@@ -69,13 +92,23 @@ class _ProductCategoriesScreenState
                               .search('');
                           setState(() {});
                         },
-                        icon: const Icon(Icons.clear),
+                        icon: Icon(Icons.clear, color: AppColors.muted),
                       ),
                 filled: true,
                 fillColor: Colors.white,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.accent, width: 1.4),
                 ),
               ),
             ),
@@ -106,9 +139,16 @@ class _ProductCategoriesScreenState
             .read(productCategoriesManagementProvider.notifier)
             .load(),
         child: ListView(
-          children: const [
-            SizedBox(height: 120),
-            Center(child: Text('No product categories found')),
+          children: [
+            const SizedBox(height: 100),
+            Icon(Icons.category_outlined, size: 44, color: AppColors.muted),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                'No product categories found',
+                style: TextStyle(color: AppColors.muted),
+              ),
+            ),
           ],
         ),
       );
@@ -118,9 +158,9 @@ class _ProductCategoriesScreenState
       onRefresh: () =>
           ref.read(productCategoriesManagementProvider.notifier).load(),
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 88),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) => _CategoryCard(
           category: categories[index],
           canManage: _canManage,
@@ -138,6 +178,7 @@ class _ProductCategoriesScreenState
     final result = await showModalBottomSheet<_CategoryFormResult>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => _CategoryForm(category: category),
     );
     if (result == null || !mounted) return;
@@ -168,6 +209,7 @@ class _ProductCategoriesScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text('Delete category?'),
         content: Text('Delete "${category.name}"?'),
         actions: [
@@ -176,6 +218,7 @@ class _ProductCategoriesScreenState
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
           ),
@@ -227,49 +270,95 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = category.status.toUpperCase();
     final active = status == 'ACTIVE';
-    return Card(
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: AppColors.border),
+    final statusColor = active ? const Color(0xFF2E7D32) : AppColors.muted;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
-        title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 5),
-          child: Text([
-            if (category.type?.isNotEmpty == true) category.type!,
-            'HSN/SAC: ${category.hsnSac ?? '-'}',
-          ].join('  |  ')),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: (active ? Colors.green : Colors.grey).withOpacity(.12),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                status,
-                style: TextStyle(
-                  color: active ? Colors.green.shade700 : Colors.grey.shade700,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(3),
             ),
-            if (canManage) ...[
-              IconButton(onPressed: onEdit, icon: const Icon(Icons.edit_outlined)),
-              IconButton(
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline),
-              ),
-            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        category.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          fontFamily: 'serif',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: statusColor.withOpacity(0.35)),
+                      ),
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  [
+                    if (category.type?.isNotEmpty == true) category.type!,
+                    'HSN/SAC: ${category.hsnSac ?? '-'}',
+                  ].join('   ·   '),
+                  style: TextStyle(color: AppColors.muted, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          if (canManage) ...[
+            IconButton(
+              onPressed: onEdit,
+              icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.text),
+              visualDensity: VisualDensity.compact,
+            ),
+            IconButton(
+              onPressed: onDelete,
+              icon: Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
+              visualDensity: VisualDensity.compact,
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -315,61 +404,120 @@ class _CategoryFormState extends State<_CategoryForm> {
     super.dispose();
   }
 
+  InputDecoration _decoration(String label, {bool required = false}) {
+    return InputDecoration(
+      labelText: required ? '$label *' : label,
+      filled: true,
+      fillColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: AppColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: AppColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: AppColors.accent, width: 1.4),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 18, 16, bottom + 16),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                widget.category == null ? 'Add Category' : 'Edit Category',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: 'Name *'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Name is required'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _typeController,
-                decoration: const InputDecoration(labelText: 'Type'),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _hsnController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'HSN/SAC *'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'HSN/SAC is required'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _status,
-                decoration: const InputDecoration(labelText: 'Status'),
-                items: const [
-                  DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
-                  DropdownMenuItem(value: 'INACTIVE', child: Text('Inactive')),
-                ],
-                onChanged: (value) => setState(() => _status = value ?? 'ACTIVE'),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: _submit,
-                icon: const Icon(Icons.save_outlined),
-                label: Text(widget.category == null ? 'Create Category' : 'Save Changes'),
-              ),
-            ],
+      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.08),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.fromLTRB(20, 14, 20, bottom + 20),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 18),
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Text(
+                  widget.category == null ? 'Add Category' : 'Edit Category',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'serif',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  width: 40,
+                  height: 2,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  color: AppColors.accent.withOpacity(0.6),
+                ),
+                TextFormField(
+                  controller: _nameController,
+                  autofocus: true,
+                  decoration: _decoration('Name', required: true),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Name is required'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _typeController,
+                  decoration: _decoration('Type'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _hsnController,
+                  keyboardType: TextInputType.number,
+                  decoration: _decoration('HSN/SAC', required: true),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'HSN/SAC is required'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _status,
+                  decoration: _decoration('Status'),
+                  items: const [
+                    DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
+                    DropdownMenuItem(value: 'INACTIVE', child: Text('Inactive')),
+                  ],
+                  onChanged: (value) => setState(() => _status = value ?? 'ACTIVE'),
+                ),
+                const SizedBox(height: 22),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: _submit,
+                  icon: const Icon(Icons.save_outlined),
+                  label: Text(
+                    widget.category == null ? 'Create Category' : 'Save Changes',
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -405,9 +553,25 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+            Icon(Icons.error_outline, size: 36, color: AppColors.danger),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted),
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
           ],
         ),
       ),

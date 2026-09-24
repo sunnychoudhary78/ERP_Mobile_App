@@ -9,7 +9,6 @@ import 'package:erp_app/features/inventory/shared/presentation/providers/invento
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import 'product_form_screen.dart';
 import 'products_screen.dart' show resolveImageUrl, statusColor;
 
@@ -29,11 +28,22 @@ class ProductDetailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text('Product Detail'),
+        elevation: 0,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.text,
+        centerTitle: true,
+        title: const Text(
+          'Product Detail',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+          ),
+        ),
         actions: canManage
             ? [
                 IconButton(
-                  icon: const Icon(Icons.edit),
+                  icon: const Icon(Icons.edit_outlined),
                   onPressed: () async {
                     final updated = await Navigator.of(context).push<bool>(
                       MaterialPageRoute(
@@ -45,6 +55,7 @@ class ProductDetailScreen extends ConsumerWidget {
                     }
                   },
                 ),
+                const SizedBox(width: 4),
               ]
             : null,
       ),
@@ -65,136 +76,237 @@ class _DetailBody extends ConsumerWidget {
     final costHistoryAsync = ref.watch(itemCostHistoryProvider(item.id));
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
-        Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: 120,
-              height: 120,
-              child: imageUrl != null
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: AppColors.surface,
-                        child: Icon(Icons.inventory_2_outlined,
-                            color: AppColors.muted, size: 40),
-                      ),
-                    )
-                  : Container(
-                      color: AppColors.surface,
-                      child: Icon(Icons.inventory_2_outlined,
-                          color: AppColors.muted, size: 40),
-                    ),
-            ),
+        // ---------- Hero header ----------
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(item.name,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(width: 8),
-            if (item.status != null)
+          child: Column(
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: statusColor(item.status).withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.accent.withOpacity(0.4)),
                 ),
-                child: Text(
-                  item.status!.toUpperCase(),
-                  style: TextStyle(
-                    color: statusColor(item.status),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(13),
+                  child: SizedBox(
+                    width: 128,
+                    height: 128,
+                    child: imageUrl != null
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _imageFallback(),
+                          )
+                        : _imageFallback(),
                   ),
                 ),
               ),
-          ],
-        ),
-        Center(
-          child: Text(
-            item.productCode ?? item.sku,
-            style: TextStyle(color: AppColors.muted),
+              const SizedBox(height: 18),
+              Text(
+                item.name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'serif',
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                width: 40,
+                height: 2,
+                color: AppColors.accent.withOpacity(0.6),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.productCode ?? item.sku,
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 13,
+                  letterSpacing: 0.4,
+                ),
+              ),
+              if (item.status != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusColor(item.status).withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: statusColor(item.status).withOpacity(0.35),
+                    ),
+                  ),
+                  child: Text(
+                    item.status!.toUpperCase(),
+                    style: TextStyle(
+                      color: statusColor(item.status),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
+        // ---------- Pricing ----------
         _SectionCard(
           title: 'Pricing',
-          rows: [
-            _kv('MRP', item.mrp),
-            _kv('B2B Price', item.b2bPrice),
-            _kv('Cost Price', item.costPrice),
-            _kv('Selling Price', item.sellingPrice),
-          ],
+          icon: Icons.sell_outlined,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _PriceTile(
+                      label: 'Selling Price',
+                      value: item.sellingPrice,
+                      emphasize: true,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _PriceTile(label: 'MRP', value: item.mrp),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+              _kvRow('B2B Price', _rupee(item.b2bPrice)),
+              _kvRow('Cost Price', _rupee(item.costPrice)),
+            ],
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
 
+        // ---------- Stock ----------
         _SectionCard(
           title: 'Stock',
-          rows: [
-            MapEntry('Current stock', '${item.currentStock} ${item.unit ?? ''}'),
-            MapEntry('Reorder level', '${item.reorderLevel ?? '-'}'),
-            MapEntry('Opening stock', '${item.openingStock ?? '-'}'),
-          ],
+          icon: Icons.inventory_2_outlined,
           trailing: canAdjustStock
               ? TextButton.icon(
-                  icon: const Icon(Icons.edit_note),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.accent,
+                  ),
+                  icon: const Icon(Icons.edit_note, size: 18),
                   label: const Text('Adjust'),
                   onPressed: () => _showAdjustStockSheet(context, ref, item),
                 )
               : null,
+          child: Column(
+            children: [
+              _kvRow(
+                'Current stock',
+                '${item.currentStock} ${item.unit ?? ''}'.trim(),
+                highlight: true,
+              ),
+              _kvRow('Reorder level', '${item.reorderLevel ?? '-'}'),
+              _kvRow('Opening stock', '${item.openingStock ?? '-'}'),
+              if (item.stocks.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+                const SizedBox(height: 6),
+                ...item.stocks.map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.warehouse_outlined,
+                                size: 16, color: AppColors.muted),
+                            const SizedBox(width: 8),
+                            Text(s.warehouseName),
+                          ],
+                        ),
+                        Text(
+                          '${s.quantity}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-        if (item.stocks.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(color: AppColors.border),
-            ),
-            child: Column(
-              children: item.stocks
-                  .map((s) => ListTile(
-                        dense: true,
-                        title: Text(s.warehouseName),
-                        trailing: Text('${s.quantity}'),
-                      ))
-                  .toList(),
+        const SizedBox(height: 14),
+
+        // ---------- Details ----------
+        _SectionCard(
+          title: 'Details',
+          icon: Icons.description_outlined,
+          child: Column(
+            children: [
+              _kvRow('SKU', item.sku),
+              _kvRow('Category', item.categoryName ?? '-'),
+              _kvRow('Brand', item.brandName ?? '-'),
+              _kvRow('HSN/SAC', item.hsnSac ?? '-'),
+              _kvRow('Product type', item.productType ?? '-'),
+              _kvRow('Sourcing', item.sourcing ?? '-'),
+              _kvRow('Visibility', item.visibility ?? '-'),
+              if (item.vendorName != null) _kvRow('Vendor', item.vendorName!),
+            ],
+          ),
+        ),
+
+        if (item.description != null && item.description!.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          _SectionCard(
+            title: 'Description',
+            icon: Icons.notes_outlined,
+            child: Text(
+              item.description!,
+              style: TextStyle(color: AppColors.text, height: 1.4),
             ),
           ),
         ],
-        const SizedBox(height: 12),
 
-        _SectionCard(
-          title: 'Details',
-          rows: [
-            MapEntry('SKU', item.sku),
-            MapEntry('Category', item.categoryName ?? '-'),
-            MapEntry('Brand', item.brandName ?? '-'),
-            MapEntry('HSN/SAC', item.hsnSac ?? '-'),
-            MapEntry('Product type', item.productType ?? '-'),
-            MapEntry('Sourcing', item.sourcing ?? '-'),
-            MapEntry('Visibility', item.visibility ?? '-'),
-            if (item.vendorName != null) MapEntry('Vendor', item.vendorName!),
+        const SizedBox(height: 20),
+
+        // ---------- Cost history ----------
+        Row(
+          children: [
+            Icon(Icons.history, size: 18, color: AppColors.muted),
+            const SizedBox(width: 6),
+            Text(
+              'Cost history',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'serif',
+              ),
+            ),
           ],
         ),
-        if (item.description != null && item.description!.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _SectionCard(title: 'Description', rows: const [], freeText: item.description),
-        ],
-
-        const SizedBox(height: 12),
-        Text('Cost history', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         costHistoryAsync.when(
           loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+            padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(child: CircularProgressIndicator()),
           ),
           error: (e, _) => Text(
@@ -206,40 +318,110 @@ class _DetailBody extends ConsumerWidget {
               return Text('No cost changes recorded',
                   style: TextStyle(color: AppColors.muted));
             }
-            return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(color: AppColors.border),
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
               ),
               child: Column(
-                children: history
-                    .map((h) => ListTile(
-                          dense: true,
-                          title: Text(
-                            h.previousCost != null
-                                ? '₹${h.previousCost} → ₹${h.cost}'
-                                : '₹${h.cost}',
-                          ),
-                          subtitle: h.note != null ? Text(h.note!) : null,
-                          trailing: h.date != null
-                              ? Text(
-                                  '${h.date!.day}/${h.date!.month}/${h.date!.year}',
-                                  style: const TextStyle(fontSize: 12),
-                                )
-                              : null,
-                        ))
-                    .toList(),
+                children: List.generate(history.length, (i) {
+                  final h = history[i];
+                  final isLast = i == history.length - 1;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    child: Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 4, right: 10),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    h.previousCost != null
+                                        ? '₹${h.previousCost} → ₹${h.cost}'
+                                        : '₹${h.cost}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                  if (h.note != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      h.note!,
+                                      style: TextStyle(
+                                        color: AppColors.muted,
+                                        fontSize: 12.5,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            if (h.date != null)
+                              Text(
+                                '${h.date!.day}/${h.date!.month}/${h.date!.year}',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                          ],
+                        ),
+                        if (!isLast) ...[
+                          const SizedBox(height: 8),
+                          Divider(height: 1, color: AppColors.border),
+                        ],
+                      ],
+                    ),
+                  );
+                }),
               ),
             );
           },
         ),
-        const SizedBox(height: 24),
       ],
     );
   }
 
-  MapEntry<String, String> _kv(String label, num? value) {
-    return MapEntry(label, value == null ? '-' : '₹$value');
+  Widget _imageFallback() {
+    return Container(
+      color: AppColors.surface,
+      child: Icon(Icons.inventory_2_outlined, color: AppColors.muted, size: 40),
+    );
+  }
+
+  String _rupee(num? value) => value == null ? '-' : '₹$value';
+
+  Widget _kvRow(String label, String value, {bool highlight = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: AppColors.muted, fontSize: 13.5)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
+              color: highlight ? AppColors.accent : AppColors.text,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showAdjustStockSheet(
@@ -254,39 +436,76 @@ class _DetailBody extends ConsumerWidget {
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
       builder: (ctx) {
         return Padding(
           padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Adjust stock — ${item.name}',
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                'Adjust stock',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  fontFamily: 'serif',
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                item.name,
+                style: TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
+              const SizedBox(height: 18),
               TextField(
                 controller: qtyController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'New quantity',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               TextField(
                 controller: hintController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Warehouse hint (optional)',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 onPressed: () => Navigator.of(ctx).pop(true),
                 child: const Text('Save'),
               ),
@@ -331,54 +550,111 @@ class _DetailBody extends ConsumerWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final List<MapEntry<String, String>> rows;
-  final Widget? trailing;
-  final String? freeText;
+class _PriceTile extends StatelessWidget {
+  final String label;
+  final num? value;
+  final bool emphasize;
 
-  const _SectionCard({
-    required this.title,
-    required this.rows,
-    this.trailing,
-    this.freeText,
+  const _PriceTile({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      decoration: BoxDecoration(
+        color: emphasize
+            ? AppColors.accent.withOpacity(0.08)
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: AppColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                if (trailing != null) trailing!,
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (freeText != null) Text(freeText!),
-            ...rows.map(
-              (r) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(r.key, style: TextStyle(color: AppColors.muted)),
-                    Text(r.value),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        border: Border.all(
+          color: emphasize
+              ? AppColors.accent.withOpacity(0.3)
+              : AppColors.border,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 11.5, color: AppColors.muted),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value == null ? '-' : '₹$value',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: emphasize ? AppColors.accent : AppColors.text,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final IconData? icon;
+  final Widget child;
+  final Widget? trailing;
+
+  const _SectionCard({
+    required this.title,
+    required this.child,
+    this.icon,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 17, color: AppColors.accent),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14.5,
+                      fontFamily: 'serif',
+                    ),
+                  ),
+                ],
+              ),
+              if (trailing != null) trailing!,
+            ],
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
       ),
     );
   }

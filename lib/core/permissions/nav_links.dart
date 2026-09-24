@@ -15,10 +15,14 @@ class QuickLink {
   final String route;
   final IconData icon;
 
+
+
+  final String? group;
+
   /// Empty = visible to all authenticated users (web sidebar semantics).
   final List<String> anyOf;
 
-  const QuickLink(this.label, this.route, this.icon, {this.anyOf = const []});
+  const QuickLink(this.label, this.route, this.icon, {this.anyOf = const [],this.group,});
 }
 
 /// Keep sections/links the user may see; drop empty sections.
