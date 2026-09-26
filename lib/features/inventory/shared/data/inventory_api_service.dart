@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../purchase/recives/data/model/purchase_bill_model.dart';
 import 'models/inventory_item_model.dart';
 import 'models/warehouse_stock_model.dart';
 import 'models/warehouse_model.dart';
@@ -468,6 +469,7 @@ class InventoryApiService {
     int page = 1,
     int limit = 25,
     String query = '',
+    String status = '',
   }) async {
     final res = await _api.get(
       ApiEndpoints.purchases,
@@ -475,6 +477,7 @@ class InventoryApiService {
         'page': page,
         'limit': limit,
         if (query.trim().isNotEmpty) 'q': query.trim(),
+        if (status.trim().isNotEmpty) 'status': status.trim(),
       },
       headers: _companyHeader,
     );
@@ -492,6 +495,80 @@ class InventoryApiService {
     List<Map<String, dynamic>> rows,
   ) async {
     final res = await _api.post(ApiEndpoints.importPurchases, {'rows': rows});
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> receivePurchase(
+    int purchaseId, {
+    required int warehouseId,
+    required String invoiceNumber,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final body = <String, dynamic>{
+      'warehouseId': warehouseId,
+      'invoiceNumber': invoiceNumber,
+      'items': items,
+    };
+    final res = await _api.post(
+      ApiEndpoints.purchaseReceive(purchaseId.toString()),
+      body,
+    );
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> receivePurchaseWithPhoto(
+    int purchaseId, {
+    required int warehouseId,
+    required String invoiceNumber,
+    required List<Map<String, dynamic>> items,
+    required String invoicePhotoPath,
+    String? invoicePhotoFilename,
+  }) async {
+    final formItems = <String, dynamic>{};
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      for (final entry in item.entries) {
+        formItems['items[$i][${entry.key}]'] = entry.value;
+      }
+    }
+
+    final formData = FormData.fromMap({
+      'warehouseId': warehouseId,
+      'invoiceNumber': invoiceNumber,
+      ...formItems,
+      'invoicePhoto': await MultipartFile.fromFile(
+        invoicePhotoPath,
+        filename: invoicePhotoFilename,
+      ),
+    });
+    final res = await _api.postMultipart(
+      ApiEndpoints.purchaseReceive(purchaseId.toString()),
+      formData,
+    );
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> rejectPurchase(int purchaseId) async {
+    final res = await _api.post(
+      ApiEndpoints.purchaseReject(purchaseId.toString()),
+      <String, dynamic>{},
+    );
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<PurchaseBills> getPurchaseBills() async {
+    final res = await _api.get(
+      ApiEndpoints.bills,
+      headers: _companyHeader,
+    );
+    return PurchaseBills.fromResponse(res);
+  }
+
+  Future<Map<String, dynamic>> createBillFromPurchase(int purchaseId) async {
+    final res = await _api.post(
+      ApiEndpoints.billFromPurchase,
+      {'purchaseId': purchaseId},
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 }

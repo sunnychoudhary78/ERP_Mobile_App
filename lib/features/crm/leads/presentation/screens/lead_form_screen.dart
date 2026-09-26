@@ -575,10 +575,18 @@ class _LeadFormScreenState extends ConsumerState<LeadFormScreen> {
 
     try {
       final notifier = ref.read(salesWorkspaceProvider.notifier);
+      final SalesLead lead;
       if (_isEdit) {
-        await notifier.updateLead(_leadId!, _payload());
+        lead = await notifier.updateLead(_leadId!, _payload());
       } else {
-        await notifier.createLead(_payload());
+        lead = await notifier.createLead(_payload());
+      }
+
+      if (_customerId != null && _customerId!.isNotEmpty) {
+        final linked = lead.customerId?.toString();
+        if (linked == null || linked.isEmpty || linked != _customerId) {
+          await notifier.linkCustomer(lead.id, _customerId!);
+        }
       }
 
       if (mounted) Navigator.pop(context, true);

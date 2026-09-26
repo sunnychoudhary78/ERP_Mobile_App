@@ -12,6 +12,7 @@ import 'package:erp_app/features/inventory/shared/data/models/warehouse_stock_mo
 import 'package:erp_app/features/inventory/purchase/vendors/data/model/vendor_model.dart';
 import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_demand_model.dart';
 import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_order_model.dart';
+import 'package:erp_app/features/inventory/purchase/recives/data/model/purchase_bill_model.dart';
 
 class InventoryRepository {
   final InventoryApiService _api;
@@ -263,7 +264,13 @@ class InventoryRepository {
     int page = 1,
     int limit = 25,
     String query = '',
-  }) => _api.getPurchaseOrders(page: page, limit: limit, query: query);
+    String? status,
+  }) => _api.getPurchaseOrders(
+        page: page,
+        limit: limit,
+        query: query,
+        status: status ?? '',
+      );
 
   Future<Map<String, dynamic>> createPurchaseOrder(Map<String, dynamic> body) =>
       _api.createPurchaseOrder(body);
@@ -271,4 +278,42 @@ class InventoryRepository {
   Future<Map<String, dynamic>> importPurchaseOrders(
     List<Map<String, dynamic>> rows,
   ) => _api.importPurchaseOrders(rows);
+
+  Future<Map<String, dynamic>> receivePurchase(
+    int purchaseId, {
+    required int warehouseId,
+    required String invoiceNumber,
+    required List<Map<String, dynamic>> items,
+  }) =>
+      _api.receivePurchase(
+        purchaseId,
+        warehouseId: warehouseId,
+        invoiceNumber: invoiceNumber,
+        items: items,
+      );
+
+  Future<Map<String, dynamic>> receivePurchaseWithPhoto(
+    int purchaseId, {
+    required int warehouseId,
+    required String invoiceNumber,
+    required List<Map<String, dynamic>> items,
+    required String invoicePhotoPath,
+    String? invoicePhotoFilename,
+  }) =>
+      _api.receivePurchaseWithPhoto(
+        purchaseId,
+        warehouseId: warehouseId,
+        invoiceNumber: invoiceNumber,
+        items: items,
+        invoicePhotoPath: invoicePhotoPath,
+        invoicePhotoFilename: invoicePhotoFilename,
+      );
+
+  Future<Map<String, dynamic>> rejectPurchase(int purchaseId) =>
+      _api.rejectPurchase(purchaseId);
+
+  Future<PurchaseBills> getPurchaseBills() => _api.getPurchaseBills();
+
+  Future<Map<String, dynamic>> createBillFromPurchase(int purchaseId) =>
+      _api.createBillFromPurchase(purchaseId);
 }

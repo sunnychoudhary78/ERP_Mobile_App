@@ -334,6 +334,14 @@ class CrmCustomersNotifier extends AsyncNotifier<List<InventoryCustomer>> {
       () => ref.read(salesCrmApiProvider).fetchCustomers(q: q),
     );
   }
+
+  Future<InventoryCustomer> createCustomer(Map<String, dynamic> payload) async {
+    final created = await ref.read(salesCrmApiProvider).createCustomer(payload);
+    state = await AsyncValue.guard(
+      () => ref.read(salesCrmApiProvider).fetchCustomers(),
+    );
+    return created;
+  }
 }
 
 final crmLeadByIdProvider = Provider.autoDispose.family<SalesLead?, String>((
@@ -497,6 +505,108 @@ final crmPipelineFunnelProvider =
           );
         }).toList();
       });
+    });
+
+// ─── Combined customers (ERP records + CRM-lead-derived contacts) ───────
+// Mirrors the web CRM's "Customers" table, which shows ERP customer
+// records plus contacts pulled from CRM leads (SOURCE column: ERP / CRM lead).
+
+class CrmCustomerEntry {
+  final String id;
+  final String name;
+  final String? email;
+  final String? phone;
+  final String? gstNumber;
+  final String source; // 'ERP' or 'CRM lead'
+  final String? leadId; // set only for CRM-lead-derived entries
+
+  const CrmCustomerEntry({
+    required this.id,
+    required this.name,
+    this.email,
+    this.phone,
+    this.gstNumber,
+    required this.source,
+    this.leadId,
+  });
+
+  factory CrmCustomerEntry.fromInventory(InventoryCustomer c) =>
+      CrmCustomerEntry(
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        phone: c.phone,
+        gstNumber: c.gstNumber,
+        source: 'ERP',
+      );
+
+  factory CrmCustomerEntry.fromContact(SalesContact c) => CrmCustomerEntry(
+    id: c.id,
+    name: c.name,
+    email: c.email.isNotEmpty ? c.email : null,
+    phone: c.phone.isNotEmpty ? c.phone : null,
+    source: 'CRM lead',
+    leadId: c.leadId,
+  );
+}
+
+final crmAllCustomersProvider =
+    Provider.autoDispose<AsyncValue<List<CrmCustomerEntry>>>((ref) {
+      final customersAsync = ref.watch(crmCustomersProvider);
+      final contactsAsync = ref.watch(crmContactsProvider);
+
+      if (customersAsync.isLoading || contactsAsync.isLoading) {
+        return const AsyncLoading();
+      }
+      if (customersAsync.hasError) {
+        return AsyncError(
+          customersAsync.error!,
+          customersAsync.stackTrace ?? StackTrace.current,
+        );
+      }
+      if (contactsAsync.hasError) {
+        return AsyncError(
+          contactsAsync.error!,
+          contactsAsync.stackTrace ?? StackTrace.current,
+        );
+      }
+
+      final customers = customersAsync.value ?? [];
+      final contacts = contactsAsync.value ?? [];
+
+      String norm(String? s) => (s ?? '').trim().toLowerCase();
+
+      final existingIds = customers.map((c) => c.id).toSet();
+      final existingEmails = customers
+          .map((c) => norm(c.email))
+          .where((e) => e.isNotEmpty)
+          .toSet();
+      final existingPhones = customers
+          .map((c) => norm(c.phone))
+          .where((p) => p.isNotEmpty)
+          .toSet();
+
+      final result = <CrmCustomerEntry>[
+        ...customers.map(CrmCustomerEntry.fromInventory),
+      ];
+
+      for (final contact in contacts) {
+        // Already linked to (or matches) an existing ERP customer — skip,
+        // it's already represented above with source 'ERP'.
+        if (contact.customerId != null &&
+            existingIds.contains(contact.customerId)) {
+          continue;
+        }
+        final email = norm(contact.email);
+        final phone = norm(contact.phone);
+        if ((email.isNotEmpty && existingEmails.contains(email)) ||
+            (phone.isNotEmpty && existingPhones.contains(phone))) {
+          continue;
+        }
+        result.add(CrmCustomerEntry.fromContact(contact));
+      }
+
+      return AsyncData(result);
     });
 
 // ─── Chart data (source / temperature / won-lost / follow-up type) ─────

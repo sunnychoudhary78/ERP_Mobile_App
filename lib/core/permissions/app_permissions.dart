@@ -26,6 +26,7 @@ abstract final class AppPermissions {
   static const salesApprovalsManage = 'sales_approvals.manage';
   static const salesVisitsManage = 'sales_visits.manage';
   static const customerView = 'customer.view';
+  static const customerManage = 'customer.manage';
   static const salesCustomersView = 'sales_customers.view';
 
   // --- Inventory ---
@@ -39,6 +40,10 @@ abstract final class AppPermissions {
   static const vendorView = 'vendor.view';
   static const vendorManage = 'vendor.manage';
   static const purchaseOrderView = 'purchase_order.view';
+  static const purchaseOrderReceive = 'purchase_order.receive';
+  static const purchaseOrderManage = 'purchase_order.manage';
+  static const billView = 'bill.view';
+  static const billManage = 'bill.manage';
   static const approvalView = 'approval.view';
   static const approvalApprove = 'approval.approve';
   static const approvalReject = 'approval.reject';
@@ -102,6 +107,11 @@ abstract final class AppPermissions {
 
   static const List<String> crmCustomers = [customerView, salesCustomersView];
 
+  static const List<String> crmCustomersManage = [
+    customerManage,
+    salesCrmLeadsManage,
+  ];
+
   static const List<String> crmQuotes = [
     salesCrmLeadsView,
     salesApprovalsManage,
@@ -155,6 +165,33 @@ abstract final class AppPermissions {
   static const List<String> purchaseDemandReject = [
     approvalReject,
     approvalApprove,
+  ];
+
+  static const List<String> purchaseOrdersManage = [
+    purchaseOrderManage,
+    purchaseOrderReceive,
+  ];
+
+  static const List<String> purchaseReceived = [
+    purchaseOrderView,
+    purchaseOrderReceive,
+    purchaseOrderManage,
+  ];
+
+  static const List<String> purchaseReceiveAction = [
+    purchaseOrderReceive,
+    purchaseOrderManage,
+  ];
+
+  static const List<String> billsAccess = [
+    billView,
+    billManage,
+    purchaseOrderView,
+  ];
+
+  static const List<String> billCreateFromPurchase = [
+    billManage,
+    purchaseOrderManage,
   ];
 
   static const List<String> bomAccess = [bomView, bomManage];

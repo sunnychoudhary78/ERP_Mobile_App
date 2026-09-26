@@ -28,13 +28,12 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
-  // Uses theme color tokens for background palettes
   Color _getAvatarBgColor(int index) {
     const colors = [
       AppColors.primaryDark,
-      Color(0xFFE5E8EB), // Neutral avatar grey
-      Color(0xFF5C1D06), // Accent avatar brown
-      Color(0xFF91F086), // Mint green highlight
+      Color(0xFFE5E8EB),
+      Color(0xFF5C1D06),
+      Color(0xFF91F086),
     ];
     return colors[index % colors.length];
   }
@@ -55,9 +54,14 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
     super.dispose();
   }
 
+  void _retry() {
+    ref.read(crmCustomersProvider.notifier).refresh();
+    ref.read(salesWorkspaceProvider.notifier).refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(crmCustomersProvider);
+    final async = ref.watch(crmAllCustomersProvider);
     final textTheme = Theme.of(context).textTheme;
 
     return PermissionGate(
@@ -71,10 +75,19 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
           ),
         ),
         floatingActionButton: Can(
-          anyOf: AppPermissions.crmCustomers,
+          anyOf: AppPermissions.crmCustomersManage,
           child: FloatingActionButton.extended(
-            onPressed: () {
-              // Add customer logic
+            onPressed: () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/crm/customers/form',
+              );
+              if (result != null && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Customer created')),
+                );
+                ref.read(crmCustomersProvider.notifier).refresh();
+              }
             },
             backgroundColor: AppColors.primaryDark,
             elevation: 0,
@@ -93,24 +106,20 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
         ),
         body: CrmAsyncBody(
           async: async,
-          onRetry: () => ref.read(crmCustomersProvider.notifier).refresh(),
+          onRetry: _retry,
           builder: (customers) {
             final filteredCustomers = customers.where((c) {
               return c.name.toLowerCase().contains(_searchQuery.toLowerCase());
             }).toList();
 
-           
-
             return RefreshIndicator(
-              onRefresh: () =>
-                  ref.read(crmCustomersProvider.notifier).refresh(),
+              onRefresh: () async => _retry(),
               child: ListView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 16,
                 ),
                 children: [
-                  // Search & Filter Section
                   Row(
                     children: [
                       Expanded(
@@ -134,7 +143,6 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Customer List
                   if (filteredCustomers.isEmpty)
                     Padding(
                       padding: const EdgeInsets.all(32.0),
@@ -150,6 +158,7 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
                   else
                     ...List.generate(filteredCustomers.length, (index) {
                       final customer = filteredCustomers[index];
+                      final isErp = customer.source == 'ERP';
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Material(
@@ -157,11 +166,21 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
                           borderRadius: BorderRadius.circular(16),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(16),
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              '/crm/customers/detail',
-                              arguments: customer.id,
-                            ),
+                            onTap: () {
+                              if (isErp) {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/crm/customers/detail',
+                                  arguments: customer.id,
+                                );
+                              } else if (customer.leadId != null) {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/crm/leads/detail',
+                                  arguments: customer.leadId,
+                                );
+                              }
+                            },
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -221,6 +240,28 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
                                       ],
                                     ),
                                   ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isErp
+                                          ? AppColors.primary.withOpacity(0.12)
+                                          : AppColors.muted.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      customer.source,
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: isErp
+                                            ? AppColors.primaryDark
+                                            : AppColors.muted,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
                                   const Icon(
                                     Icons.chevron_right,
                                     color: AppColors.border,

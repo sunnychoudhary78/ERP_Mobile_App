@@ -159,6 +159,13 @@ class HomeScreen extends ConsumerWidget {
         group: 'Purchase',
         anyOf: [AppPermissions.purchaseOrderView],
       ),
+      QuickLink(
+        'Purchase received',
+        '/purchase-received',
+        Icons.call_received_outlined,
+        group: 'Purchase',
+        anyOf: AppPermissions.purchaseReceived,
+      ),
     ]),
     LinkSection('Production', [
       QuickLink(

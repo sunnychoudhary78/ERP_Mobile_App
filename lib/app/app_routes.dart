@@ -11,6 +11,7 @@ import 'package:erp_app/features/inventory/bom/presentation/bom_screen.dart';
 import 'package:erp_app/features/inventory/purchase/vendors/presentations/vendors_screen.dart';
 import 'package:erp_app/features/inventory/purchase/orders/presentation/purchase_demand_screen.dart';
 import 'package:erp_app/features/inventory/purchase/orders/presentation/purchase_orders_screen.dart';
+import 'package:erp_app/features/inventory/purchase/recives/presentation/purchase_received_screen.dart';
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
 import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
@@ -28,6 +29,7 @@ import '../features/crm/contacts/presentation/screens/contact_detail_screen.dart
 import '../features/crm/contacts/presentation/screens/contact_form_screen.dart';
 import '../features/crm/contacts/presentation/screens/contacts_list_screen.dart';
 import '../features/crm/customers/presentation/screens/customer_detail_screen.dart';
+import '../features/crm/customers/presentation/screens/customer_form_screen.dart';
 import '../features/crm/customers/presentation/screens/customers_list_screen.dart';
 import '../features/crm/leads/presentation/screens/lead_detail_screen.dart';
 import '../features/crm/leads/presentation/screens/lead_form_screen.dart';
@@ -81,6 +83,8 @@ class AppRoutes {
     '/crm/customers': (_) => const CustomersListScreen(),
     '/crm/customers/detail': (_) =>
         _gate(AppPermissions.crmCustomers, const CustomerDetailScreen()),
+    '/crm/customers/form': (_) =>
+        _gate(AppPermissions.crmCustomersManage, const CustomerFormScreen()),
     '/crm/pipeline': (_) =>
         _gate(AppPermissions.crmLeads, const PipelineScreen()),
     '/crm/activities': (_) => const ActivitiesScreen(),
@@ -120,6 +124,8 @@ class AppRoutes {
         _gate(AppPermissions.purchaseDemand, const PurchaseDemandScreen()),
     '/purchase-orders': (_) =>
         _gate([AppPermissions.purchaseOrderView], const PurchaseOrdersScreen()),
+    '/purchase-received': (_) =>
+        _gate(AppPermissions.purchaseReceived, const PurchaseReceivedScreen()),
 
     // Tracking
     '/tracking-dashboard': (_) => const TrackingDashboardScreen(),

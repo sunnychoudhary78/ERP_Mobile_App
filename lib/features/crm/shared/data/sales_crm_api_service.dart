@@ -417,6 +417,23 @@ class SalesCrmApiService {
         .toList();
   }
 
+  Future<InventoryCustomer> createCustomer(
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await api.post(ApiEndpoints.customers, payload);
+    final map = _asMap(response);
+    final customer = map['customer'] is Map
+        ? map['customer']
+        : map['data'] is Map
+            ? (map['data'] as Map)['customer'] is Map
+                ? (map['data'] as Map)['customer']
+                : map['data']
+            : map;
+    return InventoryCustomer.fromJson(
+      Map<String, dynamic>.from(customer as Map),
+    );
+  }
+
   Future<List<dynamic>> getTeamStats() async {
     final response = await api.get(ApiEndpoints.salesTeam);
 

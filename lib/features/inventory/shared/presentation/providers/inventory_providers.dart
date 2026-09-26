@@ -12,6 +12,7 @@ import 'package:erp_app/features/inventory/shared/data/models/warehouse_model.da
 import 'package:erp_app/features/inventory/purchase/vendors/data/model/vendor_model.dart';
 import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_demand_model.dart';
 import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_order_model.dart';
+import 'package:erp_app/features/inventory/purchase/recives/data/model/purchase_bill_model.dart';
 import 'package:erp_app/features/inventory/shared/data/repository/inventory_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -104,18 +105,25 @@ class PurchaseOrderQuery {
   final int page;
   final int limit;
   final String search;
+  final String status;
 
-  const PurchaseOrderQuery({this.page = 1, this.limit = 25, this.search = ''});
+  const PurchaseOrderQuery({
+    this.page = 1,
+    this.limit = 25,
+    this.search = '',
+    this.status = '',
+  });
 
   @override
   bool operator ==(Object other) =>
       other is PurchaseOrderQuery &&
-      other.page == page &&
-      other.limit == limit &&
-      other.search == search;
+          other.page == page &&
+          other.limit == limit &&
+          other.search == search &&
+          other.status == status;
 
   @override
-  int get hashCode => Object.hash(page, limit, search);
+  int get hashCode => Object.hash(page, limit, search, status);
 }
 
 final purchaseOrdersProvider =
@@ -126,8 +134,14 @@ final purchaseOrdersProvider =
             page: query.page,
             limit: query.limit,
             query: query.search,
+            status: query.status.isEmpty ? null : query.status,
           ),
     );
+
+final purchaseBillsProvider = FutureProvider<PurchaseBills>((ref) async {
+  final repo = ref.read(inventoryRepositoryProvider);
+  return repo.getPurchaseBills();
+});
 
 // ───────── Stock Lookup (search) state ─────────
 

@@ -4,6 +4,7 @@ import 'package:erp_app/features/crm/shared/presentation/widgets/quote_pdf_helpe
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/data/models/inventory_customer_model.dart';
 import '../../../shared/data/models/sales_lead_model.dart';
 import '../../../shared/presentation/providers/sales_workspace_provider.dart';
 
@@ -42,7 +43,11 @@ class _InventorySearchResult {
   final String name;
   final num? price;
 
-  const _InventorySearchResult({required this.id, required this.name, this.price});
+  const _InventorySearchResult({
+    required this.id,
+    required this.name,
+    this.price,
+  });
 }
 
 /// Indian-style grouped currency string, e.g. 589410 -> "₹5,89,410".
@@ -96,8 +101,7 @@ class _CreateSalesOrderSheet extends StatefulWidget {
   });
 
   @override
-  State<_CreateSalesOrderSheet> createState() =>
-      _CreateSalesOrderSheetState();
+  State<_CreateSalesOrderSheet> createState() => _CreateSalesOrderSheetState();
 }
 
 class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
@@ -200,10 +204,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
       isDense: true,
       filled: true,
       fillColor: AppColors.surface,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 12,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: AppColors.border),
@@ -260,8 +261,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
         controller: line.descriptionController,
         decoration: _boxDecoration(hint: 'Item description'),
         onChanged: (_) => setState(() {}),
-        validator: (v) =>
-            (v == null || v.trim().isEmpty) ? 'Required' : null,
+        validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
       );
     }
 
@@ -469,9 +469,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
                               icon: const Icon(Icons.add, size: 16),
                               label: const Text('Add line'),
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
-                                  color: AppColors.border,
-                                ),
+                                side: const BorderSide(color: AppColors.border),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -1168,6 +1166,36 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     });
   }
 
+  Future<void> _linkExistingCustomer(String leadId, SalesLead lead) async {
+    final customersAsync = ref.read(crmCustomersProvider);
+    List<InventoryCustomer> customers = customersAsync.maybeWhen(
+      data: (data) => data,
+      orElse: () => const [],
+    );
+
+    if (customers.isEmpty && !customersAsync.isLoading) {
+      final loaded = await ref.read(crmCustomersProvider.future);
+      if (!mounted) return;
+      customers = loaded;
+    }
+
+    if (!mounted) return;
+
+    final selected = await showDialog<InventoryCustomer>(
+      context: context,
+      builder: (ctx) => _CustomerPickerDialog(customers: customers),
+    );
+
+    if (selected == null || !mounted) return;
+
+    await _runAction(() async {
+      await ref
+          .read(salesWorkspaceProvider.notifier)
+          .linkCustomer(leadId, selected.id);
+      _snack('Linked to customer: ${selected.name}');
+    });
+  }
+
   // ===========================================================================
   // Create Sales Order flow
   //   Step 1: ensureCustomer   (skipped if lead.customerId already set)
@@ -1251,7 +1279,8 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       _snack('Sales order ${order.invoiceNo ?? order.salesOrderId} created');
     });
   }
- //
+
+  //
   @override
   Widget build(BuildContext context) {
     final leadId = ModalRoute.of(context)?.settings.arguments as String?;
@@ -2140,6 +2169,98 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       buttonRows.add(const SizedBox(height: 12));
     }
 
+    // ============ Row 1b: Customer (View / Auto-create / Link existing) ============
+    if (allowedActions.contains('view_customer')) {
+      final hasCustomer =
+          lead.customerId != null && lead.customerId!.isNotEmpty;
+      final List<Widget> custRow = [];
+
+      if (hasCustomer) {
+        custRow.add(
+          Expanded(
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: const BorderSide(color: AppColors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: _actionBusy
+                  ? null
+                  : () {
+                      Navigator.pushNamed(
+                        context,
+                        '/crm/customers/detail',
+                        arguments: lead.customerId,
+                      );
+                    },
+              child: const Text(
+                'View linked customer',
+                style: TextStyle(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        );
+      } else {
+        custRow.add(
+          Expanded(
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: const BorderSide(color: AppColors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: _actionBusy
+                  ? null
+                  : () => _convertCustomer(leadId, lead),
+              child: const Text(
+                'Auto-create / match',
+                style: TextStyle(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        );
+        custRow.add(const SizedBox(width: 12));
+        custRow.add(
+          Expanded(
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: const BorderSide(color: AppColors.primary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: _actionBusy
+                  ? null
+                  : () => _linkExistingCustomer(leadId, lead),
+              child: const Text(
+                'Link existing',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      if (custRow.isNotEmpty) {
+        buttonRows.add(Row(children: custRow));
+        buttonRows.add(const SizedBox(height: 12));
+      }
+    }
+
     // ============ Row 2: Create Quotation & Close as Lost ============
     final List<Widget> row2Buttons = [];
 
@@ -2567,5 +2688,90 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     }
 
     return Column(children: buttonRows);
+  }
+}
+
+class _CustomerPickerDialog extends StatefulWidget {
+  final List<InventoryCustomer> customers;
+
+  const _CustomerPickerDialog({required this.customers});
+
+  @override
+  State<_CustomerPickerDialog> createState() => _CustomerPickerDialogState();
+}
+
+class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  late List<InventoryCustomer> _filtered;
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.customers;
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      _filtered = query.isEmpty
+          ? widget.customers
+          : widget.customers
+                .where((c) => c.name.toLowerCase().contains(query))
+                .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Link existing customer'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: MediaQuery.of(context).size.height * 0.5,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: 'Search customers…',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: _filtered.isEmpty
+                  ? const Center(child: Text('No customers found.'))
+                  : ListView.separated(
+                      itemCount: _filtered.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final c = _filtered[i];
+                        return ListTile(
+                          title: Text(c.name),
+                          subtitle: c.id.isNotEmpty ? Text(c.id) : null,
+                          onTap: () => Navigator.pop(context, c),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
   }
 }
