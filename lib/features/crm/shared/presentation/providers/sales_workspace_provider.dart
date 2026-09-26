@@ -73,6 +73,43 @@ class SalesWorkspaceNotifier extends AsyncNotifier<SalesWorkspace> {
     Map<String, dynamic> payload,
   ) => _mutate(() => _api.updateQuote(quoteId, payload));
 
+  Future<
+    ({
+      int? salesOrderId,
+      String? invoiceNo,
+      String? message,
+      List<Map<String, dynamic>> itemsProcessed,
+      List<Map<String, dynamic>> productionDemandsCreated,
+      List<Map<String, dynamic>> productionOrdersNeeded,
+      List<Map<String, dynamic>> purchaseOrdersNeeded,
+    })
+  >
+  createSalesOrder({
+    required String customerId,
+    required List<Map<String, dynamic>> items,
+    String? notes,
+  }) {
+    return _api.createSalesOrder(
+      customerId: customerId,
+      items: items,
+      notes: notes,
+    );
+  }
+
+  Future<SalesLead> linkSalesOrder(
+    String leadId,
+    int salesOrderId, {
+    String? timelineNote,
+  }) async {
+    final lead = await _api.linkSalesOrderToLead(
+      leadId,
+      salesOrderId,
+      timelineNote: timelineNote,
+    );
+    // update local workspace state the same way your updateLead() does
+    return lead;
+  }
+
   Future<SalesQuote> approveQuote(
     String quoteId, [
     Map<String, dynamic>? payload,

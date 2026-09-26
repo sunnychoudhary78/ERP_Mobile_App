@@ -5,6 +5,7 @@ import 'package:erp_app/features/inventory/shared/data/models/financial_report.d
 import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/stock_report_model.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_endpoints.dart';
@@ -358,6 +359,7 @@ class InventoryApiService {
       ApiEndpoints.vendorById(id.toString()),
       headers: _companyHeader,
     );
+    debugPrint('getVendor response:---->>>>>>>>>>> $res');
     return Vendor.fromJson(Map<String, dynamic>.from(res['data'] as Map));
   }
 
@@ -389,8 +391,15 @@ class InventoryApiService {
     int id,
     Map<String, dynamic> body,
   ) async {
-    final res = await _api.put(ApiEndpoints.vendorById(id.toString()), body);
-    return Map<String, dynamic>.from(res as Map);
+    debugPrint('updateVendor request body: $body');
+    try {
+      final res = await _api.put(ApiEndpoints.vendorById(id.toString()), body);
+      return Map<String, dynamic>.from(res as Map);
+    } on DioException catch (e) {
+      debugPrint('updateVendor DIO ERROR status: ${e.response?.statusCode}');
+      debugPrint('updateVendor DIO ERROR response body: ${e.response?.data}');
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> importVendors(

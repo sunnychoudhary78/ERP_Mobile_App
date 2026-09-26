@@ -1,7 +1,4 @@
-// lib/features/inventory/products/presentation/screens/product_form_screen.dart
-//
 import 'dart:io';
-
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/inventory/product/data/provider/product_provider.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';

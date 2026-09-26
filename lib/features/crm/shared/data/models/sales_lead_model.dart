@@ -1,4 +1,3 @@
-
 // Represents one entry inside a lead's `timeline` array, e.g.
 // {"at":"2026-08-03","text":"Follow-up stage started","type":"note"}
 class SalesLeadTimelineEntry {
@@ -46,7 +45,9 @@ class SalesLead {
   final String? lostReason;
   final String? quoteId;
   final String? billId;
-  final String? salesOrderId;
+  // Numeric id returned by POST /inventory/sales/auto and echoed back by
+  // PATCH /sales/leads/:id (see Sales_CRM_Create_Sales_Order_APIs.md §5-6).
+  final int? salesOrderId;
   final String? customerId;
   final Map<String, dynamic>? wonApproval;
   final String? lastFollowUpAt;
@@ -119,15 +120,20 @@ class SalesLead {
       timeline: json['timeline'] is List
           ? (json['timeline'] as List)
               .whereType<Map>()
-              .map((e) => SalesLeadTimelineEntry.fromJson(
-                  Map<String, dynamic>.from(e)))
+              .map(
+                (e) => SalesLeadTimelineEntry.fromJson(
+                  Map<String, dynamic>.from(e),
+                ),
+              )
               .toList()
           : const [],
       repeatFrequency: json['repeatFrequency']?.toString() ?? '',
       lostReason: json['lostReason']?.toString(),
       quoteId: json['quoteId']?.toString(),
       billId: json['billId']?.toString(),
-      salesOrderId: json['salesOrderId']?.toString(),
+      salesOrderId: json['salesOrderId'] is int
+          ? json['salesOrderId'] as int
+          : int.tryParse('${json['salesOrderId'] ?? ''}'),
       customerId: json['customerId']?.toString(),
       wonApproval: json['wonApproval'] is Map
           ? Map<String, dynamic>.from(json['wonApproval'] as Map)

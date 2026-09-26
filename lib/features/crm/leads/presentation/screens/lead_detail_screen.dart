@@ -14,6 +14,546 @@ class LeadDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<LeadDetailScreen> createState() => _LeadDetailScreenState();
 }
 
+/// One editable line item in the Create Sales Order dialog.
+class _SalesOrderLineDraft {
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController quantityController = TextEditingController(
+    text: '1',
+  );
+  final TextEditingController priceController = TextEditingController();
+
+  num get total {
+    final qty = num.tryParse(quantityController.text.trim()) ?? 0;
+    final price = num.tryParse(priceController.text.trim()) ?? 0;
+    return qty * price;
+  }
+
+  void dispose() {
+    descriptionController.dispose();
+    quantityController.dispose();
+    priceController.dispose();
+  }
+}
+
+/// Result of an inventory item lookup, used by the "Select from inventory"
+/// toggle in the Create Sales Order sheet.
+class _InventorySearchResult {
+  final String id;
+  final String name;
+  final num? price;
+
+  const _InventorySearchResult({required this.id, required this.name, this.price});
+}
+
+/// Indian-style grouped currency string, e.g. 589410 -> "₹5,89,410".
+String _formatInr(num value) {
+  final isNegative = value < 0;
+  final absValue = value.abs();
+  final hasDecimals = absValue != absValue.roundToDouble();
+  final parts = absValue.toStringAsFixed(hasDecimals ? 2 : 0).split('.');
+  final integerPart = parts[0];
+  final decimalPart = parts.length > 1 ? '.${parts[1]}' : '';
+
+  String formatted;
+  if (integerPart.length <= 3) {
+    formatted = integerPart;
+  } else {
+    final lastThree = integerPart.substring(integerPart.length - 3);
+    final rest = integerPart.substring(0, integerPart.length - 3);
+    final grouped = rest.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{2})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+    formatted = '$grouped,$lastThree';
+  }
+
+  return '${isNegative ? '-' : ''}₹$formatted$decimalPart';
+}
+
+/// Full-screen "Create sales order" sheet, matching the web CRM's layout:
+/// header with close button, a "From CRM lead" summary card, a customer
+/// field, editable order lines (with an inventory-picker toggle), a running
+/// total, order notes, and a sticky bottom "Create order" button.
+class _CreateSalesOrderSheet extends StatefulWidget {
+  final String leadName;
+  final num? leadValue;
+  final String? leadRequirements;
+  final String customerName;
+
+  /// Optional inventory search hook. Wire this to your real item-lookup
+  /// call (e.g. the existing GET /api/lookups/items provider) from the
+  /// caller — left unset here since that repository/provider isn't in
+  /// this file.
+  final Future<List<_InventorySearchResult>> Function(String query)?
+  searchInventory;
+
+  const _CreateSalesOrderSheet({
+    required this.leadName,
+    required this.leadValue,
+    required this.leadRequirements,
+    required this.customerName,
+    this.searchInventory,
+  });
+
+  @override
+  State<_CreateSalesOrderSheet> createState() =>
+      _CreateSalesOrderSheetState();
+}
+
+class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final List<_SalesOrderLineDraft> _lines = [_SalesOrderLineDraft()];
+  late final TextEditingController _customerController;
+  late final TextEditingController _notesController;
+  bool _selectFromInventory = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _customerController = TextEditingController(text: widget.customerName);
+    final requirementLine = (widget.leadRequirements ?? '').trim();
+    _notesController = TextEditingController(
+      text: [
+        if (requirementLine.isNotEmpty) 'Requirement: $requirementLine',
+        'Account: ${widget.leadName}',
+      ].join('\n'),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final l in _lines) {
+      l.dispose();
+    }
+    _customerController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  num get _linesTotal => _lines.fold<num>(0, (sum, l) => sum + l.total);
+
+  void _addLine() => setState(() => _lines.add(_SalesOrderLineDraft()));
+
+  void _removeLine(int index) {
+    if (_lines.length <= 1) return;
+    setState(() {
+      final removed = _lines.removeAt(index);
+      WidgetsBinding.instance.addPostFrameCallback((_) => removed.dispose());
+    });
+  }
+
+  void _submit() {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final items = _lines
+        .map(
+          (l) => {
+            'description': l.descriptionController.text.trim(),
+            'quantity': num.tryParse(l.quantityController.text.trim()) ?? 0,
+            'price': num.tryParse(l.priceController.text.trim()) ?? 0,
+          },
+        )
+        .toList();
+
+    Navigator.pop(context, {
+      'items': items,
+      'notes': _notesController.text.trim(),
+      'customerName': _customerController.text.trim(),
+    });
+  }
+
+  Widget _fieldLabel(String text, {bool required = false}) {
+    return RichText(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: AppColors.text,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+        children: [
+          if (required)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(color: AppColors.danger),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionCaption(String text) {
+    return Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        color: AppColors.muted,
+        fontWeight: FontWeight.w700,
+        fontSize: 12,
+        letterSpacing: 0.4,
+      ),
+    );
+  }
+
+  InputDecoration _boxDecoration({String? hint}) {
+    return InputDecoration(
+      hintText: hint,
+      isDense: true,
+      filled: true,
+      fillColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 12,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+    );
+  }
+
+  Widget _lineCard(int index) {
+    final line = _lines[index];
+
+    Widget descriptionField;
+    if (_selectFromInventory && widget.searchInventory != null) {
+      descriptionField = Autocomplete<_InventorySearchResult>(
+        optionsBuilder: (value) async {
+          if (value.text.trim().length < 2) {
+            return const Iterable<_InventorySearchResult>.empty();
+          }
+          return widget.searchInventory!(value.text.trim());
+        },
+        displayStringForOption: (o) => o.name,
+        fieldViewBuilder: (ctx, controller, focusNode, onSubmit) {
+          // Keep our own controller in sync so submit-time reads work.
+          controller.text = line.descriptionController.text;
+          controller.addListener(() {
+            line.descriptionController.text = controller.text;
+          });
+          return TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            decoration: _boxDecoration(hint: 'Search item…'),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
+          );
+        },
+        onSelected: (option) {
+          setState(() {
+            line.descriptionController.text = option.name;
+            if (option.price != null) {
+              line.priceController.text = option.price!.toString();
+            }
+          });
+        },
+      );
+    } else {
+      descriptionField = TextFormField(
+        controller: line.descriptionController,
+        decoration: _boxDecoration(hint: 'Item description'),
+        onChanged: (_) => setState(() {}),
+        validator: (v) =>
+            (v == null || v.trim().isEmpty) ? 'Required' : null,
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: descriptionField),
+              if (_lines.length > 1) ...[
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _removeLine(index),
+                  borderRadius: BorderRadius.circular(6),
+                  child: const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: line.quantityController,
+                  keyboardType: TextInputType.number,
+                  decoration: _boxDecoration(hint: 'Qty'),
+                  onChanged: (_) => setState(() {}),
+                  validator: (v) {
+                    final q = num.tryParse(v ?? '');
+                    return (q == null || q <= 0) ? '> 0' : null;
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextFormField(
+                  controller: line.priceController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: _boxDecoration(hint: 'Rate'),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              _formatInr(line.total),
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.text,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summaryLine = [
+      widget.leadName,
+      if (widget.leadValue != null) _formatInr(widget.leadValue!),
+      if ((widget.leadRequirements ?? '').trim().isNotEmpty)
+        widget.leadRequirements!.trim(),
+    ].join(' · ');
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.92,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // ---------- Header ----------
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.receipt_long_outlined,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Create sales order',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: AppColors.text,
+                            ),
+                          ),
+                          Text(
+                            widget.leadName,
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 13,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+
+              // ---------- Scrollable body ----------
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // From CRM lead
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.06),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.2),
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _sectionCaption('From CRM lead'),
+                              const SizedBox(height: 6),
+                              Text(
+                                summaryLine,
+                                style: const TextStyle(
+                                  color: AppColors.text,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Customer
+                        _fieldLabel('Customer', required: true),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _customerController,
+                          decoration: _boxDecoration(),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Required'
+                              : null,
+                        ),
+                        const SizedBox(height: 22),
+
+                        // Order lines header
+                        Row(
+                          children: [
+                            Expanded(child: _sectionCaption('Order lines')),
+                            OutlinedButton.icon(
+                              onPressed: _addLine,
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Add line'),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: AppColors.border,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        CheckboxListTile(
+                          value: _selectFromInventory,
+                          onChanged: (v) =>
+                              setState(() => _selectFromInventory = v ?? false),
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
+                          title: const Text('Select from inventory'),
+                        ),
+                        const SizedBox(height: 6),
+
+                        for (var i = 0; i < _lines.length; i++) _lineCard(i),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            'Lines total: ${_formatInr(_linesTotal)}',
+                            style: const TextStyle(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+
+                        // Order notes
+                        _fieldLabel('Order notes'),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _notesController,
+                          decoration: _boxDecoration(),
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ---------- Sticky bottom button ----------
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: AppColors.border)),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _submit,
+                    child: const Text(
+                      'Create order',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   int _selectedTabIndex = 0;
   bool _actionBusy = false;
@@ -628,6 +1168,90 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
     });
   }
 
+  // ===========================================================================
+  // Create Sales Order flow
+  //   Step 1: ensureCustomer   (skipped if lead.customerId already set)
+  //   Step 2: createSalesOrder (POST /inventory/sales/auto)
+  //   Step 3: linkSalesOrder   (PATCH /sales/leads/:id with salesOrderId)
+  // ===========================================================================
+
+  Future<void> _createSalesOrder(String leadId, SalesLead lead) async {
+    if (lead.salesOrderId != null) {
+      _snack('Sales order already created: ${lead.salesOrderId}');
+      return;
+    }
+
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (ctx) => _CreateSalesOrderSheet(
+        leadName: _leadDisplayName(lead),
+        leadValue: lead.value,
+        leadRequirements: lead.requirements,
+        customerName: _leadDisplayName(lead),
+        // TODO: wire this to your real inventory item-lookup call, e.g.
+        // the GET /api/lookups/items provider already used elsewhere in
+        // the app (inventory_repository.dart / inventory_providers.dart),
+        // so "Select from inventory" can suggest real items.
+        // searchInventory: (query) async {
+        //   final results = await ref.read(inventoryRepositoryProvider)
+        //       .lookupItems(query);
+        //   return results
+        //       .map((r) => _InventorySearchResult(
+        //             id: r.id,
+        //             name: r.name,
+        //             price: r.price,
+        //           ))
+        //       .toList();
+        // },
+      ),
+    );
+
+    // User cancelled or dismissed the sheet.
+    if (result == null) return;
+
+    final items = result['items'] as List<Map<String, dynamic>>;
+    final notes = (result['notes'] as String?)?.trim() ?? '';
+
+    await _runAction(() async {
+      final notifier = ref.read(salesWorkspaceProvider.notifier);
+
+      var customerId = lead.customerId;
+
+      if (customerId == null || customerId.isEmpty) {
+        final ensured = await notifier.ensureCustomer(leadId);
+        customerId = ensured.customerId;
+      }
+
+      if (customerId == null || customerId.isEmpty) {
+        _snack('Could not resolve a customer for this lead', error: true);
+        return;
+      }
+
+      final order = await notifier.createSalesOrder(
+        customerId: customerId,
+        items: items,
+        notes: notes.isEmpty ? null : notes,
+      );
+
+      if (order.salesOrderId == null) {
+        _snack('Sales order creation did not return an id', error: true);
+        return;
+      }
+
+      await notifier.linkSalesOrder(
+        leadId,
+        order.salesOrderId!,
+        timelineNote:
+            'Sales order ${order.invoiceNo ?? order.salesOrderId} created.',
+      );
+
+      _snack('Sales order ${order.invoiceNo ?? order.salesOrderId} created');
+    });
+  }
+ //
   @override
   Widget build(BuildContext context) {
     final leadId = ModalRoute.of(context)?.settings.arguments as String?;
@@ -1805,10 +2429,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed:
-                _actionBusy ||
-                    lead.billId ==
-                        null 
+            onPressed: _actionBusy || lead.billId == null
                 ? null
                 : () async {
                     setState(() => _actionBusy = true);
@@ -1866,7 +2487,9 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       );
     }
 
-    if (allowedActions.contains('view_sales_order')) {
+    if (allowedActions.contains('create_sales_order') ||
+        allowedActions.contains('view_sales_order')) {
+      final hasSalesOrder = lead.salesOrderId != null;
       row7Buttons.add(
         Expanded(
           child: OutlinedButton(
@@ -1877,10 +2500,14 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _actionBusy ? null : () => _snack('View sales order'),
-            child: const Text(
-              'Create Sales order',
-              style: TextStyle(
+            onPressed: _actionBusy
+                ? null
+                : () => hasSalesOrder
+                      ? _snack('Sales order: ${lead.salesOrderId}')
+                      : _createSalesOrder(leadId, lead),
+            child: Text(
+              hasSalesOrder ? 'View sales order' : 'Create sales order',
+              style: const TextStyle(
                 color: AppColors.text,
                 fontWeight: FontWeight.w600,
               ),

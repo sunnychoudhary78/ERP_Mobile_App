@@ -453,6 +453,87 @@ class SalesCrmApiService {
     return Uint8List.fromList(bytes);
   }
 
+  // ===========================================================================
+  // Create Sales Order flow (Sales_CRM_Create_Sales_Order_APIs.md)
+  //   Step 1: ensureCustomer(leadId)                         -- already above
+  //   Step 2: createSalesOrder(customerId, items, notes)      -- POST /inventory/sales/auto
+  //   Step 3: linkSalesOrderToLead(leadId, salesOrderId)       -- PATCH /sales/leads/:id
+  // ===========================================================================
+
+  List<Map<String, dynamic>> _listOfMaps(dynamic v) {
+    if (v is! List) return const [];
+    return v.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  /// Step 2 — creates the order via the Inventory "auto" endpoint (the same
+  /// one the web CRM's "Create sales order" modal calls). `items` entries
+  /// must each have `quantity` (> 0) and either `itemId` or `description`.
+  Future<
+    ({
+      int? salesOrderId,
+      String? invoiceNo,
+      String? message,
+      List<Map<String, dynamic>> itemsProcessed,
+      List<Map<String, dynamic>> productionDemandsCreated,
+      List<Map<String, dynamic>> productionOrdersNeeded,
+      List<Map<String, dynamic>> purchaseOrdersNeeded,
+    })
+  >
+  createSalesOrder({
+    required String customerId,
+    required List<Map<String, dynamic>> items,
+    String? notes,
+  }) async {
+    final payload = <String, dynamic>{
+      'customerId': int.tryParse(customerId) ?? customerId,
+      'items': items,
+      if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+    };
+
+    debugPrint('=== CREATE SALES ORDER REQUEST ===');
+    debugPrint(jsonEncode(payload));
+
+    final response = await api.post(ApiEndpoints.inventorySalesAuto, payload);
+
+    debugPrint('=== CREATE SALES ORDER RESPONSE ===');
+    debugPrint(response.toString());
+
+    final map = _asMap(response);
+    final data = map['data'] is Map
+        ? Map<String, dynamic>.from(map['data'] as Map)
+        : map;
+
+    final rawSalesOrderId = data['salesOrderId'];
+    final salesOrderId = rawSalesOrderId is int
+        ? rawSalesOrderId
+        : int.tryParse('$rawSalesOrderId');
+
+    return (
+      salesOrderId: salesOrderId,
+      invoiceNo: data['invoiceNo']?.toString(),
+      message: (map['message'] ?? data['message'])?.toString(),
+      itemsProcessed: _listOfMaps(data['itemsProcessed']),
+      productionDemandsCreated: _listOfMaps(data['productionDemandsCreated']),
+      productionOrdersNeeded: _listOfMaps(data['productionOrdersNeeded']),
+      purchaseOrdersNeeded: _listOfMaps(data['purchaseOrdersNeeded']),
+    );
+  }
+
+  /// Step 3 — links the newly created Inventory sales order back onto the
+  /// CRM lead. Without this the order is orphaned and the lead still shows
+  /// "Create sales order". Reuses the existing generic PATCH lead call.
+  Future<SalesLead> linkSalesOrderToLead(
+    String leadId,
+    int salesOrderId, {
+    String? timelineNote,
+  }) {
+    return updateLead(leadId, {
+      'salesOrderId': salesOrderId,
+      if (timelineNote != null && timelineNote.trim().isNotEmpty)
+        'timelineEntry': {'type': 'note', 'text': timelineNote.trim()},
+    });
+  }
+
   Future<List<InventoryProductItem>> fetchItems({
     int page = 1,
     int limit = 25,

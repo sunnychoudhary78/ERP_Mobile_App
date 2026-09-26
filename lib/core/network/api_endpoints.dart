@@ -106,6 +106,8 @@ class ApiEndpoints {
 
   // BOM
   static const String boms = 'bom';
+  // sales Crm
+  static const String inventorySalesAuto = '/inventory/sales/auto';
 
   static String bomById(String id) => 'bom/$id';
   static const String bills = 'bills';
