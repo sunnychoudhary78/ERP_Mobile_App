@@ -60,6 +60,10 @@ class InventoryRepository {
     return all.where((r) => r.itemId == itemId).toList();
   }
 
+  Future<List<WarehouseStockRow>> getWarehouseStock({
+    bool forceRefresh = false,
+  }) => _getAllWarehouseStock(forceRefresh: forceRefresh);
+
   Future<List<InventoryItem>> getLowStockItems() {
     return _api.getLowStockItems();
   }
@@ -266,11 +270,11 @@ class InventoryRepository {
     String query = '',
     String? status,
   }) => _api.getPurchaseOrders(
-        page: page,
-        limit: limit,
-        query: query,
-        status: status ?? '',
-      );
+    page: page,
+    limit: limit,
+    query: query,
+    status: status ?? '',
+  );
 
   Future<Map<String, dynamic>> createPurchaseOrder(Map<String, dynamic> body) =>
       _api.createPurchaseOrder(body);
@@ -284,13 +288,12 @@ class InventoryRepository {
     required int warehouseId,
     required String invoiceNumber,
     required List<Map<String, dynamic>> items,
-  }) =>
-      _api.receivePurchase(
-        purchaseId,
-        warehouseId: warehouseId,
-        invoiceNumber: invoiceNumber,
-        items: items,
-      );
+  }) => _api.receivePurchase(
+    purchaseId,
+    warehouseId: warehouseId,
+    invoiceNumber: invoiceNumber,
+    items: items,
+  );
 
   Future<Map<String, dynamic>> receivePurchaseWithPhoto(
     int purchaseId, {
@@ -299,15 +302,14 @@ class InventoryRepository {
     required List<Map<String, dynamic>> items,
     required String invoicePhotoPath,
     String? invoicePhotoFilename,
-  }) =>
-      _api.receivePurchaseWithPhoto(
-        purchaseId,
-        warehouseId: warehouseId,
-        invoiceNumber: invoiceNumber,
-        items: items,
-        invoicePhotoPath: invoicePhotoPath,
-        invoicePhotoFilename: invoicePhotoFilename,
-      );
+  }) => _api.receivePurchaseWithPhoto(
+    purchaseId,
+    warehouseId: warehouseId,
+    invoiceNumber: invoiceNumber,
+    items: items,
+    invoicePhotoPath: invoicePhotoPath,
+    invoicePhotoFilename: invoicePhotoFilename,
+  );
 
   Future<Map<String, dynamic>> rejectPurchase(int purchaseId) =>
       _api.rejectPurchase(purchaseId);
@@ -316,4 +318,236 @@ class InventoryRepository {
 
   Future<Map<String, dynamic>> createBillFromPurchase(int purchaseId) =>
       _api.createBillFromPurchase(purchaseId);
+
+  Future<List<dynamic>> getVendorPayments({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+    int? vendorId,
+    int? billId,
+  }) => _api.getVendorPayments(
+    page: page,
+    limit: limit,
+    query: query,
+    vendorId: vendorId,
+    billId: billId,
+  );
+  Future<Map<String, dynamic>> createVendorPayment(Map<String, dynamic> body) =>
+      _api.createVendorPayment(body);
+  Future<List<dynamic>> getVendorCredits() => _api.getVendorCredits();
+  Future<Map<String, dynamic>> createVendorCredit(Map<String, dynamic> body) =>
+      _api.createVendorCredit(body);
+  Future<Map<String, dynamic>> createManualBill(Map<String, dynamic> body) =>
+      _api.createManualBill(body);
+  Future<List<dynamic>> getPaymentsReceived({int page = 1, int limit = 25}) =>
+      _api.getPaymentsReceived(page: page, limit: limit);
+  Future<Map<String, dynamic>> createPaymentReceived(
+    Map<String, dynamic> body,
+  ) => _api.createPaymentReceived(body);
+  Future<List<dynamic>> getLots({
+    int page = 1,
+    int limit = 500,
+    String status = '',
+    String query = '',
+  }) => _api.getLots(page: page, limit: limit, status: status, query: query);
+  Future<Map<String, dynamic>> getLotSummary(int id) => _api.getLotSummary(id);
+  Future<List<dynamic>> getLotProcessings(int id) => _api.getLotProcessings(id);
+  Future<Map<String, dynamic>> startLotProcessing(
+    int id,
+    Map<String, dynamic> body,
+  ) => _api.startLotProcessing(id, body);
+  Future<Map<String, dynamic>> completeLotProcessing(
+    int id,
+    Map<String, dynamic> body,
+  ) => _api.completeLotProcessing(id, body);
+  Future<Map<String, dynamic>> sendLotForSelling(
+    int id,
+    Map<String, dynamic> body,
+  ) => _api.sendLotForSelling(id, body);
+  Future<Map<String, dynamic>> allocateDirectStock(Map<String, dynamic> body) =>
+      _api.allocateDirectStock(body);
+  Future<Map<String, dynamic>> stockIn(Map<String, dynamic> body) =>
+      _api.stockIn(body);
+  Future<Map<String, dynamic>> stockOut(Map<String, dynamic> body) =>
+      _api.stockOut(body);
+  Future<Map<String, dynamic>> transferStock(Map<String, dynamic> body) =>
+      _api.transferStock(body);
+  Future<List<dynamic>> getStockOutBills({int page = 1, int limit = 25}) =>
+      _api.getStockOutBills(page: page, limit: limit);
+  Future<dynamic> getStockOutBill(int id) => _api.getStockOutBill(id);
+  Future<dynamic> getStockOutWarehouseStock(int id) =>
+      _api.getStockOutWarehouseStock(id);
+  Future<List<dynamic>> getTransactions({
+    int page = 1,
+    int limit = 500,
+    String direction = '',
+    String type = '',
+    int? itemId,
+  }) => _api.getTransactions(
+    page: page,
+    limit: limit,
+    direction: direction,
+    type: type,
+    itemId: itemId,
+  );
+  Future<Map<String, dynamic>> saveWarehouse(Map<String, dynamic> body) =>
+      _api.saveWarehouse(body);
+  Future<Map<String, dynamic>> updateWarehouse(Map<String, dynamic> body) =>
+      _api.updateWarehouse(body);
+  Future<List<dynamic>> getDocuments({
+    int page = 1,
+    int limit = 25,
+    int? lotId,
+    String? startDate,
+    String query = '',
+  }) => _api.getDocuments(
+    page: page,
+    limit: limit,
+    lotId: lotId,
+    startDate: startDate,
+    query: query,
+  );
+  Future<Map<String, dynamic>> uploadDocument({
+    required String name,
+    String? type,
+    int? lotId,
+    required String filePath,
+  }) => _api.uploadDocument(
+    name: name,
+    type: type,
+    lotId: lotId,
+    filePath: filePath,
+  );
+
+  Future<Map<String, dynamic>> createDocumentLink({
+    required String url,
+    required String name,
+    String? type,
+    int? lotId,
+  }) => _api.createDocumentLink(url: url, name: name, type: type, lotId: lotId);
+  Future<Map<String, dynamic>> getInventoryApprovals({
+    int page = 1,
+    int limit = 25,
+    String? status,
+    String? type,
+  }) => _api.getInventoryApprovals(
+    page: page,
+    limit: limit,
+    status: status,
+    type: type,
+  );
+  Future<Map<String, dynamic>> getMyApprovalRequests({
+    int page = 1,
+    int limit = 25,
+  }) => _api.getMyApprovalRequests(page: page, limit: limit);
+  Future<Map<String, dynamic>> getMyPendingApprovals({
+    int page = 1,
+    int limit = 25,
+    String? status,
+    String? type,
+  }) => _api.getMyPendingApprovals(
+    page: page,
+    limit: limit,
+    status: status,
+    type: type,
+  );
+  Future<Map<String, dynamic>> approveInventoryRequest(
+    dynamic id, {
+    String? note,
+    Map<String, dynamic>? data,
+  }) => _api.approveInventoryRequest(id, note: note, data: data);
+  Future<Map<String, dynamic>> rejectInventoryRequest(
+    dynamic id, {
+    String? note,
+  }) => _api.rejectInventoryRequest(id, note: note);
+  Future<Map<String, dynamic>> forwardInventoryRequest(
+    dynamic id, {
+    required String forwardToUserId,
+    String? note,
+  }) => _api.forwardInventoryRequest(
+    id,
+    forwardToUserId: forwardToUserId,
+    note: note,
+  );
+  Future<Map<String, dynamic>> resubmitInventoryRequest(dynamic id) =>
+      _api.resubmitInventoryRequest(id);
+  Future<Map<String, dynamic>> updateInventoryRequest(
+    dynamic id,
+    Map<String, dynamic> data,
+  ) => _api.updateInventoryRequest(id, data);
+  Future<List<dynamic>> getLegacyCustomers({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) => _api.getLegacyCustomers(page: page, limit: limit, query: query);
+  Future<Map<String, dynamic>> createLegacyCustomer(
+    Map<String, dynamic> body,
+  ) => _api.createLegacyCustomer(body);
+  Future<Map<String, dynamic>> updateLegacyCustomer(
+    int id,
+    Map<String, dynamic> body,
+  ) => _api.updateLegacyCustomer(id, body);
+  Future<Map<String, dynamic>> deleteLegacyCustomer(int id) =>
+      _api.deleteLegacyCustomer(id);
+  Future<List<dynamic>> getLegacySales({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) => _api.getLegacySales(page: page, limit: limit, query: query);
+  Future<Map<String, dynamic>> createLegacySale(
+    Map<String, dynamic> body, {
+    bool automatic = false,
+  }) => _api.createLegacySale(body, automatic: automatic);
+  Future<Map<String, dynamic>> fulfillLegacySale(int id) =>
+      _api.fulfillLegacySale(id);
+  Future<List<dynamic>> getLegacyInvoices({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) => _api.getLegacyInvoices(page: page, limit: limit, query: query);
+  Future<List<dynamic>> getGstSlabs({bool activeOnly = true}) =>
+      _api.getGstSlabs(activeOnly: activeOnly);
+  Future<List<dynamic>> getCreditNotes({int page = 1, int limit = 25}) =>
+      _api.getCreditNotes(page: page, limit: limit);
+  Future<List<dynamic>> getSalesReturns({int page = 1, int limit = 25}) =>
+      _api.getSalesReturns(page: page, limit: limit);
+  Future<Map<String, dynamic>> updateSalesReturnStatus(int id, String status) =>
+      _api.updateSalesReturnStatus(id, status);
+  Future<List<dynamic>> getLegacyProductionOrders({
+    int page = 1,
+    int limit = 25,
+  }) => _api.getLegacyProductionOrders(page: page, limit: limit);
+  Future<Map<String, dynamic>> createLegacyProductionOrder({
+    required int itemId,
+    required num quantity,
+  }) => _api.createLegacyProductionOrder(itemId: itemId, quantity: quantity);
+  Future<Map<String, dynamic>> completeLegacyProductionOrder(
+    int id, {
+    int? rmWarehouse,
+    int? fgWarehouse,
+    String? workOrderId,
+  }) => _api.completeLegacyProductionOrder(
+    id,
+    rmWarehouse: rmWarehouse,
+    fgWarehouse: fgWarehouse,
+    workOrderId: workOrderId,
+  );
+  Future<Map<String, dynamic>> getStockReconciliation() =>
+      _api.getStockReconciliation();
+  Future<List<dynamic>> getStockJournals({
+    int limit = 100,
+    String? journalType,
+  }) => _api.getStockJournals(limit: limit, journalType: journalType);
+  Future<Map<String, dynamic>> createStockJournal(Map<String, dynamic> body) =>
+      _api.createStockJournal(body);
+  Future<Map<String, dynamic>> getGodownStockValuation() =>
+      _api.getGodownStockValuation();
+  Future<Map<String, dynamic>> importItems(List<Map<String, dynamic>> rows) =>
+      _api.importItems(rows);
+  Future<List<dynamic>> lookupVendors({String search = '', int limit = 100}) =>
+      _api.lookupVendors(search: search, limit: limit);
+  Future<List<dynamic>> lookupWarehouses({
+    String search = '',
+    int limit = 100,
+  }) => _api.lookupWarehouses(search: search, limit: limit);
 }

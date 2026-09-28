@@ -7,6 +7,8 @@ import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart'
 import 'package:erp_app/features/inventory/product/data/provider/product_provider.dart';
 import 'package:erp_app/features/inventory/product/presentations/product_details_screen.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
+import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'product_form_screen.dart';
@@ -80,9 +82,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(productsListProvider);
-    final canManage = ref.watch(authProvider).canAny(
-          AppPermissions.productManageAccess,
-        );
+    final canManage = ref
+        .watch(authProvider)
+        .canAny(AppPermissions.productManageAccess);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
@@ -95,6 +97,14 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           'Products',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
         ),
+        actions: [
+          if (canManage)
+            IconButton(
+              tooltip: 'Import product rows',
+              icon: const Icon(Icons.upload_file_outlined),
+              onPressed: _importProducts,
+            ),
+        ],
       ),
       floatingActionButton: canManage
           ? FloatingActionButton(
@@ -113,7 +123,10 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           : null,
       body: Column(
         children: [
-          _SearchBar(controller: _searchController, onChanged: _onSearchChanged),
+          _SearchBar(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
+          ),
           const SizedBox(height: 4),
           _StatusTabs(state: state),
           const SizedBox(height: 4),
@@ -121,6 +134,88 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _importProducts() async {
+    final controller = TextEditingController();
+    final rows = await showDialog<List<Map<String, dynamic>>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import products'),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Paste a JSON array of product objects (up to 500 rows).',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                minLines: 5,
+                maxLines: 10,
+                decoration: const InputDecoration(
+                  hintText: '[{"name":"Example","sku":"EX-1"}]',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              try {
+                final decoded = jsonDecode(controller.text);
+                if (decoded is! List ||
+                    decoded.isEmpty ||
+                    decoded.length > 500 ||
+                    decoded.any((e) => e is! Map)) {
+                  throw const FormatException('Provide 1 to 500 JSON objects.');
+                }
+                Navigator.pop(
+                  context,
+                  decoded
+                      .map((e) => Map<String, dynamic>.from(e as Map))
+                      .toList(),
+                );
+              } catch (error) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Invalid JSON: $error')));
+              }
+            },
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+    if (rows == null || !mounted) {
+      controller.dispose();
+      return;
+    }
+    try {
+      await ref.read(inventoryRepositoryProvider).importItems(rows);
+      await ref.read(productsListProvider.notifier).refresh();
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Products imported')));
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+    } finally {
+      controller.dispose();
+    }
   }
 
   Widget _buildBody(ProductsListState state) {
@@ -144,7 +239,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           children: const [
             SizedBox(height: 100),
-            Icon(Icons.inventory_2_outlined, size: 40, color: Color(0xFFB0B5BD)),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 40,
+              color: Color(0xFFB0B5BD),
+            ),
             SizedBox(height: 12),
             Center(
               child: Text(
@@ -208,11 +307,19 @@ class _SearchBar extends StatelessWidget {
         decoration: InputDecoration(
           hintText: 'Search by name, SKU or code',
           hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9AA0A8)),
-          prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF9AA0A8)),
+          prefixIcon: const Icon(
+            Icons.search,
+            size: 20,
+            color: Color(0xFF9AA0A8),
+          ),
           suffixIcon: controller.text.isEmpty
               ? null
               : IconButton(
-                  icon: const Icon(Icons.close, size: 18, color: Color(0xFF9AA0A8)),
+                  icon: const Icon(
+                    Icons.close,
+                    size: 18,
+                    color: Color(0xFF9AA0A8),
+                  ),
                   onPressed: () {
                     controller.clear();
                     onChanged('');
@@ -262,12 +369,17 @@ class _StatusTabs extends ConsumerWidget {
                   ref.read(productsListProvider.notifier).setStatusFilter(f),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: selected ? AppColors.primary : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: selected ? AppColors.primary : const Color(0xFFECEDF0),
+                    color: selected
+                        ? AppColors.primary
+                        : const Color(0xFFECEDF0),
                   ),
                 ),
                 child: Text(
@@ -364,7 +476,10 @@ class _ProductCard extends StatelessWidget {
                           if (item.categoryName != null) item.categoryName!,
                           if (item.brandName != null) item.brandName!,
                         ].join('  ·  '),
-                        style: const TextStyle(color: Color(0xFF9AA0A8), fontSize: 12),
+                        style: const TextStyle(
+                          color: Color(0xFF9AA0A8),
+                          fontSize: 12,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -374,27 +489,41 @@ class _ProductCard extends StatelessWidget {
                         runSpacing: 6,
                         children: [
                           if (item.mrp != null) _priceTag('MRP', item.mrp!),
-                          if (item.b2bPrice != null) _priceTag('B2B', item.b2bPrice!),
-                          if (item.costPrice != null) _priceTag('Cost', item.costPrice!),
+                          if (item.b2bPrice != null)
+                            _priceTag('B2B', item.b2bPrice!),
+                          if (item.costPrice != null)
+                            _priceTag('Cost', item.costPrice!),
                           if (item.sellingPrice != null)
-                            _priceTag('Sell', item.sellingPrice!, highlight: true),
+                            _priceTag(
+                              'Sell',
+                              item.sellingPrice!,
+                              highlight: true,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Icon(
-                            item.isLowStock ? Icons.warning_amber_rounded : Icons.inventory_2_outlined,
+                            item.isLowStock
+                                ? Icons.warning_amber_rounded
+                                : Icons.inventory_2_outlined,
                             size: 13,
-                            color: item.isLowStock ? AppColors.danger : const Color(0xFF9AA0A8),
+                            color: item.isLowStock
+                                ? AppColors.danger
+                                : const Color(0xFF9AA0A8),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             'Stock: ${item.currentStock} ${item.unit ?? ''}',
                             style: TextStyle(
                               fontSize: 14,
-                              color: item.isLowStock ? AppColors.danger : const Color(0xFF9AA0A8),
-                              fontWeight: item.isLowStock ? FontWeight.w600 : FontWeight.normal,
+                              color: item.isLowStock
+                                  ? AppColors.danger
+                                  : const Color(0xFF9AA0A8),
+                              fontWeight: item.isLowStock
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                         ],
@@ -414,7 +543,9 @@ class _ProductCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: highlight ? AppColors.primary.withOpacity(0.10) : const Color(0xFFF3F4F6),
+        color: highlight
+            ? AppColors.primary.withOpacity(0.10)
+            : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -432,7 +563,11 @@ class _ProductCard extends StatelessWidget {
     return Container(
       color: const Color(0xFFF3F4F6),
       alignment: Alignment.center,
-      child: const Icon(Icons.inventory_2_outlined, color: Color(0xFFB0B5BD), size: 22),
+      child: const Icon(
+        Icons.inventory_2_outlined,
+        color: Color(0xFFB0B5BD),
+        size: 22,
+      ),
     );
   }
 }
@@ -454,7 +589,12 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         status!.toUpperCase(),
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.2),
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }
@@ -488,8 +628,13 @@ class _ErrorView extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
               ),
               child: const Text('Retry'),
             ),

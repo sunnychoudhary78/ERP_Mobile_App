@@ -13,6 +13,8 @@ import 'package:erp_app/features/inventory/purchase/orders/presentation/purchase
 import 'package:erp_app/features/inventory/purchase/orders/presentation/purchase_orders_screen.dart';
 import 'package:erp_app/features/inventory/purchase/recives/presentation/purchase_received_screen.dart';
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_operations_screen.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_advanced_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
 import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
 import 'package:erp_app/features/tracking/presentation/tracking_screen.dart';
@@ -126,6 +128,42 @@ class AppRoutes {
         _gate([AppPermissions.purchaseOrderView], const PurchaseOrdersScreen()),
     '/purchase-received': (_) =>
         _gate(AppPermissions.purchaseReceived, const PurchaseReceivedScreen()),
+    '/inventory-operations': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryOperationsScreen(),
+    ),
+    '/inventory/payables': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryOperationsScreen(initialTab: 0),
+    ),
+    '/inventory/lots': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryOperationsScreen(initialTab: 1),
+    ),
+    '/inventory/stock': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryOperationsScreen(initialTab: 2),
+    ),
+    '/inventory/warehouses': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryOperationsScreen(initialTab: 3),
+    ),
+    '/inventory/ledger': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryOperationsScreen(initialTab: 4),
+    ),
+    '/inventory/reports': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryOperationsScreen(initialTab: 5),
+    ),
+    '/inventory/documents': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryOperationsScreen(initialTab: 6),
+    ),
+    '/inventory-advanced': (_) => _gate(
+      AppPermissions.inventoryAdvanced,
+      const InventoryAdvancedScreen(),
+    ),
 
     // Tracking
     '/tracking-dashboard': (_) => const TrackingDashboardScreen(),

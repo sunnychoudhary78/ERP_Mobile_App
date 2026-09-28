@@ -100,9 +100,31 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
   }
 
   Future<void> _createOrder() async {
+    final repo = ref.read(inventoryRepositoryProvider);
+    late final List<dynamic> vendors;
+    late final List<dynamic> warehouses;
+    late final List<dynamic> items;
+    try {
+      final results = await Future.wait<dynamic>([
+        repo.lookupVendors(limit: 500),
+        repo.lookupWarehouses(limit: 500),
+        repo.getItems(limit: 500),
+      ]);
+      vendors = results[0] as List<dynamic>;
+      warehouses = results[1] as List<dynamic>;
+      items = (results[2] as dynamic).items as List<dynamic>;
+    } catch (error) {
+      _message(error.toString().replaceFirst('Exception: ', ''));
+      return;
+    }
+    if (!mounted) return;
     final result = await showDialog<_CreateOrderResult>(
       context: context,
-      builder: (_) => const _CreateOrderDialog(),
+      builder: (_) => _CreateOrderDialog(
+        vendors: vendors,
+        warehouses: warehouses,
+        items: items,
+      ),
     );
     if (result == null || !mounted) return;
 
@@ -214,7 +236,9 @@ class _ImportRowsDialogState extends State<_ImportRowsDialog> {
           itemId == null ||
           quantity == null ||
           price == null) {
-        setState(() => _error = 'Row ${i + 1}: enter valid IDs, quantity, and price');
+        setState(
+          () => _error = 'Row ${i + 1}: enter valid IDs, quantity, and price',
+        );
         return;
       }
       result.add({
@@ -407,16 +431,24 @@ class _CreateOrderResult {
 }
 
 class _CreateOrderDialog extends StatefulWidget {
-  const _CreateOrderDialog();
+  final List<dynamic> vendors;
+  final List<dynamic> warehouses;
+  final List<dynamic> items;
+
+  const _CreateOrderDialog({
+    required this.vendors,
+    required this.warehouses,
+    required this.items,
+  });
 
   @override
   State<_CreateOrderDialog> createState() => _CreateOrderDialogState();
 }
 
 class _CreateOrderDialogState extends State<_CreateOrderDialog> {
-  final _vendorController = TextEditingController();
-  final _warehouseController = TextEditingController();
-  final _itemController = TextEditingController();
+  int? _vendorId;
+  int? _warehouseId;
+  int? _itemId;
   final _quantityController = TextEditingController(text: '1');
   final _priceController = TextEditingController(text: '0');
   final _unitController = TextEditingController(text: 'Nos');
@@ -424,9 +456,6 @@ class _CreateOrderDialogState extends State<_CreateOrderDialog> {
   @override
   void dispose() {
     for (final controller in [
-      _vendorController,
-      _warehouseController,
-      _itemController,
       _quantityController,
       _priceController,
       _unitController,
@@ -444,9 +473,39 @@ class _CreateOrderDialogState extends State<_CreateOrderDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _numberField(_vendorController, 'Vendor ID'),
-            _numberField(_warehouseController, 'Warehouse ID'),
-            _numberField(_itemController, 'Item ID'),
+            DropdownButtonFormField<int>(
+              decoration: const InputDecoration(labelText: 'Vendor'),
+              items: [
+                for (final v in widget.vendors)
+                  DropdownMenuItem(
+                    value: _lookupId(v),
+                    child: Text(_lookupName(v)),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _vendorId = value),
+            ),
+            DropdownButtonFormField<int>(
+              decoration: const InputDecoration(labelText: 'Warehouse'),
+              items: [
+                for (final w in widget.warehouses)
+                  DropdownMenuItem(
+                    value: _lookupId(w),
+                    child: Text(_lookupName(w)),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _warehouseId = value),
+            ),
+            DropdownButtonFormField<int>(
+              decoration: const InputDecoration(labelText: 'Product'),
+              items: [
+                for (final i in widget.items)
+                  DropdownMenuItem<int>(
+                    value: i.id as int,
+                    child: Text('${i.name}', overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _itemId = value),
+            ),
             _numberField(_quantityController, 'Ordered quantity'),
             _numberField(_priceController, 'Price'),
             TextField(
@@ -466,6 +525,16 @@ class _CreateOrderDialogState extends State<_CreateOrderDialog> {
     );
   }
 
+  int _lookupId(dynamic row) {
+    final raw = row is Map ? row['id'] : null;
+    return raw is int ? raw : int.tryParse('$raw') ?? 0;
+  }
+
+  String _lookupName(dynamic row) {
+    if (row is! Map) return 'Unknown';
+    return '${row['name'] ?? row['warehouseName'] ?? 'Unknown'}';
+  }
+
   Widget _numberField(TextEditingController controller, String label) {
     return TextField(
       controller: controller,
@@ -475,9 +544,9 @@ class _CreateOrderDialogState extends State<_CreateOrderDialog> {
   }
 
   void _submit() {
-    final vendorId = int.tryParse(_vendorController.text);
-    final warehouseId = int.tryParse(_warehouseController.text);
-    final itemId = int.tryParse(_itemController.text);
+    final vendorId = _vendorId;
+    final warehouseId = _warehouseId;
+    final itemId = _itemId;
     final quantity = num.tryParse(_quantityController.text);
     final price = num.tryParse(_priceController.text);
     if (vendorId == null ||

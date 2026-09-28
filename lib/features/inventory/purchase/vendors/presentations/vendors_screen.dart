@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
@@ -17,7 +19,7 @@ class VendorsScreen extends ConsumerStatefulWidget {
 class _VendorsScreenState extends ConsumerState<VendorsScreen> {
   final _searchController = TextEditingController();
   String _search = '';
-  
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -57,6 +59,14 @@ class _VendorsScreenState extends ConsumerState<VendorsScreen> {
             ),
           ],
         ),
+        actions: [
+          if (canManage)
+            IconButton(
+              tooltip: 'Import vendor rows',
+              icon: const Icon(Icons.upload_file_outlined),
+              onPressed: _importVendors,
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: const Color(0xFFE9ECEF)),
@@ -207,6 +217,88 @@ class _VendorsScreenState extends ConsumerState<VendorsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _importVendors() async {
+    final controller = TextEditingController();
+    final rows = await showDialog<List<Map<String, dynamic>>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import vendors'),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Paste a JSON array of vendor objects (up to 500 rows).',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                minLines: 5,
+                maxLines: 10,
+                decoration: const InputDecoration(
+                  hintText: '[{"name":"Example Supplier"}]',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              try {
+                final decoded = jsonDecode(controller.text);
+                if (decoded is! List ||
+                    decoded.isEmpty ||
+                    decoded.length > 500 ||
+                    decoded.any((e) => e is! Map)) {
+                  throw const FormatException('Provide 1 to 500 JSON objects.');
+                }
+                Navigator.pop(
+                  context,
+                  decoded
+                      .map((e) => Map<String, dynamic>.from(e as Map))
+                      .toList(),
+                );
+              } catch (error) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Invalid JSON: $error')));
+              }
+            },
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+    if (rows == null || !mounted) {
+      controller.dispose();
+      return;
+    }
+    try {
+      await ref.read(inventoryRepositoryProvider).importVendors(rows);
+      ref.invalidate(vendorsProvider(VendorListQuery(search: _search)));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Vendors imported')));
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+    } finally {
+      controller.dispose();
+    }
   }
 
   Future<void> _showDetails(Vendor vendor) async {

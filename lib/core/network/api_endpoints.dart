@@ -52,7 +52,7 @@ class ApiEndpoints {
   static String customerById(String id) => 'customers/$id';
 
   // ───────── INVENTORY (new — add below existing block) ─────────
-  static const String inventoryDashboardStats = 'inventory/dashboard/stats';
+  static const String inventoryDashboardStats = 'dashboard/stats';
   static const String lookupItems = 'lookups/items'; //done
   static const String lookupWarehouses = 'lookups/warehouses';
 
@@ -103,6 +103,7 @@ class ApiEndpoints {
   static const String vendorPayments = 'vendor-payments';
 
   static const String vendorCredits = 'vendor-credits';
+  static String vendorPaymentById(String id) => 'vendor-payments/$id';
 
   // BOM
   static const String boms = 'bom';
@@ -155,6 +156,31 @@ class ApiEndpoints {
   static const String allocateDirectStock = 'inventory/direct-stock/allocate';
   // Documents
   static const String documents = 'documents';
+  static const String inventoryStockOutPayments = 'accounts/payments-received';
+
+  // Remaining endpoints in Inventory_Complete_Mobile_APIs.md (sections 19–22)
+  static const String approvalMyRequests = 'approvals/my-requests';
+  static const String approvalMyPending = 'approvals/my-pending';
+  static const String approvalMyResubmit = 'approvals/my-resubmit';
+  static const String approvalMyUpdate = 'approvals/my-update';
+  static const String customerInvoices = 'invoices';
+  static const String legacySales = 'sales';
+  static const String legacySalesAuto = 'sales/auto';
+  static String legacySaleFulfill(String id) => 'sales/$id/fulfill';
+  static String legacySaleById(String id) => 'sales/$id';
+  static const String accountGstSlabs = 'accounts/gst-slabs';
+  static const String accountCreditNotes = 'accounts/credit-notes';
+  static const String accountSalesReturns = 'accounts/sales-returns';
+  static String accountSalesReturnStatus(String id) =>
+      'accounts/sales-returns/$id/status';
+  static const String legacyProduction = 'production';
+  static String legacyProductionComplete(String id) =>
+      'production/$id/complete';
+  static const String stockReconciliation =
+      'accounts/inventory/stock-reconciliation';
+  static const String stockJournals = 'accounts/inventory/stock-journals';
+  static const String godownStockValuation =
+      'accounts/inventory/godown-stock-valuation';
 
   // Approvals
   static const String approvalList = 'approvals/list';

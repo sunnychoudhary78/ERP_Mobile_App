@@ -162,7 +162,11 @@ class InventoryApiService {
   }
 
   Future<Map<String, dynamic>> createBom(Map<String, dynamic> body) async {
-    final res = await _api.post(ApiEndpoints.boms, body);
+    final res = await _api.post(
+      ApiEndpoints.boms,
+      body,
+      headers: _companyHeader,
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -170,12 +174,19 @@ class InventoryApiService {
     int id,
     Map<String, dynamic> body,
   ) async {
-    final res = await _api.put(ApiEndpoints.bomById(id.toString()), body);
+    final res = await _api.put(
+      ApiEndpoints.bomById(id.toString()),
+      body,
+      headers: _companyHeader,
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 
   Future<Map<String, dynamic>> deleteBom(int id) async {
-    final res = await _api.deleteNoBody(ApiEndpoints.bomById(id.toString()));
+    final res = await _api.deleteNoBody(
+      ApiEndpoints.bomById(id.toString()),
+      headers: _companyHeader,
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -200,7 +211,7 @@ class InventoryApiService {
     String? imageFilename,
   }) async {
     final res = imagePath == null
-        ? await _api.post(ApiEndpoints.items, body)
+        ? await _api.post(ApiEndpoints.items, body, headers: _companyHeader)
         : await _api.postMultipart(
             ApiEndpoints.items,
             FormData.fromMap({
@@ -210,6 +221,7 @@ class InventoryApiService {
                 filename: imageFilename,
               ),
             }),
+            headers: _companyHeader,
           );
     return Map<String, dynamic>.from(res as Map);
   }
@@ -222,7 +234,11 @@ class InventoryApiService {
     String? imageFilename,
   }) async {
     final res = imagePath == null
-        ? await _api.put(ApiEndpoints.itemById(id.toString()), body)
+        ? await _api.put(
+            ApiEndpoints.itemById(id.toString()),
+            body,
+            headers: _companyHeader,
+          )
         : await _api.putMultipart(
             ApiEndpoints.itemById(id.toString()),
             FormData.fromMap({
@@ -232,6 +248,7 @@ class InventoryApiService {
                 filename: imageFilename,
               ),
             }),
+            headers: _companyHeader,
           );
     return Map<String, dynamic>.from(res as Map);
   }
@@ -245,7 +262,7 @@ class InventoryApiService {
     final res = await _api.patch(ApiEndpoints.itemStock(id.toString()), {
       'quantity': quantity,
       if (warehouseHint != null) 'warehouseHint': warehouseHint,
-    });
+    }, headers: _companyHeader);
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -259,6 +276,37 @@ class InventoryApiService {
     if (data is Map) return data['productCode']?.toString();
     return null;
   }
+
+  Future<Map<String, dynamic>> importItems(
+    List<Map<String, dynamic>> rows,
+  ) async => Map<String, dynamic>.from(
+    await _api.post(ApiEndpoints.importItems, {
+          'rows': rows,
+        }, headers: _companyHeader)
+        as Map,
+  );
+
+  Future<List<dynamic>> lookupVendors({
+    String search = '',
+    int limit = 100,
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.lookupVendors, {
+      'search': search,
+      'limit': limit,
+    }),
+    const ['vendors', 'data'],
+  );
+
+  Future<List<dynamic>> lookupWarehouses({
+    String search = '',
+    int limit = 100,
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.lookupWarehouses, {
+      'search': search,
+      'limit': limit,
+    }),
+    const ['warehouses', 'data'],
+  );
 
   /// `GET /api/items/:id/cost-history?limit=`
   Future<List<CostHistoryEntry>> getItemCostHistory(
@@ -307,7 +355,11 @@ class InventoryApiService {
   }
 
   Future<Map<String, dynamic>> createCategory(Map<String, dynamic> body) async {
-    final res = await _api.post(ApiEndpoints.categories, body);
+    final res = await _api.post(
+      ApiEndpoints.categories,
+      body,
+      headers: _companyHeader,
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -315,13 +367,18 @@ class InventoryApiService {
     int id,
     Map<String, dynamic> body,
   ) async {
-    final res = await _api.put(ApiEndpoints.categoryById(id.toString()), body);
+    final res = await _api.put(
+      ApiEndpoints.categoryById(id.toString()),
+      body,
+      headers: _companyHeader,
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 
   Future<Map<String, dynamic>> deleteCategory(int id) async {
     final res = await _api.deleteNoBody(
       ApiEndpoints.categoryById(id.toString()),
+      headers: _companyHeader,
     );
     return Map<String, dynamic>.from(res as Map);
   }
@@ -384,7 +441,11 @@ class InventoryApiService {
           filename: aadharCardFilename,
         ),
     });
-    final res = await _api.postMultipart(ApiEndpoints.vendors, formData);
+    final res = await _api.postMultipart(
+      ApiEndpoints.vendors,
+      formData,
+      headers: _companyHeader,
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -394,7 +455,11 @@ class InventoryApiService {
   ) async {
     debugPrint('updateVendor request body: $body');
     try {
-      final res = await _api.put(ApiEndpoints.vendorById(id.toString()), body);
+      final res = await _api.put(
+        ApiEndpoints.vendorById(id.toString()),
+        body,
+        headers: _companyHeader,
+      );
       return Map<String, dynamic>.from(res as Map);
     } on DioException catch (e) {
       debugPrint('updateVendor DIO ERROR status: ${e.response?.statusCode}');
@@ -406,7 +471,9 @@ class InventoryApiService {
   Future<Map<String, dynamic>> importVendors(
     List<Map<String, dynamic>> rows,
   ) async {
-    final res = await _api.post(ApiEndpoints.importVendors, {'rows': rows});
+    final res = await _api.post(ApiEndpoints.importVendors, {
+      'rows': rows,
+    }, headers: _companyHeader);
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -437,7 +504,7 @@ class InventoryApiService {
     final res = await _api.post(ApiEndpoints.raisePurchases(workOrderId), {
       'vendorByItemId': vendorByItemId,
       'persistVendorOnItems': persistVendorOnItems,
-    });
+    }, headers: _companyHeader);
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -448,7 +515,7 @@ class InventoryApiService {
     final res = await _api.post(ApiEndpoints.approvalApprove, {
       'requestId': requestId,
       if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
-    });
+    }, headers: _companyHeader);
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -459,7 +526,7 @@ class InventoryApiService {
     final res = await _api.post(ApiEndpoints.approvalReject, {
       'requestId': requestId,
       if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
-    });
+    }, headers: _companyHeader);
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -487,14 +554,20 @@ class InventoryApiService {
   Future<Map<String, dynamic>> createPurchaseOrder(
     Map<String, dynamic> body,
   ) async {
-    final res = await _api.post(ApiEndpoints.purchases, body);
+    final res = await _api.post(
+      ApiEndpoints.purchases,
+      body,
+      headers: _companyHeader,
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 
   Future<Map<String, dynamic>> importPurchaseOrders(
     List<Map<String, dynamic>> rows,
   ) async {
-    final res = await _api.post(ApiEndpoints.importPurchases, {'rows': rows});
+    final res = await _api.post(ApiEndpoints.importPurchases, {
+      'rows': rows,
+    }, headers: _companyHeader);
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -512,6 +585,7 @@ class InventoryApiService {
     final res = await _api.post(
       ApiEndpoints.purchaseReceive(purchaseId.toString()),
       body,
+      headers: _companyHeader,
     );
     return Map<String, dynamic>.from(res as Map);
   }
@@ -544,6 +618,7 @@ class InventoryApiService {
     final res = await _api.postMultipart(
       ApiEndpoints.purchaseReceive(purchaseId.toString()),
       formData,
+      headers: _companyHeader,
     );
     return Map<String, dynamic>.from(res as Map);
   }
@@ -552,23 +627,435 @@ class InventoryApiService {
     final res = await _api.post(
       ApiEndpoints.purchaseReject(purchaseId.toString()),
       <String, dynamic>{},
+      headers: _companyHeader,
     );
     return Map<String, dynamic>.from(res as Map);
   }
 
   Future<PurchaseBills> getPurchaseBills() async {
-    final res = await _api.get(
-      ApiEndpoints.bills,
-      headers: _companyHeader,
-    );
+    final res = await _api.get(ApiEndpoints.bills, headers: _companyHeader);
     return PurchaseBills.fromResponse(res);
   }
 
   Future<Map<String, dynamic>> createBillFromPurchase(int purchaseId) async {
-    final res = await _api.post(
-      ApiEndpoints.billFromPurchase,
-      {'purchaseId': purchaseId},
-    );
+    final res = await _api.post(ApiEndpoints.billFromPurchase, {
+      'purchaseId': purchaseId,
+    }, headers: _companyHeader);
     return Map<String, dynamic>.from(res as Map);
+  }
+
+  // Inventory API guide sections 12–18: payables, lots, movements, warehouses,
+  // ledger, reports and documents. Keep envelopes intact for approvalId.
+  Future<dynamic> _getInventory(String path, [Map<String, dynamic>? query]) =>
+      _api.get(path, queryParams: query, headers: _companyHeader);
+
+  Future<Map<String, dynamic>> _postInventory(
+    String path,
+    Map<String, dynamic> body,
+  ) async => Map<String, dynamic>.from(
+    await _api.post(path, body, headers: _companyHeader) as Map,
+  );
+
+  Future<List<dynamic>> getVendorPayments({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+    int? vendorId,
+    int? billId,
+  }) async {
+    final res = await _getInventory(ApiEndpoints.vendorPayments, {
+      'page': page,
+      'limit': limit,
+      if (query.isNotEmpty) 'q': query,
+      if (vendorId != null) 'vendorId': vendorId,
+      if (billId != null) 'billId': billId,
+    });
+    return _extractList(res, const ['payments', 'data']);
+  }
+
+  Future<Map<String, dynamic>> createVendorPayment(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.vendorPayments, body);
+  Future<List<dynamic>> getVendorCredits() async => _extractList(
+    await _getInventory(ApiEndpoints.vendorCredits),
+    const ['credits', 'data'],
+  );
+  Future<Map<String, dynamic>> createVendorCredit(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.vendorCredits, body);
+  Future<Map<String, dynamic>> createManualBill(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.bills, body);
+  Future<List<dynamic>> getPaymentsReceived({
+    int page = 1,
+    int limit = 25,
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.paymentsReceived, {
+      'page': page,
+      'limit': limit,
+    }),
+    const ['payments', 'data'],
+  );
+  Future<Map<String, dynamic>> createPaymentReceived(
+    Map<String, dynamic> body,
+  ) => _postInventory(ApiEndpoints.paymentsReceived, body);
+
+  Future<List<dynamic>> getLots({
+    int page = 1,
+    int limit = 500,
+    String status = '',
+    String query = '',
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.lots, {
+      'page': page,
+      'limit': limit,
+      if (status.isNotEmpty) 'status': status,
+      if (query.isNotEmpty) 'q': query,
+    }),
+    const ['lots', 'data'],
+  );
+  Future<Map<String, dynamic>> getLotSummary(int id) async =>
+      Map<String, dynamic>.from(
+        (await _getInventory(ApiEndpoints.lotSummary('$id')))['data'] as Map,
+      );
+  Future<List<dynamic>> getLotProcessings(int id) async => _extractList(
+    await _getInventory(ApiEndpoints.lotProcessings('$id')),
+    const ['processings', 'data'],
+  );
+  Future<Map<String, dynamic>> startLotProcessing(
+    int id,
+    Map<String, dynamic> body,
+  ) => _postInventory(ApiEndpoints.lotStartProcessing('$id'), body);
+  Future<Map<String, dynamic>> completeLotProcessing(
+    int processingId,
+    Map<String, dynamic> body,
+  ) =>
+      _postInventory(ApiEndpoints.lotProcessingComplete('$processingId'), body);
+  Future<Map<String, dynamic>> sendLotForSelling(
+    int id,
+    Map<String, dynamic> body,
+  ) => _postInventory(ApiEndpoints.lotSendForSelling('$id'), body);
+  Future<Map<String, dynamic>> allocateDirectStock(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.allocateDirectStock, body);
+
+  Future<Map<String, dynamic>> stockIn(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.stockIn, body);
+  Future<Map<String, dynamic>> stockOut(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.stockOut, body);
+  Future<Map<String, dynamic>> transferStock(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.stockTransfer, body);
+  Future<List<dynamic>> getStockOutBills({
+    int page = 1,
+    int limit = 25,
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.stockOutBills, {
+      'page': page,
+      'limit': limit,
+    }),
+    const ['bills', 'data'],
+  );
+  Future<dynamic> getStockOutBill(int id) =>
+      _getInventory(ApiEndpoints.stockOutBillById('$id'));
+  Future<dynamic> getStockOutWarehouseStock(int itemId) =>
+      _getInventory(ApiEndpoints.stockOutWarehouseStock, {'itemId': itemId});
+  Future<List<dynamic>> getTransactions({
+    int page = 1,
+    int limit = 500,
+    String direction = '',
+    String type = '',
+    int? itemId,
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.inventoryTransactions, {
+      'page': page,
+      'limit': limit,
+      if (direction.isNotEmpty) 'direction': direction,
+      if (type.isNotEmpty) 'type': type,
+      if (itemId != null) 'itemId': itemId,
+    }),
+    const ['transactions', 'data'],
+  );
+
+  Future<Map<String, dynamic>> saveWarehouse(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.warehouses, body);
+  Future<Map<String, dynamic>> updateWarehouse(
+    Map<String, dynamic> body,
+  ) async => Map<String, dynamic>.from(
+    await _api.put(ApiEndpoints.warehouses, body, headers: _companyHeader)
+        as Map,
+  );
+  Future<List<dynamic>> getDocuments({
+    int page = 1,
+    int limit = 25,
+    int? lotId,
+    String? startDate,
+    String query = '',
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.documents, {
+      'page': page,
+      'limit': limit,
+      if (lotId != null) 'lotId': lotId,
+      if (startDate != null) 'startDate': startDate,
+      if (query.isNotEmpty) 'q': query,
+    }),
+    const ['documents', 'data'],
+  );
+  Future<Map<String, dynamic>> uploadDocument({
+    required String name,
+    String? type,
+    int? lotId,
+    required String filePath,
+  }) async {
+    final form = FormData.fromMap({
+      'name': name,
+      if (type != null) 'type': type,
+      if (lotId != null) 'lotId': lotId,
+      'file': await MultipartFile.fromFile(filePath),
+    });
+    return Map<String, dynamic>.from(
+      await _api.postMultipart(
+            ApiEndpoints.documents,
+            form,
+            headers: _companyHeader,
+          )
+          as Map,
+    );
+  }
+
+  Future<Map<String, dynamic>> createDocumentLink({
+    required String url,
+    required String name,
+    String? type,
+    int? lotId,
+  }) => _postInventory(ApiEndpoints.documents, {
+    'url': url,
+    'name': name,
+    if (type != null) 'type': type,
+    if (lotId != null) 'lotId': lotId,
+  });
+
+  // Section 19: Inventory approval request lifecycle.
+  Future<Map<String, dynamic>> getInventoryApprovals({
+    int page = 1,
+    int limit = 25,
+    String? status,
+    String? type,
+  }) => _postInventory(ApiEndpoints.approvalList, {
+    'page': page,
+    'limit': limit,
+    if (status != null && status.isNotEmpty) 'status': status,
+    if (type != null && type.isNotEmpty) 'type': type,
+  });
+  Future<Map<String, dynamic>> getMyApprovalRequests({
+    int page = 1,
+    int limit = 25,
+  }) => _postInventory(ApiEndpoints.approvalMyRequests, {
+    'page': page,
+    'limit': limit,
+  });
+  Future<Map<String, dynamic>> getMyPendingApprovals({
+    int page = 1,
+    int limit = 25,
+    String? status,
+    String? type,
+  }) => _postInventory(ApiEndpoints.approvalMyPending, {
+    'page': page,
+    'limit': limit,
+    if (status != null && status.isNotEmpty) 'status': status,
+    if (type != null && type.isNotEmpty) 'type': type,
+  });
+  Future<Map<String, dynamic>> approveInventoryRequest(
+    dynamic requestId, {
+    String? note,
+    Map<String, dynamic>? data,
+  }) => _postInventory(ApiEndpoints.approvalApprove, {
+    'requestId': requestId,
+    if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
+    if (data != null) 'data': data,
+  });
+  Future<Map<String, dynamic>> rejectInventoryRequest(
+    dynamic requestId, {
+    String? note,
+  }) => _postInventory(ApiEndpoints.approvalReject, {
+    'requestId': requestId,
+    if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
+  });
+  Future<Map<String, dynamic>> forwardInventoryRequest(
+    dynamic requestId, {
+    required String forwardToUserId,
+    String? note,
+  }) => _postInventory(ApiEndpoints.approvalForward, {
+    'requestId': requestId,
+    'forwardToUserId': forwardToUserId,
+    if (note?.trim().isNotEmpty == true) 'note': note!.trim(),
+  });
+  Future<Map<String, dynamic>> resubmitInventoryRequest(dynamic requestId) =>
+      _postInventory(ApiEndpoints.approvalMyResubmit, {'requestId': requestId});
+  Future<Map<String, dynamic>> updateInventoryRequest(
+    dynamic requestId,
+    Map<String, dynamic> data,
+  ) => _postInventory(ApiEndpoints.approvalMyUpdate, {
+    'requestId': requestId,
+    'data': data,
+  });
+
+  // Section 20: legacy Inventory sales endpoints.
+  Future<List<dynamic>> getLegacyCustomers({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.customers, {
+      'page': page,
+      'limit': limit,
+      if (query.isNotEmpty) 'q': query,
+    }),
+    const ['customers', 'data'],
+  );
+  Future<Map<String, dynamic>> createLegacyCustomer(
+    Map<String, dynamic> body,
+  ) => _postInventory(ApiEndpoints.customers, body);
+  Future<Map<String, dynamic>> updateLegacyCustomer(
+    int id,
+    Map<String, dynamic> body,
+  ) async => Map<String, dynamic>.from(
+    await _api.put(
+          ApiEndpoints.customerById('$id'),
+          body,
+          headers: _companyHeader,
+        )
+        as Map,
+  );
+  Future<Map<String, dynamic>> deleteLegacyCustomer(int id) async =>
+      Map<String, dynamic>.from(
+        await _api.deleteNoBody(
+              ApiEndpoints.customerById('$id'),
+              headers: _companyHeader,
+            )
+            as Map,
+      );
+  Future<List<dynamic>> getLegacySales({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.legacySales, {
+      'page': page,
+      'limit': limit,
+      if (query.isNotEmpty) 'q': query,
+    }),
+    const ['sales', 'data'],
+  );
+  Future<Map<String, dynamic>> createLegacySale(
+    Map<String, dynamic> body, {
+    bool automatic = false,
+  }) => _postInventory(
+    automatic ? ApiEndpoints.legacySalesAuto : ApiEndpoints.legacySales,
+    body,
+  );
+  Future<Map<String, dynamic>> fulfillLegacySale(int id) =>
+      _postInventory(ApiEndpoints.legacySaleFulfill('$id'), {});
+  Future<List<dynamic>> getLegacyInvoices({
+    int page = 1,
+    int limit = 25,
+    String query = '',
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.customerInvoices, {
+      'page': page,
+      'limit': limit,
+      if (query.isNotEmpty) 'q': query,
+    }),
+    const ['invoices', 'data'],
+  );
+  Future<List<dynamic>> getGstSlabs({bool activeOnly = true}) async =>
+      _extractList(
+        await _getInventory(ApiEndpoints.accountGstSlabs, {
+          'activeOnly': activeOnly,
+        }),
+        const ['gstSlabs', 'data'],
+      );
+  Future<List<dynamic>> getCreditNotes({int page = 1, int limit = 25}) async =>
+      _extractList(
+        await _getInventory(ApiEndpoints.accountCreditNotes, {
+          'page': page,
+          'limit': limit,
+        }),
+        const ['creditNotes', 'data'],
+      );
+  Future<List<dynamic>> getSalesReturns({int page = 1, int limit = 25}) async =>
+      _extractList(
+        await _getInventory(ApiEndpoints.accountSalesReturns, {
+          'page': page,
+          'limit': limit,
+        }),
+        const ['salesReturns', 'returns', 'data'],
+      );
+  Future<Map<String, dynamic>> updateSalesReturnStatus(
+    int id,
+    String status,
+  ) async => Map<String, dynamic>.from(
+    await _api.patch(ApiEndpoints.accountSalesReturnStatus('$id'), {
+          'status': status,
+        }, headers: _companyHeader)
+        as Map,
+  );
+
+  // Section 21: legacy Inventory ProductionOrder APIs.
+  Future<List<dynamic>> getLegacyProductionOrders({
+    int page = 1,
+    int limit = 25,
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.legacyProduction, {
+      'page': page,
+      'limit': limit,
+    }),
+    const ['production', 'orders', 'data'],
+  );
+  Future<Map<String, dynamic>> createLegacyProductionOrder({
+    required int itemId,
+    required num quantity,
+  }) => _postInventory(ApiEndpoints.legacyProduction, {
+    'itemId': itemId,
+    'quantity': quantity,
+  });
+  Future<Map<String, dynamic>> completeLegacyProductionOrder(
+    int id, {
+    int? rmWarehouse,
+    int? fgWarehouse,
+    String? workOrderId,
+  }) => _postInventory(ApiEndpoints.legacyProductionComplete('$id'), {
+    if (rmWarehouse != null) 'rmWarehouse': rmWarehouse,
+    if (fgWarehouse != null) 'fgWarehouse': fgWarehouse,
+    if (workOrderId != null) 'workOrderId': workOrderId,
+  });
+
+  // Section 22: Accounts inventory.
+  Future<Map<String, dynamic>> getStockReconciliation() async =>
+      Map<String, dynamic>.from(
+        await _getInventory(ApiEndpoints.stockReconciliation) as Map,
+      );
+  Future<List<dynamic>> getStockJournals({
+    int limit = 100,
+    String? journalType,
+  }) async => _extractList(
+    await _getInventory(ApiEndpoints.stockJournals, {
+      'limit': limit,
+      if (journalType != null && journalType.isNotEmpty)
+        'journalType': journalType,
+    }),
+    const ['journals', 'data'],
+  );
+  Future<Map<String, dynamic>> createStockJournal(Map<String, dynamic> body) =>
+      _postInventory(ApiEndpoints.stockJournals, body);
+  Future<Map<String, dynamic>> getGodownStockValuation() async =>
+      Map<String, dynamic>.from(
+        await _getInventory(ApiEndpoints.godownStockValuation) as Map,
+      );
+
+  List<dynamic> _extractList(dynamic response, List<String> keys) {
+    dynamic value = response;
+    if (value is Map && value['data'] != null) value = value['data'];
+    if (value is Map) {
+      for (final key in keys) {
+        if (value[key] is List) return List<dynamic>.from(value[key] as List);
+      }
+    }
+    return value is List ? List<dynamic>.from(value) : const [];
   }
 }

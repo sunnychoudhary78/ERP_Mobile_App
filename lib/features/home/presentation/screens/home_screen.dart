@@ -127,9 +127,27 @@ class HomeScreen extends ConsumerWidget {
         anyOf: AppPermissions.inventoryModule,
       ),
       QuickLink(
+        'Products',
+        '/products_screen',
+        Icons.inventory_2_outlined,
+        anyOf: AppPermissions.productAccess,
+      ),
+      QuickLink(
+        'Product Categories',
+        '/product-categories',
+        Icons.category_outlined,
+        anyOf: AppPermissions.productCategories,
+      ),
+      QuickLink(
+        'Bill of Materials',
+        '/bom',
+        Icons.account_tree_outlined,
+        anyOf: AppPermissions.bomAccess,
+      ),
+      QuickLink(
         'Stock lookup',
         '/stock-lookup',
-        Icons.inventory_2_outlined,
+        Icons.search_outlined,
         anyOf: AppPermissions.stockLookup,
       ),
       QuickLink(
@@ -139,34 +157,85 @@ class HomeScreen extends ConsumerWidget {
         anyOf: AppPermissions.lowStock,
       ),
       QuickLink(
+        'Lots',
+        '/inventory/lots',
+        Icons.inventory_2_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+      QuickLink(
+        'Stock IN / Stock OUT',
+        '/inventory/stock',
+        Icons.swap_horiz_rounded,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+      QuickLink(
+        'Warehouses',
+        '/inventory/warehouses',
+        Icons.warehouse_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+      QuickLink(
+        'Movement ledger',
+        '/inventory/ledger',
+        Icons.receipt_long_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+
+      // ---- Purchase ----
+      QuickLink(
         'Vendors',
         '/vendors',
         Icons.business_outlined,
-        group: 'Purchase',
         anyOf: AppPermissions.vendors,
       ),
       QuickLink(
         'Purchase demand',
         '/purchase-demand',
         Icons.shopping_cart_checkout_outlined,
-        group: 'Purchase',
         anyOf: AppPermissions.purchaseDemand,
       ),
       QuickLink(
         'Purchase orders',
         '/purchase-orders',
         Icons.receipt_long_outlined,
-        group: 'Purchase',
         anyOf: [AppPermissions.purchaseOrderView],
       ),
       QuickLink(
         'Purchase received',
         '/purchase-received',
         Icons.call_received_outlined,
-        group: 'Purchase',
         anyOf: AppPermissions.purchaseReceived,
       ),
+      QuickLink(
+        'Bills & payables',
+        '/inventory/payables',
+        Icons.request_quote_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+
+      // ---- Reports & Documents ----
+      QuickLink(
+        'Reports',
+        '/inventory/reports',
+        Icons.bar_chart_rounded,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+      QuickLink(
+        'Documents',
+        '/inventory/documents',
+        Icons.description_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+
+      // ---- Approvals ----
+      QuickLink(
+        'Inventory approvals',
+        '/inventory-advanced',
+        Icons.fact_check_outlined,
+        anyOf: AppPermissions.inventoryAdvanced,
+      ),
     ]),
+
     LinkSection('Production', [
       QuickLink(
         'Dashboard',
@@ -181,22 +250,6 @@ class HomeScreen extends ConsumerWidget {
         anyOf: AppPermissions.productionModule,
       ),
     ]),
-
-    // LinkSection('Tracking', [
-    //   QuickLink(
-    //     'Dashboard',
-    //     '/tracking-dashboard',
-    //     Icons.map_outlined,
-    //     anyOf: AppPermissions.productionModule,
-    //   ),
-
-    //   QuickLink(
-    //     'Live Tracking',
-    //     '/tracking_screen',
-    //     Icons.my_location_rounded,
-    //     anyOf: AppPermissions.productionModule,
-    //   ),
-    // ]),
   ];
 
   @override

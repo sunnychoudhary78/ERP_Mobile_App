@@ -47,9 +47,22 @@ abstract final class AppPermissions {
   static const approvalView = 'approval.view';
   static const approvalApprove = 'approval.approve';
   static const approvalReject = 'approval.reject';
+  static const approvalForward = 'approval.forward';
+  static const myApprovalView = 'myApproval.view';
   static const bomView = 'bom.view';
   static const bomManage = 'bom.manage';
   static const inventoryReportView = 'inventory_report.view';
+  static const vendorPaymentView = 'vendor_payment.view';
+  static const vendorPaymentManage = 'vendor_payment.manage';
+  static const vendorCreditView = 'vendor_credit.view';
+  static const vendorCreditManage = 'vendor_credit.manage';
+  static const lotProcessingProcess = 'lot_processing.process';
+  static const inventoryTransfer = 'inventory.transfer';
+  static const warehouseManage = 'warehouse.manage';
+  static const documentManage = 'document.manage';
+  static const salesOrderView = 'sales_order.view';
+  static const salesOrderManage = 'sales_order.manage';
+  static const invoiceView = 'invoice.view';
 
   // --- Production ---
   static const productionPlanningManage = 'production_planning.manage';
@@ -118,6 +131,39 @@ abstract final class AppPermissions {
   ];
 
   static const List<String> inventoryModule = [dashboardView, inventoryView];
+
+  static const List<String> inventoryOperations = [
+    inventoryView,
+    inventoryManage,
+    inventoryReportView,
+    billView,
+    billManage,
+    vendorView,
+    vendorManage,
+    vendorPaymentView,
+    vendorPaymentManage,
+    vendorCreditView,
+    vendorCreditManage,
+    lotProcessingProcess,
+    inventoryTransfer,
+    warehouseManage,
+    documentManage,
+  ];
+
+  static const List<String> inventoryAdvanced = [
+    ...inventoryOperations,
+    approvalView,
+    approvalApprove,
+    approvalReject,
+    approvalForward,
+    myApprovalView,
+    customerView,
+    customerManage,
+    salesOrderView,
+    salesOrderManage,
+    invoiceView,
+    productionPlanningManage,
+  ];
 
   static const List<String> stockLookup = [
     productView,
