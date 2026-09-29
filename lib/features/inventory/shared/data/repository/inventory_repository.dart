@@ -244,6 +244,24 @@ class InventoryRepository {
     String? status,
   }) => _api.getPurchaseDemands(page: page, limit: limit, status: status);
 
+  Future<List<String>> getPurchaseDemandStatuses() async {
+    final statuses = <String>{};
+    var result = await getPurchaseDemands();
+    void collectStatuses(PagedPurchaseDemands page) {
+      for (final demand in page.demands) {
+        final status = demand.raw['status']?.toString().trim() ?? '';
+        if (status.isNotEmpty) statuses.add(status);
+      }
+    }
+
+    collectStatuses(result);
+    for (var page = result.page + 1; page <= result.totalPages; page++) {
+      result = await getPurchaseDemands(page: page);
+      collectStatuses(result);
+    }
+    return statuses.toList();
+  }
+
   Future<Map<String, dynamic>> raisePurchases(
     String workOrderId, {
     required Map<String, dynamic> vendorByItemId,
@@ -314,10 +332,24 @@ class InventoryRepository {
   Future<Map<String, dynamic>> rejectPurchase(int purchaseId) =>
       _api.rejectPurchase(purchaseId);
 
-  Future<PurchaseBills> getPurchaseBills() => _api.getPurchaseBills();
+  Future<PurchaseBills> getPurchaseBills({
+    int page = 1,
+    int limit = 200,
+    String query = '',
+  }) => _api.getPurchaseBills(page: page, limit: limit, query: query);
 
-  Future<Map<String, dynamic>> createBillFromPurchase(int purchaseId) =>
-      _api.createBillFromPurchase(purchaseId);
+  Future<Map<String, dynamic>> createBillFromPurchase(
+    int purchaseId, {
+    Map<String, dynamic>? extra,
+  }) => _api.createBillFromPurchase(purchaseId, extra: extra);
+
+  Future<Map<String, dynamic>> getVendorRaw(int id) => _api.getVendorRaw(id);
+
+  Future<List<dynamic>> getPurchasesRaw({
+    int page = 1,
+    int limit = 200,
+    String query = '',
+  }) => _api.getPurchasesRaw(page: page, limit: limit, query: query);
 
   Future<List<dynamic>> getVendorPayments({
     int page = 1,

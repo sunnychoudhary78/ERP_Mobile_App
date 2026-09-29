@@ -423,8 +423,16 @@ class _InventoryLotsScreenState extends ConsumerState<InventoryLotsScreen>
             ],
           };
     try {
-      await ref.read(inventoryRepositoryProvider).sendLotForSelling(id, body);
-      showSuccess('Lot sent for sale');
+      final result = await ref
+          .read(inventoryRepositoryProvider)
+          .sendLotForSelling(id, body);
+      final approvalId = result['approvalId'];
+      showSuccess(
+        approvalId == null
+            ? 'Lot sent for sale'
+            : 'Send-for-sale request sent for approval',
+      );
+      reload();
     } catch (e) {
       showError(e);
     }

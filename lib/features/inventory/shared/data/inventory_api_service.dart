@@ -632,14 +632,32 @@ class InventoryApiService {
     return Map<String, dynamic>.from(res as Map);
   }
 
-  Future<PurchaseBills> getPurchaseBills() async {
-    final res = await _api.get(ApiEndpoints.bills, headers: _companyHeader);
+  /// `GET /api/bills?page&limit&q` — server default limit is 10, so always
+  /// pass a limit or older bills silently disappear from the app.
+  Future<PurchaseBills> getPurchaseBills({
+    int page = 1,
+    int limit = 200,
+    String query = '',
+  }) async {
+    final res = await _api.get(
+      ApiEndpoints.bills,
+      queryParams: {
+        'page': page,
+        'limit': limit,
+        if (query.isNotEmpty) 'q': query,
+      },
+      headers: _companyHeader,
+    );
     return PurchaseBills.fromResponse(res);
   }
 
-  Future<Map<String, dynamic>> createBillFromPurchase(int purchaseId) async {
+  Future<Map<String, dynamic>> createBillFromPurchase(
+    int purchaseId, {
+    Map<String, dynamic>? extra,
+  }) async {
     final res = await _api.post(ApiEndpoints.billFromPurchase, {
       'purchaseId': purchaseId,
+      if (extra != null) ...extra,
     }, headers: _companyHeader);
     return Map<String, dynamic>.from(res as Map);
   }
@@ -681,8 +699,36 @@ class InventoryApiService {
   );
   Future<Map<String, dynamic>> createVendorCredit(Map<String, dynamic> body) =>
       _postInventory(ApiEndpoints.vendorCredits, body);
+  // Manual bill is `POST /api/accounts/bills` (NOT /api/bills, which is the
+  // read-only list). Prefix is derived from the existing bills endpoint so it
+  // works whether ApiEndpoints already includes `/api` or not.
+  String get _apiPrefix =>
+      ApiEndpoints.bills.replaceFirst(RegExp(r'/?bills/?$'), '');
+
   Future<Map<String, dynamic>> createManualBill(Map<String, dynamic> body) =>
-      _postInventory(ApiEndpoints.bills, body);
+      _postInventory('$_apiPrefix/accounts/bills', body);
+
+  /// `GET /api/vendors/:id` — raw map (name, address, phone, email, gst…).
+  Future<Map<String, dynamic>> getVendorRaw(int id) async {
+    final res = await _getInventory('$_apiPrefix/vendors/$id');
+    dynamic d = res is Map ? res['data'] : null;
+    if (d is Map && d['vendor'] is Map) d = d['vendor'];
+    return d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{};
+  }
+
+  /// `GET /api/purchase` — raw PO rows incl. enriched `items` lines.
+  Future<List<dynamic>> getPurchasesRaw({
+    int page = 1,
+    int limit = 200,
+    String query = '',
+  }) async => _extractList(
+    await _getInventory('$_apiPrefix/purchase', {
+      'page': page,
+      'limit': limit,
+      if (query.isNotEmpty) 'q': query,
+    }),
+    const ['purchases', 'items', 'data'],
+  );
   Future<List<dynamic>> getPaymentsReceived({
     int page = 1,
     int limit = 25,

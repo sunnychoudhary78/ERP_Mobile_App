@@ -101,6 +101,10 @@ final purchaseDemandsProvider =
           ),
     );
 
+final purchaseDemandStatusesProvider = FutureProvider<List<String>>(
+  (ref) => ref.read(inventoryRepositoryProvider).getPurchaseDemandStatuses(),
+);
+
 class PurchaseOrderQuery {
   final int page;
   final int limit;

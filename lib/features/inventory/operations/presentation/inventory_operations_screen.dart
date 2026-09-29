@@ -2,8 +2,10 @@ import 'package:erp_app/features/inventory/operations/presentation/inventory_doc
 import 'package:erp_app/features/inventory/operations/presentation/inventory_hub_list.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_ledger_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_lots_screen.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_processed_fg_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_payables_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_reports_screen.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_sellable_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_stock_movements_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_warehouses_screen.dart';
 import 'package:flutter/material.dart';
@@ -62,6 +64,18 @@ class InventoryOperationsScreen extends StatelessWidget {
       title: 'Documents',
       subtitle: 'Files and links attached to inventory lots',
       builder: (_) => const InventoryDocumentsScreen(),
+    ),
+    HubSection(
+      icon: Icons.sell_outlined,
+      title: 'Sellable Inventory',
+      subtitle: 'Lots ready for sale and awaiting approval',
+      builder: (_) => const InventorySellableScreen(),
+    ),
+    HubSection(
+      icon: Icons.inventory_2_outlined,
+      title: 'Processed lots & FG',
+      subtitle: 'Processed lot quantities and finished goods work orders',
+      builder: (_) => const InventoryProcessedFgScreen(),
     ),
   ];
 

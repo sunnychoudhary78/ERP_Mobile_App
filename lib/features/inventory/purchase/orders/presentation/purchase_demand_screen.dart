@@ -1,10 +1,12 @@
+import 'package:erp_app/core/network/api_service.dart';
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
-import 'package:erp_app/core/network/api_service.dart';
+
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_demand_model.dart';
 import 'package:erp_app/features/inventory/purchase/vendors/data/model/vendor_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
+import 'package:erp_app/features/inventory/shared/widget/app_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,17 +27,34 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
   Widget build(BuildContext context) {
     final query = _query;
     final demands = ref.watch(purchaseDemandsProvider(query));
+    final statusOptions =
+        ref.watch(purchaseDemandStatusesProvider).asData?.value ??
+            const <String>[];
     final auth = ref.watch(authProvider);
     final canApprove = auth.canAny(AppPermissions.purchaseDemandApprove);
     final canReject = auth.canAny(AppPermissions.purchaseDemandReject);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Purchase Demand')),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.text,
+        centerTitle: true,
+        title: const Text(
+          'Purchase Demand',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
       body: Column(
         children: [
           _StatusFilter(
             value: _status,
+            statuses: statusOptions,
             onChanged: (value) => setState(() => _status = value),
           ),
           Expanded(
@@ -49,19 +68,33 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
               data: (page) => RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(purchaseDemandsProvider(query));
+                  ref.invalidate(purchaseDemandStatusesProvider);
                   await ref.read(purchaseDemandsProvider(query).future);
                 },
                 child: page.demands.isEmpty
                     ? ListView(
-                        children: const [
-                          SizedBox(height: 140),
-                          Center(child: Text('No purchase demands found')),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          const SizedBox(height: 100),
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 44,
+                            color: AppColors.muted,
+                          ),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: Text(
+                              'No purchase demands found',
+                              style: TextStyle(color: AppColors.muted),
+                            ),
+                          ),
                         ],
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
                         itemCount: page.demands.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final demand = page.demands[index];
                           return _DemandCard(
@@ -86,28 +119,29 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
   }
 
   Future<void> _showDetails(PurchaseDemand demand) async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(demand.title),
-        content: SizedBox(
-          width: 420,
-          child: demand.lines.isEmpty
-              ? const Text('No shortage lines were returned.')
-              : ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: demand.lines.length,
-                  separatorBuilder: (_, _) => const Divider(height: 16),
-                  itemBuilder: (_, index) =>
-                      _LineSummary(line: demand.lines[index]),
+    await showAppSheet<void>(
+      context,
+      builder: (_) => AppSheetFrame(
+        title: demand.title,
+        subtitle: demand.lines.isEmpty
+            ? null
+            : '${demand.lines.length} shortage '
+                '${demand.lines.length == 1 ? 'line' : 'lines'}',
+        child: demand.lines.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  'No shortage lines were returned.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted),
                 ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final line in demand.lines) _LineSummary(line: line),
+                ],
+              ),
       ),
     );
   }
@@ -122,9 +156,7 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
       return;
     }
 
-    final note = await _askForNote(
-      approve ? 'Approve demand' : 'Reject demand',
-    );
+    final note = await _askForNote(approve: approve);
     if (note == null || !mounted) return;
 
     try {
@@ -135,6 +167,7 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
         await repo.rejectPurchaseDemand(requestId, note: note);
       }
       ref.invalidate(purchaseDemandsProvider(_query));
+      ref.invalidate(purchaseDemandStatusesProvider);
       _showMessage(
         approve ? 'Purchase demand approved' : 'Purchase demand rejected',
       );
@@ -154,34 +187,11 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
     return error.toString().replaceFirst('Exception: ', '');
   }
 
-  Future<String?> _askForNote(String title) async {
-    final controller = TextEditingController();
-    final note = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Note (optional)',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Submit'),
-          ),
-        ],
-      ),
+  Future<String?> _askForNote({required bool approve}) {
+    return showAppSheet<String>(
+      context,
+      builder: (_) => _NoteSheet(approve: approve),
     );
-    controller.dispose();
-    return note;
   }
 
   Future<void> _raisePurchases(PurchaseDemand demand) async {
@@ -190,9 +200,8 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
       return;
     }
 
-    final result = await showModalBottomSheet<_RaisePurchasesResult>(
-      context: context,
-      isScrollControlled: true,
+    final result = await showAppSheet<_RaisePurchasesResult>(
+      context,
       builder: (_) => _RaisePurchasesSheet(demand: demand),
     );
     if (result == null || !mounted) return;
@@ -206,6 +215,7 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
             persistVendorOnItems: result.persistVendorOnItems,
           );
       ref.invalidate(purchaseDemandsProvider(_query));
+      ref.invalidate(purchaseDemandStatusesProvider);
       _showMessage(
         response['approvalId'] == null
             ? 'Purchases raised successfully'
@@ -224,35 +234,64 @@ class _PurchaseDemandScreenState extends ConsumerState<PurchaseDemandScreen> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Status filter (chips instead of a dropdown)
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _StatusFilter extends StatelessWidget {
   final String value;
+  final List<String> statuses;
   final ValueChanged<String> onChanged;
 
-  const _StatusFilter({required this.value, required this.onChanged});
+  const _StatusFilter({
+    required this.value,
+    required this.statuses,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-      child: DropdownButtonFormField<String>(
-        initialValue: value,
-        decoration: const InputDecoration(
-          labelText: 'Status',
-          prefixIcon: Icon(Icons.filter_list),
-          filled: true,
-          border: OutlineInputBorder(),
-        ),
-        items: const [
-          DropdownMenuItem(value: '', child: Text('All statuses')),
-          DropdownMenuItem(value: 'PENDING', child: Text('Pending')),
-          DropdownMenuItem(value: 'APPROVED', child: Text('Approved')),
-          DropdownMenuItem(value: 'REJECTED', child: Text('Rejected')),
-        ],
-        onChanged: (next) => onChanged(next ?? ''),
+    final all = <String>['', ...{...statuses, if (value.isNotEmpty) value}];
+
+    return SizedBox(
+      height: 56,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        itemCount: all.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final status = all[index];
+          final selected = status == value;
+          return ChoiceChip(
+            showCheckmark: false,
+            selected: selected,
+            onSelected: (_) => onChanged(status),
+            label: Text(status.isEmpty ? 'All' : appPrettyLabel(status)),
+            labelStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : AppColors.text,
+            ),
+            backgroundColor: Colors.white,
+            selectedColor: AppColors.accent,
+            side: BorderSide(
+              color: selected ? AppColors.accent : AppColors.border,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+          );
+        },
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Demand card
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _DemandCard extends StatelessWidget {
   final PurchaseDemand demand;
@@ -276,74 +315,320 @@ class _DemandCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPending = demand.status.contains('PENDING');
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        onTap: onOpen,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    final showDecision = isPending && (canApprove || canReject);
+    final showRaise = isPending && demand.workOrderId.isNotEmpty;
+    final statusColor = appStatusColor(demand.status);
+    final lineCount = demand.lines.length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(13),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onOpen,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.shopping_cart_outlined),
-                  const SizedBox(width: 10),
+                  Container(
+                    width: 4,
+                    color: statusColor.withValues(alpha: 0.7),
+                  ),
                   Expanded(
-                    child: Text(
-                      demand.title,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppColors.accent.withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.shopping_cart_outlined,
+                                  size: 20,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      demand.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                        fontFamily: 'serif',
+                                      ),
+                                    ),
+                                    if (demand.workOrderId.isNotEmpty) ...[
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'Work order: ${demand.workOrderId}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: AppColors.muted,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              AppStatusPill(status: demand.status),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.list_alt_outlined,
+                                      size: 15,
+                                      color: AppColors.muted,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '$lineCount shortage '
+                                      '${lineCount == 1 ? 'line' : 'lines'}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                'View details',
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: AppColors.accent,
+                              ),
+                            ],
+                          ),
+                          if (showDecision || showRaise) ...[
+                            const SizedBox(height: 12),
+                            Divider(height: 1, color: AppColors.border),
+                            const SizedBox(height: 12),
+                          ],
+                          if (showDecision)
+                            Row(
+                              children: [
+                                if (canReject)
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: AppColors.danger,
+                                        side: BorderSide(
+                                          color: AppColors.danger
+                                              .withValues(alpha: 0.5),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                      onPressed: onReject,
+                                      icon: const Icon(Icons.close, size: 18),
+                                      label: const Text('Reject'),
+                                    ),
+                                  ),
+                                if (canReject && canApprove)
+                                  const SizedBox(width: 10),
+                                if (canApprove)
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.accent,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                      onPressed: onApprove,
+                                      icon: const Icon(Icons.check, size: 18),
+                                      label: const Text('Approve'),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          if (showDecision && showRaise)
+                            const SizedBox(height: 10),
+                          if (showRaise)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.accent,
+                                  side: BorderSide(
+                                    color:
+                                        AppColors.accent.withValues(alpha: 0.5),
+                                  ),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: onRaisePurchases,
+                                icon: const Icon(
+                                  Icons.add_shopping_cart_outlined,
+                                  size: 18,
+                                ),
+                                label: const Text('Raise purchases'),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                  _StatusChip(status: demand.status),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text('${demand.lines.length} shortage line(s)'),
-              if (demand.workOrderId.isNotEmpty)
-                Text(
-                  'Work order: ${demand.workOrderId}',
-                  style: TextStyle(color: AppColors.muted, fontSize: 12),
-                ),
-              if (isPending && (canApprove || canReject)) ...[
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (canReject)
-                      TextButton.icon(
-                        onPressed: onReject,
-                        icon: const Icon(Icons.close, size: 18),
-                        label: const Text('Reject'),
-                      ),
-                    if (canApprove)
-                      FilledButton.icon(
-                        onPressed: onApprove,
-                        icon: const Icon(Icons.check, size: 18),
-                        label: const Text('Approve'),
-                      ),
-                  ],
-                ),
-              ],
-              if (isPending && demand.workOrderId.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: onRaisePurchases,
-                    icon: const Icon(Icons.add_shopping_cart_outlined),
-                    label: const Text('Raise purchases'),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Approve / reject note sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _NoteSheet extends StatefulWidget {
+  final bool approve;
+
+  const _NoteSheet({required this.approve});
+
+  @override
+  State<_NoteSheet> createState() => _NoteSheetState();
+}
+
+class _NoteSheetState extends State<_NoteSheet> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final approve = widget.approve;
+    final actionColor = approve ? AppColors.accent : AppColors.danger;
+
+    return AppSheetFrame(
+      title: approve ? 'Approve Demand' : 'Reject Demand',
+      subtitle: approve
+          ? 'Add an optional note for this approval.'
+          : 'Let the requester know why this demand is being rejected.',
+      footer: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.text,
+                side: BorderSide(color: AppColors.border),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: actionColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () => Navigator.pop(context, _controller.text.trim()),
+              icon: Icon(approve ? Icons.check : Icons.close, size: 18),
+              label: Text(approve ? 'Approve' : 'Reject'),
+            ),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _controller,
+        maxLines: 4,
+        minLines: 3,
+        textCapitalization: TextCapitalization.sentences,
+        scrollPadding: const EdgeInsets.only(bottom: 160),
+        decoration: appFieldDecoration('Note (optional)'),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Raise purchases sheet
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _RaisePurchasesResult {
   final Map<String, dynamic> vendorByItemId;
@@ -365,8 +650,7 @@ class _RaisePurchasesSheet extends ConsumerStatefulWidget {
       _RaisePurchasesSheetState();
 }
 
-class _RaisePurchasesSheetState
-    extends ConsumerState<_RaisePurchasesSheet> {
+class _RaisePurchasesSheetState extends ConsumerState<_RaisePurchasesSheet> {
   final Map<String, int> _selectedVendors = {};
   bool _persistVendorOnItems = false;
 
@@ -376,94 +660,95 @@ class _RaisePurchasesSheetState
       vendorsProvider(const VendorListQuery(limit: 200)),
     );
     final lines = widget.demand.lines;
+    final ready = lines.isNotEmpty && _selectedVendors.length == lines.length;
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          MediaQuery.viewInsetsOf(context).bottom + 16,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 680),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Raise purchases',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              const Text('Select a vendor for each shortage item.'),
-              const SizedBox(height: 12),
-              Expanded(
-                child: vendorsAsync.when(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator.adaptive(),
-                  ),
-                  error: (error, _) => Center(
-                    child: Text(
-                      error.toString().replaceFirst('Exception: ', ''),
-                      textAlign: TextAlign.center,
+    return AppSheetFrame(
+      title: 'Raise Purchases',
+      subtitle: 'Select a vendor for each shortage item. '
+          '${_selectedVendors.length} of ${lines.length} assigned.',
+      footer: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.accent,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: AppColors.border,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: !ready
+              ? null
+              : () => Navigator.pop(
+                    context,
+                    _RaisePurchasesResult(
+                      vendorByItemId: Map<String, dynamic>.from(
+                        _selectedVendors,
+                      ),
+                      persistVendorOnItems: _persistVendorOnItems,
                     ),
                   ),
-                  data: (page) => ListView.separated(
-                    itemCount: lines.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final line = lines[index];
-                      final itemId = _itemId(line);
-                      return _VendorAssignment(
-                        line: line,
-                        vendors: page.vendors,
-                        selectedVendorId: itemId == null
-                            ? null
-                            : _selectedVendors[itemId],
-                        onChanged: itemId == null
-                            ? null
-                            : (vendorId) => setState(() {
-                                  if (vendorId == null) {
-                                    _selectedVendors.remove(itemId);
-                                  } else {
-                                    _selectedVendors[itemId] = vendorId;
-                                  }
-                                }),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _persistVendorOnItems,
-                onChanged: (value) => setState(
-                  () => _persistVendorOnItems = value ?? false,
-                ),
-                title: const Text('Save vendor on item records'),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: lines.isEmpty ||
-                          _selectedVendors.length != lines.length
-                      ? null
-                      : () => Navigator.pop(
-                            context,
-                            _RaisePurchasesResult(
-                              vendorByItemId: Map<String, dynamic>.from(
-                                _selectedVendors,
-                              ),
-                              persistVendorOnItems: _persistVendorOnItems,
-                            ),
-                          ),
-                  icon: const Icon(Icons.send_outlined),
-                  label: const Text('Raise purchases'),
-                ),
-              ),
-            ],
+          icon: const Icon(Icons.send_outlined, size: 18),
+          label: const Text('Raise Purchases'),
+        ),
+      ),
+      child: vendorsAsync.when(
+        loading: () => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: Center(child: CircularProgressIndicator.adaptive()),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Text(
+            error.toString().replaceFirst('Exception: ', ''),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.danger),
           ),
+        ),
+        data: (page) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final line in lines)
+              Builder(
+                builder: (context) {
+                  final itemId = _itemId(line);
+                  return _VendorAssignment(
+                    line: line,
+                    vendors: page.vendors,
+                    selectedVendorId:
+                        itemId == null ? null : _selectedVendors[itemId],
+                    onChanged: itemId == null
+                        ? null
+                        : (vendorId) => setState(
+                              () => _selectedVendors[itemId] = vendorId,
+                            ),
+                  );
+                },
+              ),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: SwitchListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                activeThumbColor: AppColors.accent,
+                value: _persistVendorOnItems,
+                onChanged: (value) =>
+                    setState(() => _persistVendorOnItems = value),
+                title: const Text(
+                  'Save vendor on item records',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  'Use these vendors as the default next time.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -481,7 +766,7 @@ class _VendorAssignment extends StatelessWidget {
   final Map<String, dynamic> line;
   final List<Vendor> vendors;
   final int? selectedVendorId;
-  final ValueChanged<int?>? onChanged;
+  final ValueChanged<int>? onChanged;
 
   const _VendorAssignment({
     required this.line,
@@ -497,30 +782,76 @@ class _VendorAssignment extends StatelessWidget {
         ? item['name']
         : line['itemName'] ?? line['name'] ?? 'Item';
     final itemId = line['itemId'] ?? (item is Map ? item['id'] : null);
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: '$itemName (ID: ${itemId ?? '-'})',
-        border: const OutlineInputBorder(),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          isExpanded: true,
-          value: selectedVendorId,
-          hint: const Text('Select vendor'),
-          items: vendors
-              .map(
-                (vendor) => DropdownMenuItem<int>(
-                  value: vendor.id,
-                  child: Text(vendor.name),
-                ),
-              )
-              .toList(),
-          onChanged: onChanged,
+    final assigned = selectedVendorId != null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: assigned
+              ? AppColors.accent.withValues(alpha: 0.5)
+              : AppColors.border,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$itemName',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    fontFamily: 'serif',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'ID: ${itemId ?? '-'}',
+                style: TextStyle(color: AppColors.muted, fontSize: 12),
+              ),
+              if (assigned) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.check_circle, size: 18, color: AppColors.accent),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          AppPickerField<int>(
+            label: 'Vendor',
+            hint: 'Select vendor',
+            value: selectedVendorId,
+            enabled: onChanged != null,
+            options: [
+              for (final vendor in vendors)
+                AppPickerOption<int>(vendor.id, vendor.name),
+            ],
+            onChanged: (vendorId) => onChanged?.call(vendorId),
+          ),
+          if (onChanged == null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'This line has no item ID, so a vendor cannot be assigned.',
+              style: TextStyle(color: AppColors.danger, fontSize: 12),
+            ),
+          ],
+        ],
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Detail line tile
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _LineSummary extends StatelessWidget {
   final Map<String, dynamic> line;
@@ -540,41 +871,89 @@ class _LineSummary extends StatelessWidget {
         line['quantity'] ??
         line['requiredQty'] ??
         '-';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${itemName ?? 'Item'}',
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        Text('Item ID: ${itemId ?? '-'}'),
-        Text('Shortage: $quantity'),
-      ],
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${itemName ?? 'Item'}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    fontFamily: 'serif',
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Item ID: ${itemId ?? '-'}',
+                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.danger.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.danger.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  '$quantity',
+                  style: TextStyle(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  'SHORT',
+                  style: TextStyle(
+                    color: AppColors.danger,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  final String status;
-
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = status.contains('APPROVED')
-        ? Colors.green
-        : status.contains('REJECTED')
-        ? Colors.red
-        : Colors.orange;
-    return Chip(
-      label: Text(status),
-      labelStyle: TextStyle(color: color, fontSize: 11),
-      side: BorderSide(color: color.withValues(alpha: 0.35)),
-      backgroundColor: color.withValues(alpha: 0.08),
-      visualDensity: VisualDensity.compact,
-    );
-  }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Error view
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
   final String message;
@@ -590,11 +969,22 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 42),
-            const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
+            Icon(Icons.error_outline, size: 38, color: AppColors.danger),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted),
+            ),
+            const SizedBox(height: 14),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),

@@ -144,42 +144,6 @@ class HomeScreen extends ConsumerWidget {
         Icons.account_tree_outlined,
         anyOf: AppPermissions.bomAccess,
       ),
-      QuickLink(
-        'Stock lookup',
-        '/stock-lookup',
-        Icons.search_outlined,
-        anyOf: AppPermissions.stockLookup,
-      ),
-      QuickLink(
-        'Low stock',
-        '/low-stock',
-        Icons.warning_amber_outlined,
-        anyOf: AppPermissions.lowStock,
-      ),
-      QuickLink(
-        'Lots',
-        '/inventory/lots',
-        Icons.inventory_2_outlined,
-        anyOf: AppPermissions.inventoryOperations,
-      ),
-      QuickLink(
-        'Stock IN / Stock OUT',
-        '/inventory/stock',
-        Icons.swap_horiz_rounded,
-        anyOf: AppPermissions.inventoryOperations,
-      ),
-      QuickLink(
-        'Warehouses',
-        '/inventory/warehouses',
-        Icons.warehouse_outlined,
-        anyOf: AppPermissions.inventoryOperations,
-      ),
-      QuickLink(
-        'Movement ledger',
-        '/inventory/ledger',
-        Icons.receipt_long_outlined,
-        anyOf: AppPermissions.inventoryOperations,
-      ),
 
       // ---- Purchase ----
       QuickLink(
@@ -210,6 +174,59 @@ class HomeScreen extends ConsumerWidget {
         'Bills & payables',
         '/inventory/payables',
         Icons.request_quote_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+
+
+      // inventory
+
+        QuickLink(
+        'Stock IN / Stock OUT',
+        '/inventory/stock',
+        Icons.swap_horiz_rounded,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+      QuickLink(
+        'Warehouses',
+        '/inventory/warehouses',
+        Icons.warehouse_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+      QuickLink(
+        'Movement ledger',
+        '/inventory/ledger',
+        Icons.receipt_long_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+
+        QuickLink(
+        'Stock lookup',
+        '/stock-lookup',
+        Icons.search_outlined,
+        anyOf: AppPermissions.stockLookup,
+      ),
+      QuickLink(
+        'Low stock',
+        '/low-stock',
+        Icons.warning_amber_outlined,
+        anyOf: AppPermissions.lowStock,
+      ),
+      QuickLink(
+        'Lots',
+        '/inventory/lots',
+        Icons.inventory_2_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+      QuickLink(
+        'Sellable Inventory',
+        '/inventory/sellable',
+        Icons.sell_outlined,
+        anyOf: AppPermissions.inventoryOperations,
+      ),
+      QuickLink(
+        'Processed lots & FG',
+        '/inventory/processed-fg',
+        Icons.inventory_2_outlined,
         anyOf: AppPermissions.inventoryOperations,
       ),
 

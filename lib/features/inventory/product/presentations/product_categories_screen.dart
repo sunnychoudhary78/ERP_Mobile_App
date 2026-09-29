@@ -178,6 +178,7 @@ class _ProductCategoriesScreenState
     final result = await showModalBottomSheet<_CategoryFormResult>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CategoryForm(category: category),
     );
@@ -380,10 +381,19 @@ class _CategoryForm extends StatefulWidget {
 }
 
 class _CategoryFormState extends State<_CategoryForm> {
+  static const _categoryTypes = [
+    'Raw Material',
+    'Finished Product',
+    'Semi Finished',
+    'Consumable',
+    'Service',
+    'General',
+  ];
+
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _typeController;
   late final TextEditingController _hsnController;
+  late String _type;
   late String _status;
 
   @override
@@ -391,7 +401,9 @@ class _CategoryFormState extends State<_CategoryForm> {
     super.initState();
     final category = widget.category;
     _nameController = TextEditingController(text: category?.name ?? '');
-    _typeController = TextEditingController(text: category?.type ?? '');
+    _type = category?.type?.trim().isNotEmpty == true
+        ? category!.type!.trim()
+        : 'General';
     _hsnController = TextEditingController(text: category?.hsnSac ?? '');
     _status = category?.status.toUpperCase() ?? 'ACTIVE';
   }
@@ -399,7 +411,6 @@ class _CategoryFormState extends State<_CategoryForm> {
   @override
   void dispose() {
     _nameController.dispose();
-    _typeController.dispose();
     _hsnController.dispose();
     super.dispose();
   }
@@ -425,99 +436,157 @@ class _CategoryFormState extends State<_CategoryForm> {
     );
   }
 
+  /// RAW_MATERIAL -> Raw Material (display only, the stored value is unchanged)
+  String _pretty(String value) {
+    if (!value.contains('_') && value != value.toUpperCase()) return value;
+    return value
+        .split('_')
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+        .join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.viewInsetsOf(context).bottom;
-    return Padding(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.08),
+    final media = MediaQuery.of(context);
+    final keyboard = media.viewInsets.bottom;
+    // When the keyboard is closed keep clear of the gesture/nav bar.
+    final bottomSafe = keyboard > 0 ? 0.0 : media.viewPadding.bottom;
+
+    final typeOptions = <_PickerOption>[
+      ..._categoryTypes.map((t) => _PickerOption(t, t)),
+      if (!_categoryTypes.contains(_type))
+        _PickerOption(_type, _pretty(_type)),
+    ];
+
+    // The keyboard lifts the whole sheet. The sheet itself scrolls if the
+    // content is taller than the space that is left above the keyboard.
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: keyboard),
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        padding: EdgeInsets.fromLTRB(20, 14, 20, bottom + 20),
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 18),
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Fixed header (does not scroll away)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 18),
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                Text(
-                  widget.category == null ? 'Add Category' : 'Edit Category',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'serif',
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  width: 40,
-                  height: 2,
-                  margin: const EdgeInsets.only(bottom: 18),
-                  color: AppColors.accent.withOpacity(0.6),
-                ),
-                TextFormField(
-                  controller: _nameController,
-                  autofocus: true,
-                  decoration: _decoration('Name', required: true),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Name is required'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _typeController,
-                  decoration: _decoration('Type'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _hsnController,
-                  keyboardType: TextInputType.number,
-                  decoration: _decoration('HSN/SAC', required: true),
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'HSN/SAC is required'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _status,
-                  decoration: _decoration('Status'),
-                  items: const [
-                    DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
-                    DropdownMenuItem(value: 'INACTIVE', child: Text('Inactive')),
+                    Text(
+                      widget.category == null
+                          ? 'Add Category'
+                          : 'Edit Category',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'serif',
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 40,
+                      height: 2,
+                      margin: const EdgeInsets.only(bottom: 18),
+                      color: AppColors.accent.withOpacity(0.6),
+                    ),
                   ],
-                  onChanged: (value) => setState(() => _status = value ?? 'ACTIVE'),
                 ),
-                const SizedBox(height: 22),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: _submit,
-                  icon: const Icon(Icons.save_outlined),
-                  label: Text(
-                    widget.category == null ? 'Create Category' : 'Save Changes',
+              ),
+              // Scrollable fields
+              Flexible(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottomSafe),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        textInputAction: TextInputAction.next,
+                        scrollPadding: const EdgeInsets.only(bottom: 120),
+                        decoration: _decoration('Name', required: true),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                                ? 'Name is required'
+                                : null,
+                      ),
+                      const SizedBox(height: 12),
+                      _PickerField(
+                        title: 'Type',
+                        decoration: _decoration('Type'),
+                        value: _type,
+                        displayText: _pretty(_type),
+                        options: typeOptions,
+                        onChanged: (v) => setState(() => _type = v),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _hsnController,
+                        keyboardType: TextInputType.number,
+                        scrollPadding: const EdgeInsets.only(bottom: 120),
+                        decoration: _decoration('HSN/SAC', required: true),
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
+                                ? 'HSN/SAC is required'
+                                : null,
+                      ),
+                      const SizedBox(height: 12),
+                      _PickerField(
+                        title: 'Status',
+                        decoration: _decoration('Status'),
+                        value: _status,
+                        displayText: _status == 'ACTIVE' ? 'Active' : 'Inactive',
+                        options: const [
+                          _PickerOption('ACTIVE', 'Active'),
+                          _PickerOption('INACTIVE', 'Inactive'),
+                        ],
+                        onChanged: (v) => setState(() => _status = v),
+                      ),
+                      const SizedBox(height: 22),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: _submit,
+                        icon: const Icon(Icons.save_outlined),
+                        label: Text(
+                          widget.category == null
+                              ? 'Create Category'
+                              : 'Save Changes',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -530,11 +599,125 @@ class _CategoryFormState extends State<_CategoryForm> {
       context,
       _CategoryFormResult({
         'name': _nameController.text.trim(),
-        if (_typeController.text.trim().isNotEmpty)
-          'type': _typeController.text.trim(),
+        'type': _type,
         'status': _status,
         'hsnSac': _hsnController.text.trim(),
       }),
+    );
+  }
+}
+
+class _PickerOption {
+  final String value;
+  final String label;
+
+  const _PickerOption(this.value, this.label);
+}
+
+/// Replacement for DropdownButtonFormField.
+///
+/// A normal dropdown anchors its popup to the field's position at the moment
+/// it opens. If the keyboard is open, it closes right after and the sheet
+/// slides down, so the popup ends up in the wrong place (jumps upward).
+/// Here we close the keyboard first, wait for the layout to settle, and then
+/// show a bottom-anchored picker that is never affected by the keyboard.
+class _PickerField extends StatelessWidget {
+  final String title;
+  final InputDecoration decoration;
+  final String value;
+  final String displayText;
+  final List<_PickerOption> options;
+  final ValueChanged<String> onChanged;
+
+  const _PickerField({
+    required this.title,
+    required this.decoration,
+    required this.value,
+    required this.displayText,
+    required this.options,
+    required this.onChanged,
+  });
+
+  Future<void> _open(BuildContext context) async {
+    final keyboardWasOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (keyboardWasOpen) {
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+    if (!context.mounted) return;
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                'Select $title',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.only(bottom: 12),
+                children: [
+                  for (final option in options)
+                    ListTile(
+                      title: Text(option.label),
+                      trailing: option.value == value
+                          ? Icon(Icons.check, color: AppColors.accent)
+                          : null,
+                      onTap: () => Navigator.pop(sheetContext, option.value),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (selected != null) onChanged(selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => _open(context),
+      child: InputDecorator(
+        decoration: decoration.copyWith(
+          suffixIcon: Icon(Icons.keyboard_arrow_down, color: AppColors.muted),
+        ),
+        child: Text(
+          displayText,
+          style: TextStyle(fontSize: 16, color: AppColors.text),
+        ),
+      ),
     );
   }
 }

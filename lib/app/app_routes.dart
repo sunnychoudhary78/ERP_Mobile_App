@@ -15,6 +15,8 @@ import 'package:erp_app/features/inventory/purchase/recives/presentation/purchas
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stock_lookup_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_operations_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_advanced_screen.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_processed_fg_screen.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_sellable_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
 import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
 import 'package:erp_app/features/tracking/presentation/tracking_screen.dart';
@@ -159,6 +161,14 @@ class AppRoutes {
     '/inventory/documents': (_) => _gate(
       AppPermissions.inventoryOperations,
       const InventoryOperationsScreen(initialTab: 6),
+    ),
+    '/inventory/sellable': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventorySellableScreen(),
+    ),
+    '/inventory/processed-fg': (_) => _gate(
+      AppPermissions.inventoryOperations,
+      const InventoryProcessedFgScreen(),
     ),
     '/inventory-advanced': (_) => _gate(
       AppPermissions.inventoryAdvanced,

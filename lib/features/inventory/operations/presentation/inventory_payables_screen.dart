@@ -1,10 +1,15 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:erp_app/features/inventory/operations/data/utlis/payable_utlis.dart';
+import 'package:erp_app/features/inventory/operations/presentation/create_purchase_bill.dart';
+import 'package:erp_app/features/inventory/operations/presentation/payable_settlement_dailogbox.dart';
+import 'package:erp_app/features/inventory/operations/presentation/purchase_bill_details_screen.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'inventory_ui_helpers.dart';
+
 
 class InventoryPayablesScreen extends ConsumerStatefulWidget {
   const InventoryPayablesScreen({super.key});
@@ -16,6 +21,8 @@ class InventoryPayablesScreen extends ConsumerStatefulWidget {
 class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScreen>
     with InventoryUiHelpers<InventoryPayablesScreen> {
   late Future<List<dynamic>> _load;
+  final _search = TextEditingController();
+  String _filter = 'ALL'; // ALL | OPEN | PAID
 
   @override
   void initState() {
@@ -23,11 +30,17 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
     _load = _fetch();
   }
 
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
   Future<List<dynamic>> _fetch() {
     final repo = ref.read(inventoryRepositoryProvider);
     return Future.wait<dynamic>([
-      repo.getPurchaseBills(),
-      repo.getVendorPayments(),
+      repo.getPurchaseBills(limit: 200),
+      repo.getVendorPayments(limit: 200),
       repo.getVendorCredits(),
     ]);
   }
@@ -36,6 +49,10 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
   void reload() => setState(() {
     _load = _fetch();
   });
+
+  List<BillView> _billViews(dynamic purchaseBills) => [
+    for (final b in (purchaseBills as dynamic).bills as List) BillView(asMap(b.raw)),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -52,11 +69,7 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
         appBar: AppBar(
           title: const Text('Payables'),
           bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Bills'),
-              Tab(text: 'Payments'),
-              Tab(text: 'Credits'),
-            ],
+            tabs: [Tab(text: 'Bills'), Tab(text: 'Payments'), Tab(text: 'Credits')],
           ),
         ),
         floatingActionButton: canAdd
@@ -66,39 +79,18 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
                 label: const Text('Add payable'),
               )
             : null,
-        body: loadBody<List<dynamic>>(
-          future: _load,
-          what: 'payables',
-          builder: _content,
-        ),
+        body: loadBody<List<dynamic>>(future: _load, what: 'payables', builder: _content),
       ),
     );
   }
 
   Widget _content(List<dynamic> data) {
-    final bills = (data[0] as dynamic).bills;
+    final bills = _billViews(data[0]);
     final payments = data[1] as List<dynamic>;
     final credits = data[2] as List<dynamic>;
     return TabBarView(
       children: [
-        _payableList(
-          title: 'Purchase bills',
-          subtitle: 'Review bills and outstanding vendor balances.',
-          icon: Icons.receipt_long_outlined,
-          rows: List<dynamic>.from(bills),
-          emptyTitle: 'No purchase bills',
-          emptyMessage: 'Outstanding vendor bills and balances appear here.',
-          itemBuilder: (b) => dataCard(
-            title: pickText(b.raw, [
-              'billNo',
-              'billNumber',
-            ], fallback: 'Bill #${b.id}'),
-            subtitle:
-                '${pickText(b.raw, ['vendorName', 'vendor'])}  •  ${b.status}',
-            amount: '₹${b.totalAmount.toStringAsFixed(2)}',
-            icon: Icons.receipt_long_outlined,
-          ),
-        ),
+        _billsTab(bills),
         _payableList(
           title: 'Vendor payments',
           subtitle: 'Follow payments recorded against vendor bills.',
@@ -106,17 +98,23 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
           rows: payments,
           emptyTitle: 'No vendor payments',
           emptyMessage: 'Payments recorded against bills appear here.',
-          itemBuilder: (p) => dataCard(
-            title: pickText(mapOf(p), [
-              'vendorName',
-              'vendor',
-              'billNo',
-            ], fallback: 'Vendor payment'),
-            subtitle:
-                '${pickText(mapOf(p), ['method', 'reference'])}  •  ${fmtDate(mapOf(p)['paidAt'] ?? mapOf(p)['createdAt'])}',
-            amount: '₹${fmtMoney(mapOf(p)['amount'])}',
-            icon: Icons.payments_outlined,
-          ),
+          itemBuilder: (p) {
+            final m = asMap(p);
+            final method = firstText(m, ['method']);
+            final ref = firstText(m, ['reference']);
+            final bill = firstText(m, ['billNo']);
+            return dataCard(
+              title: firstText(m, ['vendorName', 'vendor'], fallback: 'Vendor payment'),
+              subtitle: [
+                if (bill.isNotEmpty) bill,
+                if (method.isNotEmpty) method,
+                if (ref.isNotEmpty) ref,
+                dateText(m['paidAt'] ?? m['createdAt']),
+              ].join('  •  '),
+              amount: inr(m['amount']),
+              icon: Icons.payments_outlined,
+            );
+          },
         ),
         _payableList(
           title: 'Vendor credits',
@@ -125,20 +123,223 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
           rows: credits,
           emptyTitle: 'No vendor credits',
           emptyMessage: 'Credits applied to vendor balances appear here.',
-          itemBuilder: (c) => dataCard(
-            title: pickText(mapOf(c), [
-              'vendorName',
-              'vendor',
-              'billNo',
-            ], fallback: 'Vendor credit'),
-            subtitle: pickText(mapOf(c), ['reason', 'creditedAt', 'createdAt']),
-            amount: '₹${fmtMoney(mapOf(c)['amount'])}',
-            icon: Icons.credit_score_outlined,
-          ),
+          itemBuilder: (c) {
+            final m = asMap(c);
+            final bill = firstText(m, ['billNo']);
+            final reason = firstText(m, ['reason']);
+            return dataCard(
+              title: firstText(m, ['vendorName', 'vendor'], fallback: 'Vendor credit'),
+              subtitle: [
+                if (bill.isNotEmpty) bill,
+                if (reason.isNotEmpty) reason,
+                dateText(m['creditedAt'] ?? m['createdAt']),
+              ].join('  •  '),
+              amount: inr(m['amount']),
+              icon: Icons.credit_score_outlined,
+            );
+          },
         ),
       ],
     );
   }
+
+  // ───────── Bills tab ─────────
+
+  Widget _billsTab(List<BillView> all) {
+    final q = _search.text.trim().toLowerCase();
+    final shown = all.where((b) {
+      if (_filter == 'OPEN' && b.balance <= 0) return false;
+      if (_filter == 'PAID' && !b.isPaid) return false;
+      if (q.isEmpty) return true;
+      return b.billNo.toLowerCase().contains(q) ||
+          b.vendorName.toLowerCase().contains(q) ||
+          b.invoiceNo.toLowerCase().contains(q) ||
+          b.poNo.toLowerCase().contains(q);
+    }).toList();
+
+    final totalBilled = all.fold<num>(0, (s, b) => s + b.amount);
+    final totalDue = all.fold<num>(0, (s, b) => s + b.balance);
+    final t = Theme.of(context).textTheme;
+
+    return refreshList([
+      pageHeader(
+        title: 'Purchase bills',
+        subtitle: 'Review bills and outstanding vendor balances.',
+        icon: Icons.receipt_long_outlined,
+      ),
+      Row(
+        children: [
+          Expanded(child: _summaryTile('Total billed', inr(totalBilled), t)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _summaryTile('Outstanding', inr(totalDue), t, color: const Color(0xFFB45309)),
+          ),
+        ],
+      ),
+      const SizedBox(height: 10),
+      TextField(
+        controller: _search,
+        onChanged: (_) => setState(() {}),
+        decoration: InputDecoration(
+          hintText: 'Search bill, vendor, invoice or PO',
+          prefixIcon: const Icon(Icons.search),
+          isDense: true,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        children: [
+          for (final f in const ['ALL', 'OPEN', 'PAID'])
+            ChoiceChip(
+              label: Text(f == 'ALL' ? 'All' : f == 'OPEN' ? 'Unpaid' : 'Paid'),
+              selected: _filter == f,
+              onSelected: (_) => setState(() => _filter = f),
+            ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      countBadge('Records', shown.length, icon: Icons.receipt_long_outlined),
+      const SizedBox(height: 12),
+      if (shown.isEmpty)
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              children: [
+                Icon(Icons.receipt_long_outlined, size: 32, color: Theme.of(context).colorScheme.outline),
+                const SizedBox(height: 9),
+                Text('No purchase bills', style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                Text(
+                  'Outstanding vendor bills and balances appear here.',
+                  textAlign: TextAlign.center,
+                  style: t.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        )
+      else
+        for (final b in shown) _billCard(b, all),
+    ]);
+  }
+
+  Widget _summaryTile(String label, String value, TextTheme t, {Color? color}) => Card(
+    margin: EdgeInsets.zero,
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: t.bodySmall),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: color)),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _billCard(BillView b, List<BillView> all) {
+    final t = Theme.of(context).textTheme;
+    final status = b.isOverdue ? 'OVERDUE' : b.status;
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _openBill(b, all),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(b.billNo, style: t.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                  ),
+                  StatusChip(status),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                [
+                  b.vendorName,
+                  if (b.invoiceNo.isNotEmpty) 'Inv ${b.invoiceNo}',
+                  if (b.poNo.isNotEmpty) b.poNo,
+                ].join('  •  '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: t.bodySmall,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: _kv('Amount', inr(b.amount), t)),
+                  Expanded(child: _kv('Paid', inr(b.paid + b.credited), t)),
+                  Expanded(
+                    child: _kv(
+                      'Balance',
+                      inr(b.balance),
+                      t,
+                      color: b.balance > 0 ? const Color(0xFFB45309) : const Color(0xFF15803D),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(value: b.settledFraction, minHeight: 4),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Invoice ${dateText(b.invoiceDate)}   •   Due ${dateText(b.dueDate)}',
+                style: t.labelSmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _kv(String k, String v, TextTheme t, {Color? color}) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(k, style: t.labelSmall),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(v, style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700, color: color)),
+      ),
+    ],
+  );
+
+  Future<List<MapEntry<int, String>>> _vendorList() async {
+    final res = await ref.read(inventoryRepositoryProvider).getVendors(limit: 200);
+    return [for (final v in res.vendors) MapEntry<int, String>(v.id, v.name)];
+  }
+
+  Future<void> _openBill(BillView b, List<BillView> all) async {
+    try {
+      final vendors = await _vendorList();
+      if (!mounted) return;
+      final changed = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PurchaseBillDetailScreen(bill: b, vendors: vendors, allBills: all),
+        ),
+      );
+      if (changed == true) reload();
+    } catch (e) {
+      showError(e);
+    }
+  }
+
+  // ───────── generic list for payments / credits ─────────
 
   Widget _payableList({
     required String title,
@@ -160,18 +361,10 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
             children: [
               Icon(icon, size: 32, color: Theme.of(context).colorScheme.outline),
               const SizedBox(height: 9),
-              Text(
-                emptyTitle,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text(emptyTitle,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
-              Text(
-                emptyMessage,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text(emptyMessage, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
@@ -180,6 +373,8 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
       for (final row in rows) itemBuilder(row),
   ]);
 
+  // ───────── actions ─────────
+
   Future<void> _payableActions() async {
     final auth = ref.read(authProvider);
     final choice = await showModalBottomSheet<String>(
@@ -187,13 +382,10 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
       builder: (c) => SafeArea(
         child: Wrap(
           children: [
-            if (auth.canAny(const [
-              AppPermissions.billManage,
-              AppPermissions.purchaseOrderManage,
-            ]))
+            if (auth.canAny(const [AppPermissions.billManage, AppPermissions.purchaseOrderManage]))
               ListTile(
                 leading: const Icon(Icons.receipt_long_outlined),
-                title: const Text('Create manual bill'),
+                title: const Text('Create purchase bill'),
                 onTap: () => Navigator.pop(c, 'Bill'),
               ),
             if (auth.can(AppPermissions.vendorPaymentManage))
@@ -212,298 +404,33 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
         ),
       ),
     );
-    if (choice == 'Bill') await _createManualBill();
-    if (choice == 'Payment') await _vendorSettlement(credit: false);
-    if (choice == 'Credit') await _vendorSettlement(credit: true);
-  }
-
-  Future<void> _vendorSettlement({required bool credit}) async {
-    final repo = ref.read(inventoryRepositoryProvider);
-    try {
-      final vendors = (await repo.getVendors(limit: 200)).vendors;
-      final bills = (await repo.getPurchaseBills()).bills;
-      if (!mounted) return;
-      int? vendorId;
-      int? billId;
-      String method = 'Bank Transfer';
-      final amount = TextEditingController();
-      final reference = TextEditingController();
-      final reason = TextEditingController();
-      final formKey = GlobalKey<FormState>();
-      final done = await showDialog<bool>(
-        context: context,
-        builder: (context) => StatefulBuilder(
-          builder: (context, setModal) => AlertDialog(
-            title: Text(
-              credit ? 'Record vendor credit' : 'Record vendor payment',
-            ),
-            content: SizedBox(
-              width: 420,
-              child: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(labelText: 'Vendor'),
-                        items: [
-                          for (final v in vendors)
-                            DropdownMenuItem(
-                              value: v.id,
-                              child: Text(
-                                v.name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                        ],
-                        onChanged: (v) => setModal(() => vendorId = v),
-                        validator: (v) => v == null ? 'Select a vendor' : null,
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(labelText: 'Bill'),
-                        items: [
-                          for (final b in bills)
-                            DropdownMenuItem(
-                              value: b.id,
-                              child: Text(
-                                b.billNumber,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                        ],
-                        onChanged: (v) => setModal(() => billId = v),
-                        validator: (v) => v == null ? 'Select a bill' : null,
-                      ),
-                      TextFormField(
-                        controller: amount,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Amount',
-                          prefixText: '₹ ',
-                        ),
-                        validator: (v) => (num.tryParse(v ?? '') ?? 0) <= 0
-                            ? 'Enter an amount greater than zero'
-                            : null,
-                      ),
-                      if (!credit)
-                        DropdownButtonFormField<String>(
-                          value: method,
-                          decoration: const InputDecoration(
-                            labelText: 'Payment method',
-                          ),
-                          items: [
-                            for (final m in [
-                              'Bank Transfer',
-                              'UPI',
-                              'Cheque',
-                              'Cash',
-                            ])
-                              DropdownMenuItem(value: m, child: Text(m)),
-                          ],
-                          onChanged: (v) =>
-                              setModal(() => method = v ?? method),
-                        ),
-                      if (!credit)
-                        TextFormField(
-                          controller: reference,
-                          decoration: const InputDecoration(
-                            labelText: 'Reference (optional)',
-                          ),
-                        ),
-                      if (credit)
-                        TextFormField(
-                          controller: reason,
-                          decoration: const InputDecoration(
-                            labelText: 'Reason (optional)',
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (formKey.currentState!.validate())
-                    Navigator.pop(context, true);
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          ),
-        ),
+    if (choice == 'Bill') {
+      final created = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const CreatePurchaseBillScreen()),
       );
-      if (done != true || vendorId == null) return;
-      final body = <String, dynamic>{
-        'vendorId': vendorId,
-        'amount': num.parse(amount.text),
-        if (billId != null) 'billId': billId,
-        if (credit) 'reason': reason.text.trim(),
-        if (credit)
-          'creditedAt': DateTime.now().toIso8601String().substring(0, 10),
-        if (!credit) 'method': method,
-        if (!credit && reference.text.trim().isNotEmpty)
-          'reference': reference.text.trim(),
-        if (!credit)
-          'paidAt': DateTime.now().toIso8601String().substring(0, 10),
-      };
-      await (credit
-          ? repo.createVendorCredit(body)
-          : repo.createVendorPayment(body));
-      showSuccess(credit ? 'Vendor credit recorded' : 'Payment recorded');
-    } catch (e) {
-      showError(e);
+      if (created == true) reload();
     }
+    if (choice == 'Payment') await _settle(credit: false);
+    if (choice == 'Credit') await _settle(credit: true);
   }
 
-  Future<void> _createManualBill() async {
+  Future<void> _settle({required bool credit}) async {
     try {
       final repo = ref.read(inventoryRepositoryProvider);
-      final vendors = (await repo.getVendors(limit: 200)).vendors;
+      final vendors = await _vendorList();
+      final bills = _billViews(await repo.getPurchaseBills(limit: 200));
       if (!mounted) return;
-      int? vendorId;
-      bool reverseCharge = false;
-      String itcEligibility = 'ELIGIBLE';
-      final invoiceNo = TextEditingController();
-      final poNo = TextEditingController();
-      final notes = TextEditingController();
-      final formKey = GlobalKey<FormState>();
-      final today = DateTime.now();
-      final invoiceDate = today.toIso8601String().substring(0, 10);
-      final dueDate = today
-          .add(const Duration(days: 30))
-          .toIso8601String()
-          .substring(0, 10);
-      final submit = await showDialog<bool>(
-        context: context,
-        builder: (context) => StatefulBuilder(
-          builder: (context, setModal) => AlertDialog(
-            title: const Text('Create manual bill'),
-            content: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(labelText: 'Vendor'),
-                      items: [
-                        for (final v in vendors)
-                          DropdownMenuItem(
-                            value: v.id,
-                            child: Text(
-                              v.name,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                      onChanged: (v) => setModal(() => vendorId = v),
-                      validator: (v) => v == null ? 'Select a vendor' : null,
-                    ),
-                    TextFormField(
-                      controller: invoiceNo,
-                      decoration: const InputDecoration(
-                        labelText: 'Vendor invoice number',
-                      ),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Invoice number is required'
-                          : null,
-                    ),
-                    TextField(
-                      controller: poNo,
-                      decoration: const InputDecoration(
-                        labelText: 'PO number (optional)',
-                      ),
-                    ),
-                    TextField(
-                      controller: notes,
-                      decoration: const InputDecoration(
-                        labelText: 'Notes (optional)',
-                      ),
-                      maxLines: 2,
-                    ),
-                    DropdownButtonFormField<String>(
-                      value: itcEligibility,
-                      decoration: const InputDecoration(
-                        labelText: 'Input tax credit',
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'ELIGIBLE',
-                          child: Text('Eligible'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'INELIGIBLE',
-                          child: Text('Ineligible'),
-                        ),
-                      ],
-                      onChanged: (v) =>
-                          setModal(() => itcEligibility = v ?? itcEligibility),
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Reverse charge'),
-                      value: reverseCharge,
-                      onChanged: (v) => setModal(() => reverseCharge = v),
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Invoice date: $invoiceDate  •  Due date: $dueDate',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'This records the bill header. Bill lines can be added from Accounts.',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.black54),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (formKey.currentState!.validate())
-                    Navigator.pop(context, true);
-                },
-                child: const Text('Create'),
-              ),
-            ],
-          ),
-        ),
+      final body = await showVendorSettlementDialog(
+        context,
+        credit: credit,
+        vendors: vendors,
+        bills: bills,
       );
-      if (submit != true || vendorId == null) return;
-      final vendor = vendors.firstWhere((v) => v.id == vendorId);
-      await repo.createManualBill({
-        'vendorId': vendor.id,
-        'vendor': vendor.name,
-        'poNo': poNo.text.trim(),
-        'vendorInvoiceNo': invoiceNo.text.trim(),
-        'invoiceDate': invoiceDate,
-        'dueDate': dueDate,
-        'notes': notes.text.trim(),
-        'reverseCharge': reverseCharge,
-        'itcEligibility': itcEligibility,
-        'lines': <dynamic>[],
-      });
-      showSuccess('Manual bill created');
+      if (body == null) return;
+      await (credit ? repo.createVendorCredit(body) : repo.createVendorPayment(body));
+      showSuccess(credit ? 'Vendor credit recorded' : 'Payment recorded');
+      reload(); // the old screen never refreshed after saving
     } catch (e) {
       showError(e);
     }
