@@ -119,29 +119,34 @@ class HomeScreen extends ConsumerWidget {
         anyOf: AppPermissions.crmVisits,
       ),
     ], anyOf: AppPermissions.crmModule),
-    LinkSection('Inventory', [
+       LinkSection('Inventory', [
       QuickLink(
         'Dashboard',
         '/crm/inventory_sales_screen',
         Icons.fingerprint_rounded,
         anyOf: AppPermissions.inventoryModule,
       ),
+
+      // ---- Catalog ----
       QuickLink(
         'Products',
         '/products_screen',
         Icons.inventory_2_outlined,
+        group: 'Catalog',
         anyOf: AppPermissions.productAccess,
       ),
       QuickLink(
         'Product Categories',
         '/product-categories',
         Icons.category_outlined,
+        group: 'Catalog',
         anyOf: AppPermissions.productCategories,
       ),
       QuickLink(
         'Bill of Materials',
         '/bom',
         Icons.account_tree_outlined,
+        group: 'Catalog',
         anyOf: AppPermissions.bomAccess,
       ),
 
@@ -150,83 +155,93 @@ class HomeScreen extends ConsumerWidget {
         'Vendors',
         '/vendors',
         Icons.business_outlined,
+        group: 'Purchase',
         anyOf: AppPermissions.vendors,
       ),
       QuickLink(
         'Purchase demand',
         '/purchase-demand',
         Icons.shopping_cart_checkout_outlined,
+        group: 'Purchase',
         anyOf: AppPermissions.purchaseDemand,
       ),
       QuickLink(
         'Purchase orders',
         '/purchase-orders',
         Icons.receipt_long_outlined,
+        group: 'Purchase',
         anyOf: [AppPermissions.purchaseOrderView],
       ),
       QuickLink(
         'Purchase received',
         '/purchase-received',
         Icons.call_received_outlined,
+        group: 'Purchase',
         anyOf: AppPermissions.purchaseReceived,
       ),
       QuickLink(
         'Bills & payables',
         '/inventory/payables',
         Icons.request_quote_outlined,
+        group: 'Purchase',
         anyOf: AppPermissions.inventoryOperations,
       ),
 
-
-      // inventory
-
-        QuickLink(
+      // ---- Stock ----
+      QuickLink(
         'Stock IN / Stock OUT',
         '/inventory/stock',
         Icons.swap_horiz_rounded,
+        group: 'Stock',
         anyOf: AppPermissions.inventoryOperations,
       ),
       QuickLink(
         'Warehouses',
         '/inventory/warehouses',
         Icons.warehouse_outlined,
+        group: 'Stock',
         anyOf: AppPermissions.inventoryOperations,
       ),
       QuickLink(
         'Movement ledger',
         '/inventory/ledger',
         Icons.receipt_long_outlined,
+        group: 'Stock',
         anyOf: AppPermissions.inventoryOperations,
       ),
-
-        QuickLink(
+      QuickLink(
         'Stock lookup',
         '/stock-lookup',
         Icons.search_outlined,
+        group: 'Stock',
         anyOf: AppPermissions.stockLookup,
       ),
       QuickLink(
         'Low stock',
         '/low-stock',
         Icons.warning_amber_outlined,
+        group: 'Stock',
         anyOf: AppPermissions.lowStock,
       ),
       QuickLink(
         'Lots',
         '/inventory/lots',
         Icons.inventory_2_outlined,
+        group: 'Stock',
         anyOf: AppPermissions.inventoryOperations,
       ),
       QuickLink(
         'Sellable Inventory',
         '/inventory/sellable',
         Icons.sell_outlined,
+        group: 'Stock',
         anyOf: AppPermissions.inventoryOperations,
       ),
       QuickLink(
         'Processed lots & FG',
         '/inventory/processed-fg',
         Icons.inventory_2_outlined,
+        group: 'Stock',
         anyOf: AppPermissions.inventoryOperations,
       ),
 
@@ -235,12 +250,14 @@ class HomeScreen extends ConsumerWidget {
         'Reports',
         '/inventory/reports',
         Icons.bar_chart_rounded,
+        group: 'Reports & Documents',
         anyOf: AppPermissions.inventoryOperations,
       ),
       QuickLink(
         'Documents',
         '/inventory/documents',
         Icons.description_outlined,
+        group: 'Reports & Documents',
         anyOf: AppPermissions.inventoryOperations,
       ),
 
@@ -249,6 +266,7 @@ class HomeScreen extends ConsumerWidget {
         'Inventory approvals',
         '/inventory-advanced',
         Icons.fact_check_outlined,
+        group: 'Approvals',
         anyOf: AppPermissions.inventoryAdvanced,
       ),
     ]),
