@@ -261,12 +261,12 @@ class HomeScreen extends ConsumerWidget {
         anyOf: AppPermissions.inventoryOperations,
       ),
 
-      // ---- Approvals ----
+      // ---- Advanced inventory ----
       QuickLink(
-        'Inventory approvals',
+        'Inventory advanced',
         '/inventory-advanced',
         Icons.fact_check_outlined,
-        group: 'Approvals',
+        group: 'Inventory',
         anyOf: AppPermissions.inventoryAdvanced,
       ),
     ]),

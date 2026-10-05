@@ -501,14 +501,17 @@ class _BusinessOverviewGrid extends StatelessWidget {
       },
     ];
 
+    final textScaler = MediaQuery.textScalerOf(context);
+    final cardHeight = max(88.0, textScaler.scale(64));
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // 2 Columns make cards wide and readable
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 2.1, // Adjusts height/length of boxes properly
+        mainAxisExtent: cardHeight,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -527,17 +530,21 @@ class _BusinessOverviewGrid extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    item['title'] as String,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey,
-                      letterSpacing: 0.5,
+                  Expanded(
+                    child: Text(
+                      item['title'] as String,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Icon(item['icon'] as IconData, size: 16, color: itemColor),
                 ],
               ),
@@ -721,16 +728,23 @@ class _TopProductsList extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    product.name,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
+                  Expanded(
+                    child: Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     '${product.currentStock} units',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

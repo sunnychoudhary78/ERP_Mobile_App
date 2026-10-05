@@ -14,10 +14,19 @@ class ApiException implements Exception {
   const ApiException({this.statusCode, this.message, this.payload});
 
   @override
-  String toString() => [
-    if (statusCode != null) 'HTTP $statusCode',
-    if (message != null && message!.isNotEmpty) message!,
-  ].join(': ');
+  String toString() {
+    if (statusCode == 400) {
+      final detail = message?.trim();
+      return detail == null || detail.isEmpty
+          ? 'Please check the information and try again.'
+          : 'Please check the information and try again. $detail';
+    }
+
+    return [
+      if (statusCode != null) 'HTTP $statusCode',
+      if (message != null && message!.isNotEmpty) message!,
+    ].join(': ');
+  }
 }
 
 class ApiService {
@@ -218,6 +227,12 @@ class ApiService {
 
     final errorMessage = _findErrorMessage(errorData);
     final statusCode = e.response?.statusCode;
+    if (statusCode == 400 && errorMessage != null) {
+      debugPrint(
+        'API ERROR ${e.requestOptions.method} ${e.requestOptions.uri} '
+        'HTTP 400: $errorMessage',
+      );
+    }
     if (statusCode != null) {
       return ApiException(
         statusCode: statusCode,
@@ -253,7 +268,14 @@ class ApiService {
     }
     if (value is! Map) return null;
 
-    for (final key in const ['message', 'error', 'detail']) {
+    for (final key in const [
+      'message',
+      'error',
+      'detail',
+      'msg',
+      'reason',
+      'description',
+    ]) {
       final message = _findErrorMessage(value[key]);
       if (message != null) return message;
     }

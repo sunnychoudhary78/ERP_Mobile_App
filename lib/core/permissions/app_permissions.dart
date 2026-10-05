@@ -165,6 +165,29 @@ abstract final class AppPermissions {
     productionPlanningManage,
   ];
 
+  static const List<String> inventoryApprovals = [approvalView, myApprovalView];
+
+  static const List<String> inventorySalesAccess = [
+    customerView,
+    customerManage,
+    salesOrderView,
+    salesOrderManage,
+    invoiceView,
+  ];
+
+  static const List<String> inventoryLegacyProductionAccess = [
+    productionView,
+    productionOrderView,
+    productionOrdersView,
+    workOrderView,
+    productionPlanningManage,
+  ];
+
+  static const List<String> inventoryAccountsAccess = [
+    inventoryReportView,
+    inventoryManage,
+  ];
+
   static const List<String> stockLookup = [
     productView,
     inventoryView,

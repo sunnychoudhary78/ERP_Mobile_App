@@ -11,6 +11,10 @@ import 'products_screen.dart';
 
 const _statusOptions = ['ACTIVE', 'PENDING', 'REJECTED', 'INACTIVE'];
 const _productTypeOptions = ['Physical', 'Service'];
+const _productTypeApiValues = {
+  'Physical': 'FINISHED',
+  'Service': 'SERVICE',
+};
 const _sourcingOptions = {
   'Purchased': 'BUY',
   'In House': 'MAKE',
@@ -62,6 +66,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   int? _categoryId;
   int? _warehouseId;
+  String? _warehouseHint;
   final List<_ProductDimensionDraft> _dimensions = [];
   String _status = 'ACTIVE';
   String _productType = 'Physical';
@@ -99,9 +104,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           );
         }) ?? const <_ProductDimensionDraft>[]);
     _status = e?.status?.toUpperCase() ?? 'ACTIVE';
-    _productType = _productTypeOptions.contains(e?.productType)
-        ? e!.productType!
-        : 'Physical';
+    _productType = switch (e?.productType?.toUpperCase()) {
+      'SERVICE' => 'Service',
+      _ => 'Physical',
+    };
     _sourcing = _sourcingOptions.containsValue(e?.sourcing?.toUpperCase())
         ? e!.sourcing!.toUpperCase()
         : 'BUY';
@@ -255,11 +261,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         'sellingPrice': _numOrNull(_sellingPrice.text),
       if (_numOrNull(_costPrice.text) != null)
         'costPrice': _numOrNull(_costPrice.text),
-      'productType': _productType,
+      'productType': _productTypeApiValues[_productType],
       'sourcing': _sourcing,
       if (_numOrNull(_openingStock.text) != null)
         'openingStock': _numOrNull(_openingStock.text),
-      if (_warehouseId != null) 'warehouseHint': _warehouseId,
+      if (_warehouseHint != null) 'warehouseHint': _warehouseHint,
       if (_dimensions.any((dimension) => dimension.label.text.trim().isNotEmpty))
         'productDimensions': _dimensions
             .where((dimension) => dimension.label.text.trim().isNotEmpty)
@@ -487,10 +493,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                         style: TextStyle(color: AppColors.danger, fontSize: 12),
                       ),
                       data: (warehouses) => _dropdown<int>(
-                        label: 'Warehouse *',
+                        label: 'Warehouse (optional)',
                         value: _warehouseId,
-                        validator: (value) =>
-                            value == null ? 'Please select a warehouse' : null,
                         items: [
                           const DropdownMenuItem<int>(
                             value: null,
@@ -503,8 +507,19 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                             ),
                           ),
                         ],
-                        onChanged: (value) =>
-                            setState(() => _warehouseId = value),
+                        onChanged: (value) {
+                          String? warehouseHint;
+                          for (final warehouse in warehouses) {
+                            if (warehouse.id == value) {
+                              warehouseHint = warehouse.name;
+                              break;
+                            }
+                          }
+                          setState(() {
+                            _warehouseId = value;
+                            _warehouseHint = warehouseHint;
+                          });
+                        },
                       ),
                     ),
                     _field(_openingStock, 'Opening stock',

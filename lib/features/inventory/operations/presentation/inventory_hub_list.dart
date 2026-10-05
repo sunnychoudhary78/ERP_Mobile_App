@@ -6,12 +6,14 @@ class HubSection {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.requiredPermissions = const [],
     required this.builder,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final List<String> requiredPermissions;
   final WidgetBuilder builder;
 }
 

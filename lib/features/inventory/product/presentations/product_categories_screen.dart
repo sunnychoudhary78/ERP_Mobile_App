@@ -5,6 +5,7 @@ import 'package:erp_app/features/inventory/product/data/model/product_category_m
 import 'package:erp_app/features/inventory/product/data/provider/product_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
 class ProductCategoriesScreen extends ConsumerStatefulWidget {
   const ProductCategoriesScreen({super.key});
@@ -183,12 +184,18 @@ class _ProductCategoriesScreenState
       builder: (_) => _CategoryForm(category: category),
     );
     if (result == null || !mounted) return;
+    if (result.noChanges) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No changes to save')),
+      );
+      return;
+    }
 
     try {
       final notifier = ref.read(productCategoriesManagementProvider.notifier);
       final response = category == null
-          ? await notifier.create(result.body)
-          : await notifier.update(category.id, result.body);
+          ? await notifier.create(result.body!)
+          : await notifier.update(category.id, result.body!);
       final approval = response['approvalId'];
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -353,11 +360,11 @@ class _CategoryCard extends StatelessWidget {
               icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.text),
               visualDensity: VisualDensity.compact,
             ),
-            IconButton(
-              onPressed: onDelete,
-              icon: Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
-              visualDensity: VisualDensity.compact,
-            ),
+            // IconButton(
+            //   onPressed: onDelete,
+            //   icon: Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
+            //   visualDensity: VisualDensity.compact,
+            // ),
           ],
         ],
       ),
@@ -366,9 +373,12 @@ class _CategoryCard extends StatelessWidget {
 }
 
 class _CategoryFormResult {
-  final Map<String, dynamic> body;
+  final Map<String, dynamic>? body;
+  final bool noChanges;
 
-  const _CategoryFormResult(this.body);
+  const _CategoryFormResult(this.body) : noChanges = false;
+
+  const _CategoryFormResult.noChanges() : body = null, noChanges = true;
 }
 
 class _CategoryForm extends StatefulWidget {
@@ -545,12 +555,22 @@ class _CategoryFormState extends State<_CategoryForm> {
                       TextFormField(
                         controller: _hsnController,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(8),
+                        ],
                         scrollPadding: const EdgeInsets.only(bottom: 120),
                         decoration: _decoration('HSN/SAC', required: true),
-                        validator: (value) =>
-                            value == null || value.trim().isEmpty
-                                ? 'HSN/SAC is required'
-                                : null,
+                        validator: (value) {
+                          final hsnSac = value?.trim() ?? '';
+                          if (hsnSac.isEmpty) return 'HSN/SAC is required';
+                          if (!RegExp(
+                            r'^(?:\d{4}|\d{6}|\d{8})$',
+                          ).hasMatch(hsnSac)) {
+                            return 'Enter a 4, 6, or 8 digit HSN/SAC code';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 12),
                       _PickerField(
@@ -594,16 +614,36 @@ class _CategoryFormState extends State<_CategoryForm> {
   }
 
   void _submit() {
+    final body = {
+      'name': _nameController.text.trim(),
+      'type': _type,
+      'status': _status,
+      'hsnSac': _hsnController.text.trim(),
+    };
+
+    if (_isUnchanged(body)) {
+      Navigator.pop(context, const _CategoryFormResult.noChanges());
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
+
     Navigator.pop(
       context,
-      _CategoryFormResult({
-        'name': _nameController.text.trim(),
-        'type': _type,
-        'status': _status,
-        'hsnSac': _hsnController.text.trim(),
-      }),
+      _CategoryFormResult(body),
     );
+  }
+
+  bool _isUnchanged(Map<String, dynamic> body) {
+    final category = widget.category;
+    if (category == null) return false;
+
+    final originalType = category.type?.trim().isNotEmpty == true
+        ? category.type!.trim()
+        : 'General';
+    return body['name'] == category.name.trim() &&
+        body['type'] == originalType &&
+        body['status'] == category.status.toUpperCase() &&
+        body['hsnSac'] == (category.hsnSac?.trim() ?? '');
   }
 }
 

@@ -12,10 +12,12 @@ class InventoryApprovalInboxScreen extends ConsumerStatefulWidget {
   const InventoryApprovalInboxScreen({super.key});
 
   @override
-  ConsumerState<InventoryApprovalInboxScreen> createState() => _InventoryApprovalInboxScreenState();
+  ConsumerState<InventoryApprovalInboxScreen> createState() =>
+      _InventoryApprovalInboxScreenState();
 }
 
-class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApprovalInboxScreen>
+class _InventoryApprovalInboxScreenState
+    extends ConsumerState<InventoryApprovalInboxScreen>
     with InventoryUiHelpers<InventoryApprovalInboxScreen> {
   late Future<List<dynamic>> _load;
 
@@ -29,16 +31,13 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
     final repo = ref.read(inventoryRepositoryProvider);
     final auth = ref.read(authProvider);
     return Future.wait<dynamic>([
-      auth.canAny(const [
-            AppPermissions.approvalView,
-            AppPermissions.myApprovalView,
-          ])
+      auth.can(AppPermissions.approvalView)
           ? repo.getInventoryApprovals()
           : Future.value(<String, dynamic>{'data': <dynamic>[]}),
       auth.can(AppPermissions.myApprovalView)
           ? repo.getMyPendingApprovals()
           : Future.value(<String, dynamic>{'data': <dynamic>[]}),
-      auth.can(AppPermissions.approvalView)
+      auth.can(AppPermissions.myApprovalView)
           ? repo.getMyApprovalRequests()
           : Future.value(<String, dynamic>{'data': <dynamic>[]}),
     ]);
@@ -51,16 +50,32 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authProvider);
+    final canViewTeamInbox = auth.can(AppPermissions.approvalView);
+    final canViewMyApprovals = auth.can(AppPermissions.myApprovalView);
+    final tabCount = (canViewTeamInbox ? 1 : 0) + (canViewMyApprovals ? 2 : 0);
+
+    if (tabCount == 0) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Approvals')),
+        body: const Center(
+          child: Text("You don't have permission to view approvals"),
+        ),
+      );
+    }
+
     return DefaultTabController(
-      length: 3,
+      length: tabCount,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Approvals'),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Team inbox'),
-              Tab(text: 'My pending'),
-              Tab(text: 'My requests'),
+              if (canViewTeamInbox) const Tab(text: 'Team inbox'),
+              if (canViewMyApprovals) ...const [
+                Tab(text: 'My pending'),
+                Tab(text: 'My requests'),
+              ],
             ],
           ),
         ),
@@ -78,42 +93,45 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
     final minePending = asRows(data[1]);
     final mine = asRows(data[2]);
     final auth = ref.read(authProvider);
-    final canApprove = auth.canAny(const [
-      AppPermissions.approvalApprove,
-      AppPermissions.myApprovalView,
-    ]);
-    final canReject = auth.can(AppPermissions.approvalReject) || canApprove;
+    final canApprove = auth.can(AppPermissions.approvalApprove);
+    final canReject = auth.can(AppPermissions.approvalReject);
     final canResubmit = auth.can(AppPermissions.myApprovalView);
+    final canViewTeamInbox = auth.can(AppPermissions.approvalView);
+    final canViewMyApprovals = auth.can(AppPermissions.myApprovalView);
+
     return TabBarView(
       children: [
-        _approvalList(
-          title: 'Team inbox',
-          subtitle: 'Review and action requests from your team.',
-          icon: Icons.inbox_outlined,
-          rows: inbox,
-          emptyTitle: 'Nothing to review',
-          emptyMessage: 'No requests are waiting for your review.',
-          itemBuilder: (r) =>
-              _approvalCard(r, canApprove: canApprove, canReject: canReject),
-        ),
-        _approvalList(
-          title: 'My pending',
-          subtitle: 'Requests assigned to you that still need attention.',
-          icon: Icons.hourglass_top_outlined,
-          rows: minePending,
-          emptyTitle: 'No pending approvals',
-          emptyMessage: 'Requests awaiting a decision appear here.',
-          itemBuilder: (r) => _approvalCard(r, resubmit: canResubmit),
-        ),
-        _approvalList(
-          title: 'My requests',
-          subtitle: 'Track the status of requests you have submitted.',
-          icon: Icons.outbox_outlined,
-          rows: mine,
-          emptyTitle: 'No submitted requests',
-          emptyMessage: 'Requests you have submitted appear here.',
-          itemBuilder: (r) => _approvalCard(r, resubmit: canResubmit),
-        ),
+        if (canViewTeamInbox)
+          _approvalList(
+            title: 'Team inbox',
+            subtitle: 'Review and action requests from your team.',
+            icon: Icons.inbox_outlined,
+            rows: inbox,
+            emptyTitle: 'Nothing to review',
+            emptyMessage: 'No requests are waiting for your review.',
+            itemBuilder: (r) =>
+                _approvalCard(r, canApprove: canApprove, canReject: canReject),
+          ),
+        if (canViewMyApprovals) ...[
+          _approvalList(
+            title: 'My pending',
+            subtitle: 'Requests assigned to you that still need attention.',
+            icon: Icons.hourglass_top_outlined,
+            rows: minePending,
+            emptyTitle: 'No pending approvals',
+            emptyMessage: 'Requests awaiting a decision appear here.',
+            itemBuilder: (r) => _approvalCard(r, resubmit: canResubmit),
+          ),
+          _approvalList(
+            title: 'My requests',
+            subtitle: 'Track the status of requests you have submitted.',
+            icon: Icons.outbox_outlined,
+            rows: mine,
+            emptyTitle: 'No submitted requests',
+            emptyMessage: 'Requests you have submitted appear here.',
+            itemBuilder: (r) => _approvalCard(r, resubmit: canResubmit),
+          ),
+        ],
       ],
     );
   }
@@ -136,13 +154,17 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
           padding: const EdgeInsets.all(22),
           child: Column(
             children: [
-              Icon(icon, size: 32, color: Theme.of(context).colorScheme.outline),
+              Icon(
+                icon,
+                size: 32,
+                color: Theme.of(context).colorScheme.outline,
+              ),
               const SizedBox(height: 9),
               Text(
                 emptyTitle,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
               Text(
@@ -202,9 +224,7 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        subtitle: Text(
-          '$status  •  ${_requesterName(row)}',
-        ),
+        subtitle: Text('$status  •  ${_requesterName(row)}'),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
         children: [
           if (row['description'] != null || row['summary'] != null)
@@ -308,9 +328,9 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: Theme.of(dialogContext)
-                              .colorScheme
-                              .primaryContainer,
+                          color: Theme.of(
+                            dialogContext,
+                          ).colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(13),
                         ),
                         child: Icon(
@@ -337,13 +357,11 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
                               'Request #$id  ·  ${_requestEntity(row)}  ·  By $requestedBy  ·  $requestedAt',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(dialogContext)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(dialogContext).textTheme.bodySmall
                                   ?.copyWith(
-                                    color: Theme.of(dialogContext)
-                                        .colorScheme
-                                        .onSurfaceVariant,
+                                    color: Theme.of(
+                                      dialogContext,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                             ),
                           ],
@@ -363,10 +381,13 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
                     padding: const EdgeInsets.all(18),
                     children: [
                       _requestFieldGrid([
-                        MapEntry('Module', pickText(row, [
-                          'module',
-                          'moduleName',
-                        ], fallback: title)),
+                        MapEntry(
+                          'Module',
+                          pickText(row, [
+                            'module',
+                            'moduleName',
+                          ], fallback: title),
+                        ),
                         MapEntry('Entity', _requestEntity(row)),
                         MapEntry('Status', status),
                         MapEntry(
@@ -381,10 +402,11 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
                       const SizedBox(height: 18),
                       Text(
                         '${_requestEntity(row).toUpperCase()} DETAILS',
-                        style: Theme.of(dialogContext).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: .5,
-                        ),
+                        style: Theme.of(dialogContext).textTheme.labelLarge
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: .5,
+                            ),
                       ),
                       const SizedBox(height: 10),
                       if (fields.isEmpty)
@@ -411,13 +433,15 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
                       ),
                       if (canReject && id != null)
                         OutlinedButton.icon(
-                          onPressed: () => Navigator.pop(dialogContext, 'reject'),
+                          onPressed: () =>
+                              Navigator.pop(dialogContext, 'reject'),
                           icon: const Icon(Icons.close),
                           label: const Text('Reject'),
                         ),
                       if (canApprove && id != null)
                         FilledButton.icon(
-                          onPressed: () => Navigator.pop(dialogContext, 'approve'),
+                          onPressed: () =>
+                              Navigator.pop(dialogContext, 'approve'),
                           icon: const Icon(Icons.check),
                           label: const Text('Approve'),
                         ),
@@ -523,15 +547,17 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
       .replaceAll('_', ' ')
       .split(RegExp(r'\s+'))
       .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+      .map(
+        (part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+      )
       .join(' ');
 
-  List<MapEntry<String, String>> _basicRequestFields(
-    Map<String, dynamic> row,
-  ) {
+  List<MapEntry<String, String>> _basicRequestFields(Map<String, dynamic> row) {
     final all = _flattenRequestFields(_requestPayload(row));
-    final type = pickText(row, ['requestType', 'type'], fallback: '')
-        .toUpperCase();
+    final type = pickText(row, [
+      'requestType',
+      'type',
+    ], fallback: '').toUpperCase();
     final preferred = type.startsWith('ITEM_') || type.startsWith('PRODUCT_')
         ? [
             'productcode',
@@ -589,7 +615,11 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
   }
 
   String _requestEntity(Map<String, dynamic> row) {
-    final explicit = pickText(row, ['entityName', 'entity', 'entityType'], fallback: '');
+    final explicit = pickText(row, [
+      'entityName',
+      'entity',
+      'entityType',
+    ], fallback: '');
     if (explicit.isNotEmpty) return explicit;
     final type = pickText(row, ['requestType', 'type'], fallback: 'Request');
     final normalized = type.toUpperCase();
@@ -603,8 +633,16 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
       'CATEGORY_',
     ]) {
       if (normalized.startsWith(prefix)) {
-        return prefix.replaceAll('_', ' ').trim().toLowerCase().split(' ')
-            .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}')
+        return prefix
+            .replaceAll('_', ' ')
+            .trim()
+            .toLowerCase()
+            .split(' ')
+            .map(
+              (part) => part.isEmpty
+                  ? part
+                  : '${part[0].toUpperCase()}${part.substring(1)}',
+            )
             .join(' ');
       }
     }
@@ -637,61 +675,61 @@ class _InventoryApprovalInboxScreenState extends ConsumerState<InventoryApproval
     return fields;
   }
 
-  Widget _requestFieldGrid(List<MapEntry<String, String>> fields) =>
-      LayoutBuilder(
-        builder: (context, constraints) {
-          final gap = 10.0;
-          final width = constraints.maxWidth >= 500
-              ? (constraints.maxWidth - gap) / 2
-              : constraints.maxWidth;
-          return Wrap(
-            spacing: gap,
-            runSpacing: gap,
-            children: [
-              for (final field in fields)
-                SizedBox(
-                  width: width,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 11,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .outlineVariant
-                            .withValues(alpha: .7),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          field.key.toUpperCase(),
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: .35,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        SelectableText(
-                          field.value,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+  Widget _requestFieldGrid(
+    List<MapEntry<String, String>> fields,
+  ) => LayoutBuilder(
+    builder: (context, constraints) {
+      final gap = 10.0;
+      final width = constraints.maxWidth >= 500
+          ? (constraints.maxWidth - gap) / 2
+          : constraints.maxWidth;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          for (final field in fields)
+            SizedBox(
+              width: width,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 13,
+                  vertical: 11,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: .7),
                   ),
                 ),
-            ],
-          );
-        },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      field.key.toUpperCase(),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .35,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    SelectableText(
+                      field.value,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       );
+    },
+  );
 
   Future<void> _approvalDecision(dynamic id, {required bool approve}) async {
     final note = TextEditingController();
