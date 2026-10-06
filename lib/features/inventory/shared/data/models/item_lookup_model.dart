@@ -6,6 +6,7 @@ class ItemLookupResult {
   final String? productCode;
   final String? brandName;
   final String? unit;
+  final String? hsnSac;
 
   ItemLookupResult({
     required this.id,
@@ -14,9 +15,14 @@ class ItemLookupResult {
     this.productCode,
     this.brandName,
     this.unit,
+    this.hsnSac,
   });
 
   factory ItemLookupResult.fromJson(Map<String, dynamic> json) {
+    final category = json['category'];
+    final categoryHsnSac = category is Map
+        ? category['hsnSac']?.toString()
+        : null;
     return ItemLookupResult(
       id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
       name: json['name']?.toString() ?? '',
@@ -24,6 +30,7 @@ class ItemLookupResult {
       productCode: json['productCode']?.toString(),
       brandName: json['brandName']?.toString(),
       unit: json['unit']?.toString(),
+      hsnSac: json['hsnSac']?.toString() ?? categoryHsnSac,
     );
   }
 }

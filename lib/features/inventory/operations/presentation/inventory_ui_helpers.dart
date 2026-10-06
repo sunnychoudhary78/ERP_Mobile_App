@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+final _inventoryMoneyFormat = NumberFormat('#,##,##0.00', 'en_IN');
 
 /// Shared helpers for every inventory section screen.
 ///
@@ -349,7 +352,7 @@ mixin InventoryUiHelpers<T extends ConsumerStatefulWidget>
   int toInt(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
   String fmtMoney(dynamic v) {
     final n = v is num ? v : num.tryParse('$v') ?? 0;
-    return n.toStringAsFixed(2);
+    return _inventoryMoneyFormat.format(n);
   }
 
   String fmtDate(dynamic v) {

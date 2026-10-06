@@ -452,44 +452,35 @@ class _VendorsScreenState extends ConsumerState<VendorsScreen> {
   }
 
   Future<void> _openForm([Vendor? vendor]) async {
-    final result = await showModalBottomSheet<_VendorFormResult>(
+    final response = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _VendorForm(vendor: vendor),
+      builder: (_) => _VendorForm(
+        vendor: vendor,
+        onSave: (body) async {
+          final repo = ref.read(inventoryRepositoryProvider);
+          return vendor == null
+              ? await repo.createVendor(body)
+              : await repo.updateVendor(vendor.id, body);
+        },
+      ),
     );
-    if (result == null || !mounted) return;
-
-    try {
-      final repo = ref.read(inventoryRepositoryProvider);
-      final response = vendor == null
-          ? await repo.createVendor(result.body)
-          : await repo.updateVendor(vendor.id, result.body);
-      if (!mounted) return;
-      ref.invalidate(vendorsProvider(VendorListQuery(search: _search)));
-      final approval = response['approvalId'];
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            approval != null
-                ? 'Vendor sent for approval'
-                : vendor == null
-                ? 'Vendor created'
-                : 'Vendor updated',
-          ),
+    if (response == null || !mounted) return;
+    ref.invalidate(vendorsProvider(VendorListQuery(search: _search)));
+    final approval = response['approvalId'];
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          approval != null
+              ? 'Vendor sent for approval'
+              : vendor == null
+              ? 'Vendor created'
+              : 'Vendor updated',
         ),
-      );
-
-      debugPrint('Vendor create/update response:-->>>> $response');
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
-      debugPrint('Error creating/updating vendor:----->>>>>>> $error');
-    }
+      ),
+    );
+    debugPrint('Vendor create/update response:-->>>> $response');
   }
 }
 
@@ -729,16 +720,12 @@ class _FormSectionTitle extends StatelessWidget {
   }
 }
 
-class _VendorFormResult {
-  final Map<String, dynamic> body;
-
-  const _VendorFormResult(this.body);
-}
-
 class _VendorForm extends StatefulWidget {
   final Vendor? vendor;
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic> body)
+  onSave;
 
-  const _VendorForm({this.vendor});
+  const _VendorForm({this.vendor, required this.onSave});
 
   @override
   State<_VendorForm> createState() => _VendorFormState();
@@ -746,6 +733,7 @@ class _VendorForm extends StatefulWidget {
 
 class _VendorFormState extends State<_VendorForm> {
   final _formKey = GlobalKey<FormState>();
+  final _gstFieldKey = GlobalKey<FormFieldState<String>>();
   late final TextEditingController _name;
   late final TextEditingController _email;
   late final TextEditingController _phone;
@@ -753,6 +741,8 @@ class _VendorFormState extends State<_VendorForm> {
   late final TextEditingController _gst;
   late final TextEditingController _pan;
   late final TextEditingController _tds;
+  String? _gstServerError;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -783,7 +773,6 @@ class _VendorFormState extends State<_VendorForm> {
     super.dispose();
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.vendor != null;
@@ -927,24 +916,7 @@ class _VendorFormState extends State<_VendorForm> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: () {
-                      if (!_formKey.currentState!.validate()) return;
-                      Navigator.pop(
-                        context,
-                        _VendorFormResult({
-                          'name': _name.text.trim(),
-                          'email': _email.text.trim(),
-                          'phone': _phone.text.trim(),
-                          'address': _address.text.trim(),
-                          if (_gst.text.trim().isNotEmpty)
-                            'gstNumber': _gst.text.trim(),
-                          if (_pan.text.trim().isNotEmpty)
-                            'panNumber': _pan.text.trim(),
-                          if (_tds.text.trim().isNotEmpty)
-                            'tdsSectionCode': _tds.text.trim(),
-                        }),
-                      );
-                    },
+                    onPressed: _saving ? null : _submit,
                     icon: Icon(
                       isEditing ? Icons.check_rounded : Icons.add_rounded,
                       size: 20,
@@ -964,6 +936,53 @@ class _VendorFormState extends State<_VendorForm> {
         ),
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final body = <String, dynamic>{
+      'name': _name.text.trim(),
+      'email': _email.text.trim(),
+      'phone': _phone.text.trim(),
+      'address': _address.text.trim(),
+      if (_gst.text.trim().isNotEmpty) 'gstNumber': _gst.text.trim(),
+      if (_pan.text.trim().isNotEmpty) 'panNumber': _pan.text.trim(),
+      if (_tds.text.trim().isNotEmpty) 'tdsSectionCode': _tds.text.trim(),
+    };
+
+    final vendor = widget.vendor;
+    if (vendor != null &&
+        body['name'] == vendor.name.trim() &&
+        body['email'] == vendor.email.trim() &&
+        body['phone'] == vendor.phone.trim() &&
+        body['address'] == vendor.address.trim() &&
+        (body['gstNumber'] ?? '') == (vendor.gstNumber ?? '').trim() &&
+        (body['panNumber'] ?? '') == (vendor.panNumber ?? '').trim() &&
+        (body['tdsSectionCode'] ?? '') ==
+            (vendor.tdsSectionCode ?? '').trim()) {
+      Navigator.pop(context);
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final response = await widget.onSave(body);
+      if (mounted) Navigator.pop(context, response);
+    } catch (error) {
+      if (!mounted) return;
+      final message = error.toString().replaceFirst('Exception: ', '');
+      final lowerMessage = message.toLowerCase();
+      if (lowerMessage.contains('gst') || lowerMessage.contains('gstin')) {
+        setState(() => _gstServerError = 'Please enter a valid GST number');
+        _gstFieldKey.currentState?.validate();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Widget _field(
@@ -1000,6 +1019,17 @@ class _VendorFormState extends State<_VendorForm> {
             ? null
             : 'Enter a valid 10-digit phone number';
       };
+    } else if (label == 'GST number') {
+      validator = (value) {
+        final gst = value?.trim().toUpperCase() ?? '';
+        if (gst.isEmpty) return null;
+        if (_gstServerError != null) return _gstServerError;
+        return RegExp(
+          r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$',
+        ).hasMatch(gst)
+            ? null
+            : 'Please enter a valid GST number';
+      };
     } else {
       validator = required
           ? (value) => value == null || value.trim().isEmpty
@@ -1011,6 +1041,7 @@ class _VendorFormState extends State<_VendorForm> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 13),
       child: TextFormField(
+        key: label == 'GST number' ? _gstFieldKey : null,
         controller: controller,
         keyboardType: keyboard,
         maxLines: maxLines,
@@ -1094,6 +1125,14 @@ class _VendorFormState extends State<_VendorForm> {
           ),
         ),
         validator: validator,
+        onChanged: label == 'GST number'
+            ? (_) {
+                if (_gstServerError != null) {
+                  setState(() => _gstServerError = null);
+                }
+                _gstFieldKey.currentState?.validate();
+              }
+            : null,
       ),
     );
   }

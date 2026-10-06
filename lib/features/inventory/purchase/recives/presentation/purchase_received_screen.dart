@@ -103,43 +103,53 @@ class _PurchaseReceivedScreenState
                   ref.invalidate(purchaseBillsProvider);
                 },
               ),
-              data: (page) => RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(purchaseOrdersProvider(_query));
-                  ref.invalidate(purchaseBillsProvider);
-                  await ref.read(purchaseOrdersProvider(_query).future);
-                },
-                child: page.orders.isEmpty
-                    ? ListView(
-                        children: [
-                          const SizedBox(height: 160),
-                          Center(
-                            child: Text(
-                              _statusFilters[_statusIndex].isEmpty
-                                  ? 'No purchase orders found'
-                                  : 'No ${_statusFilters[_statusIndex].replaceAll('_', ' ').toLowerCase()} purchase orders',
+              data: (page) {
+                final selectedStatus = _statusFilters[_statusIndex];
+                final visibleOrders = selectedStatus.isEmpty
+                    ? page.orders
+                    : page.orders
+                          .where((order) => order.status == selectedStatus)
+                          .toList();
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(purchaseOrdersProvider(_query));
+                    ref.invalidate(purchaseBillsProvider);
+                    await ref.read(purchaseOrdersProvider(_query).future);
+                  },
+                  child: visibleOrders.isEmpty
+                      ? ListView(
+                          children: [
+                            const SizedBox(height: 160),
+                            Center(
+                              child: Text(
+                                selectedStatus.isEmpty
+                                    ? 'No purchase orders found'
+                                    : 'No ${selectedStatus.replaceAll('_', ' ').toLowerCase()} purchase orders',
+                              ),
                             ),
-                          ),
-                        ],
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
-                        itemCount: page.orders.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 10),
-                        itemBuilder: (_, index) => _PurchaseReceivedCard(
-                          order: page.orders[index],
-                          isBilled: bills
-                                  ?.billedPurchaseIds
-                                  .contains(page.orders[index].id) ??
-                              false,
-                          onChanged: () {
-                            ref.invalidate(purchaseOrdersProvider(_query));
-                            ref.invalidate(purchaseBillsProvider);
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+                          itemCount: visibleOrders.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (_, index) {
+                            final order = visibleOrders[index];
+                            return _PurchaseReceivedCard(
+                              order: order,
+                              isBilled: bills?.billedPurchaseIds.contains(order.id) ??
+                                  false,
+                              onChanged: () {
+                                ref.invalidate(purchaseOrdersProvider(_query));
+                                ref.invalidate(purchaseBillsProvider);
+                              },
+                            );
                           },
                         ),
-                      ),
-              ),
+                );
+              },
             ),
           ),
         ],

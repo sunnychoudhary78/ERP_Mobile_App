@@ -11,10 +11,12 @@ class InventoryWarehousesScreen extends ConsumerStatefulWidget {
   const InventoryWarehousesScreen({super.key});
 
   @override
-  ConsumerState<InventoryWarehousesScreen> createState() => _InventoryWarehousesScreenState();
+  ConsumerState<InventoryWarehousesScreen> createState() =>
+      _InventoryWarehousesScreenState();
 }
 
-class _InventoryWarehousesScreenState extends ConsumerState<InventoryWarehousesScreen>
+class _InventoryWarehousesScreenState
+    extends ConsumerState<InventoryWarehousesScreen>
     with InventoryUiHelpers<InventoryWarehousesScreen> {
   late Future<List<Warehouse>> _load;
 
@@ -61,163 +63,339 @@ class _InventoryWarehousesScreenState extends ConsumerState<InventoryWarehousesS
           ),
           const SizedBox(height: 12),
           if (warehouses.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.warehouse_outlined,
-                      size: 34,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'No warehouses yet',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Add a warehouse to organize stock by location.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            )
+            _emptyState(canAdd)
           else
             for (final warehouse in warehouses) _warehouseCard(warehouse),
+          // Space so the FAB never covers the last card.
+          const SizedBox(height: 80),
         ]),
       ),
     );
   }
 
-  Widget _warehouseCard(Warehouse warehouse) {
-    final scheme = Theme.of(context).colorScheme;
-    final active = (warehouse.status ?? 'ACTIVE').toUpperCase() == 'ACTIVE';
+  Widget _emptyState(bool canAdd) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      elevation: 0,
+      color: scheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: scheme.primaryContainer,
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: Icon(Icons.warehouse_outlined, color: scheme.primary),
-        ),
-        title: Text(
-          warehouse.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: active
-                    ? scheme.tertiaryContainer
-                    : scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(20),
+                color: scheme.primaryContainer,
+                shape: BoxShape.circle,
               ),
-              child: Text(
-                active ? 'ACTIVE' : 'INACTIVE',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: active ? scheme.onTertiaryContainer : scheme.onSurfaceVariant,
-                ),
+              child: Icon(
+                Icons.warehouse_outlined,
+                size: 34,
+                color: scheme.onPrimaryContainer,
               ),
             ),
-          ),
-        ),
-        trailing: IconButton.filledTonal(
-          icon: const Icon(Icons.edit_outlined),
-          tooltip: 'Edit warehouse',
-          onPressed: () => _editWarehouse(existing: warehouse),
+            const SizedBox(height: 16),
+            Text(
+              'No warehouses yet',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Add a warehouse to organize stock by location.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            if (canAdd) ...[
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () => _editWarehouse(),
+                icon: const Icon(Icons.add),
+                label: const Text('Add warehouse'),
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
 
-  Future<void> _editWarehouse({Warehouse? existing}) async {
-    final name = TextEditingController(text: existing?.name ?? '');
-    final address = TextEditingController();
-    String status = existing?.status ?? 'ACTIVE';
-    final key = GlobalKey<FormState>();
-    final save = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModal) => AlertDialog(
-          title: Text(existing == null ? 'Add warehouse' : 'Edit warehouse'),
-          content: Form(
-            key: key,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: name,
-                  decoration: const InputDecoration(
-                    labelText: 'Warehouse name',
-                  ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Name is required' : null,
+  Widget _warehouseCard(Warehouse warehouse) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final active = (warehouse.status ?? 'ACTIVE').toUpperCase() == 'ACTIVE';
+    final address = (warehouse.address ?? '').trim();
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      color: scheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
+      ),
+      child: InkWell(
+        onTap: () => _editWarehouse(existing: warehouse),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: active
+                      ? scheme.primaryContainer
+                      : scheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                TextFormField(
-                  controller: address,
-                  decoration: const InputDecoration(
-                    labelText: 'Address (optional)',
-                  ),
+                child: Icon(
+                  Icons.warehouse_outlined,
+                  color: active ? scheme.primary : scheme.onSurfaceVariant,
                 ),
-                DropdownButtonFormField<String>(
-                  value: status,
-                  decoration: const InputDecoration(labelText: 'Status'),
-                  items: const [
-                    DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
-                    DropdownMenuItem(
-                      value: 'INACTIVE',
-                      child: Text('Inactive'),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      warehouse.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
+                    if (address.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Icon(
+                              Icons.place_outlined,
+                              size: 15,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              address,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    _statusChip(active),
                   ],
-                  onChanged: (v) => setModal(() => status = v ?? status),
                 ),
-              ],
-            ),
+              ),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                tooltip: 'Edit warehouse',
+                onPressed: () => _editWarehouse(existing: warehouse),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (key.currentState!.validate()) Navigator.pop(context, true);
-              },
-              child: const Text('Save'),
-            ),
-          ],
         ),
       ),
     );
+  }
+
+  Widget _statusChip(bool active) {
+    final scheme = Theme.of(context).colorScheme;
+    final bg = active ? scheme.tertiaryContainer : scheme.surfaceContainerHighest;
+    final fg = active ? scheme.onTertiaryContainer : scheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            active ? 'ACTIVE' : 'INACTIVE',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: .4,
+              color: fg,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration(String label, IconData icon) {
+    final scheme = Theme.of(context).colorScheme;
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: color, width: width),
+        );
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, size: 20),
+      border: border(scheme.outlineVariant),
+      enabledBorder: border(scheme.outlineVariant),
+      focusedBorder: border(scheme.primary, 1.6),
+      errorBorder: border(scheme.error),
+      focusedErrorBorder: border(scheme.error, 1.6),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    );
+  }
+
+  Future<void> _editWarehouse({Warehouse? existing}) async {
+    final name = TextEditingController(text: existing?.name ?? '');
+    final address = TextEditingController(text: existing?.address ?? '');
+    String status = (existing?.status ?? 'ACTIVE').toUpperCase();
+    if (status != 'ACTIVE' && status != 'INACTIVE') status = 'ACTIVE';
+    final key = GlobalKey<FormState>();
+
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModal) {
+          final scheme = Theme.of(context).colorScheme;
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            title: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.warehouse_outlined, color: scheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    existing == null ? 'Add warehouse' : 'Edit warehouse',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Form(
+                key: key,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: name,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      decoration: _fieldDecoration(
+                        'Warehouse name',
+                        Icons.badge_outlined,
+                      ),
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Name is required'
+                          : null,
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: address,
+                      minLines: 1,
+                      maxLines: 3,
+                      textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.next,
+                      decoration: _fieldDecoration(
+                        'Address',
+                        Icons.place_outlined,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      value: status,
+                      borderRadius: BorderRadius.circular(12),
+                      decoration: _fieldDecoration(
+                        'Status',
+                        Icons.toggle_on_outlined,
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'ACTIVE',
+                          child: Text('Active'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'INACTIVE',
+                          child: Text('Inactive'),
+                        ),
+                      ],
+                      onChanged: (v) => setModal(() => status = v ?? status),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton.icon(
+                onPressed: () {
+                  if (key.currentState!.validate()) {
+                    Navigator.pop(context, true);
+                  }
+                },
+                icon: const Icon(Icons.check, size: 18),
+                label: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    final body = <String, dynamic>{
+      'name': name.text.trim(),
+      if (address.text.trim().isNotEmpty) 'address': address.text.trim(),
+      'status': status,
+    };
+    name.dispose();
+    address.dispose();
+
     if (save != true) return;
     try {
-      final body = <String, dynamic>{
-        'name': name.text.trim(),
-        if (address.text.trim().isNotEmpty) 'address': address.text.trim(),
-        'status': status,
-      };
       if (existing == null) {
         await ref.read(inventoryRepositoryProvider).saveWarehouse(body);
       } else {

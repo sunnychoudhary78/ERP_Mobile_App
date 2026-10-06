@@ -4,6 +4,7 @@ import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart'
 import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 
@@ -36,7 +37,11 @@ class InventorySalesScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(dashboardStatsProvider);
-            await ref.read(dashboardStatsProvider.future);
+            ref.invalidate(financialReportProvider('12'));
+            await Future.wait([
+              ref.read(dashboardStatsProvider.future),
+              ref.read(financialReportProvider('12').future),
+            ]);
           },
           child: statsAsync.when(
             data: (stats) => _DashboardBody(stats: stats),
@@ -83,8 +88,12 @@ class _DashboardBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
+    final financialAsync = ref.watch(financialReportProvider('12'));
     final canStock = auth.canAny(AppPermissions.stockLookup);
     final canLowStock = auth.canAny(AppPermissions.lowStock);
+    final canInventoryOperations =
+        auth.canAny(AppPermissions.inventoryOperations);
+    final canPurchaseReceived = auth.canAny(AppPermissions.purchaseReceived);
     // Dynamic bottom padding ensures bottom cards never collide with system navigation bar
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
@@ -96,6 +105,21 @@ class _DashboardBody extends ConsumerWidget {
         bottom: bottomInset + 32, // Extra safety margin added
       ),
       children: [
+        financialAsync.when(
+          data: (report) => _FinancialSummaryCards(data: report.raw),
+          loading: () => const LinearProgressIndicator(),
+          error: (error, _) => _FinancialSummaryError(
+            onRetry: () => ref.invalidate(financialReportProvider('12')),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (canInventoryOperations || canPurchaseReceived) ...[
+          _InventoryQuickLinks(
+            canInventoryOperations: canInventoryOperations,
+            canPurchaseReceived: canPurchaseReceived,
+          ),
+          const SizedBox(height: 16),
+        ],
         // 1. Stock Distribution Card
         if (stats.topProductsByStock.isNotEmpty) ...[
           _SectionCard(
@@ -177,6 +201,202 @@ class _DashboardBody extends ConsumerWidget {
       if (posFromEnd > 3 && (posFromEnd - 3) % 2 == 0) buf.write(',');
     }
     return buf.toString();
+  }
+}
+
+class _FinancialSummaryCards extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  const _FinancialSummaryCards({required this.data});
+
+  static final NumberFormat _currency = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
+
+  static String _money(dynamic value) {
+    final amount = value is num ? value : num.tryParse('$value');
+    return amount == null ? '—' : _currency.format(amount);
+  }
+
+  static String _count(dynamic value) => value?.toString() ?? '0';
+
+  @override
+  Widget build(BuildContext context) {
+    final net = data['netProfitEstimate'] is num
+        ? data['netProfitEstimate'] as num
+        : num.tryParse('${data['netProfitEstimate'] ?? ''}') ?? 0;
+    final period = data['period']?.toString().trim();
+    final periodLabel = period == null || period.isEmpty
+        ? 'Last 12 months'
+        : period;
+    final cards = [
+      (
+        'Spent on purchases',
+        _money(data['purchaseCost']),
+        '${_count(data['purchaseCount'])} received orders · $periodLabel',
+        const Color(0xFFFFF8EE),
+        Icons.trending_down,
+      ),
+      (
+        'Sales (stock out)',
+        _money(data['stockOutSubtotal']),
+        '${_count(data['stockOutBillCount'])} bills · before GST',
+        const Color(0xFFF1F4FF),
+        Icons.trending_up,
+      ),
+      (
+        'Profit estimate',
+        _money(data['netProfitEstimate']),
+        '${net >= 0 ? 'Earned more than spent' : 'Spent more than earned'} · $periodLabel',
+        const Color(0xFFEBFAF3),
+        Icons.show_chart,
+      ),
+      (
+        'Stock value',
+        _money(data['inventoryValueAtCost']),
+        'At cost · wholesale ${_money(data['inventoryValueAtB2b'])}',
+        const Color(0xFFF1F8FF),
+        Icons.pie_chart_outline,
+      ),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        mainAxisExtent: 142,
+      ),
+      itemCount: cards.length,
+      itemBuilder: (context, index) {
+        final card = cards[index];
+        return Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: card.$4,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: card.$4.withValues(alpha: .9)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      card.$1.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .35,
+                        color: Color(0xFF495568),
+                      ),
+                    ),
+                  ),
+                  Icon(card.$5, size: 18, color: const Color(0xFF495568)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  card.$2,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF17202A),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Expanded(
+                child: Text(
+                  card.$3,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    height: 1.25,
+                    color: Color(0xFF566174),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FinancialSummaryError extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _FinancialSummaryError({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.error_outline),
+      title: const Text('Financial summary unavailable'),
+      trailing: IconButton(
+        tooltip: 'Retry',
+        onPressed: onRetry,
+        icon: const Icon(Icons.refresh),
+      ),
+    ),
+  );
+}
+
+class _InventoryQuickLinks extends StatelessWidget {
+  final bool canInventoryOperations;
+  final bool canPurchaseReceived;
+
+  const _InventoryQuickLinks({
+    required this.canInventoryOperations,
+    required this.canPurchaseReceived,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    void open(String route) => Navigator.pushNamed(context, route);
+
+    return _SectionCard(
+      title: 'Quick links',
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          if (canInventoryOperations)
+            OutlinedButton(
+              onPressed: () => open('/inventory/reports/pl'),
+              child: const Text('Cost & P/L'),
+            ),
+          if (canInventoryOperations)
+            OutlinedButton(
+              onPressed: () => open('/inventory/ledger'),
+              child: const Text('Movement Ledger'),
+            ),
+          if (canPurchaseReceived)
+            OutlinedButton(
+              onPressed: () => open('/purchase-received'),
+              child: const Text('Purchase Received'),
+            ),
+          if (canInventoryOperations)
+            OutlinedButton(
+              onPressed: () => open('/inventory/stock'),
+              child: const Text('Stock OUT Bills'),
+            ),
+        ],
+      ),
+    );
   }
 }
 

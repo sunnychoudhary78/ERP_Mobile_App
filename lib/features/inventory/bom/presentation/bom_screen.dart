@@ -162,7 +162,7 @@ class _BomScreenState extends ConsumerState<BomScreen> {
             bom: bom,
             canManage: _canManage,
             onEdit: () => _openForm(context, bom: bom),
-            onDelete: () => _deleteBom(bom),
+            //onDelete: () => _deleteBom(bom),
           );
         },
       ),
@@ -258,13 +258,12 @@ class _BomCard extends StatelessWidget {
   final BillOfMaterials bom;
   final bool canManage;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  
 
   const _BomCard({
     required this.bom,
     required this.canManage,
     required this.onEdit,
-    required this.onDelete,
   });
 
   // Built once instead of allocating a new BoxShadow list on every
@@ -370,12 +369,6 @@ class _BomCard extends StatelessWidget {
                             icon: Icons.edit_outlined,
                             color: AppColors.primary,
                             onTap: onEdit,
-                          ),
-                          const SizedBox(width: 6),
-                          _RoundIconButton(
-                            icon: Icons.delete_outline,
-                            color: AppColors.danger,
-                            onTap: onDelete,
                           ),
                         ],
                       ),
@@ -688,7 +681,7 @@ class _BomFormState extends ConsumerState<_BomForm> {
             (item) => DropdownMenuItem<int>(
               value: item.id,
               child: Text(
-                '${item.name} (${item.sku})',
+                _itemDropdownLabel(item),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -697,6 +690,35 @@ class _BomFormState extends ConsumerState<_BomForm> {
       onChanged: onChanged,
       validator: (selected) => selected == null ? 'Select an item' : null,
     );
+  }
+
+  String _itemDropdownLabel(ItemLookupResult item) {
+    var name = item.name;
+    name = name.replaceAll(
+      RegExp(
+        r'\s*[\(\[]?\s*HSN(?:\s*Code)?\s*[:#-]?\s*[A-Z0-9./-]+\s*[\)\]]?',
+        caseSensitive: false,
+      ),
+      '',
+    );
+
+    final hsnSac = item.hsnSac?.trim();
+    if (hsnSac != null && hsnSac.isNotEmpty) {
+      name = name.replaceAll(
+        RegExp(
+          '(?<![A-Za-z0-9])${RegExp.escape(hsnSac)}(?![A-Za-z0-9])',
+          caseSensitive: false,
+        ),
+        '',
+      );
+    }
+
+    name = name
+        .replaceAll(RegExp(r'\(\s*\)|\[\s*\]'), '')
+        .replaceAll(RegExp(r'\s+([|,\-]|\u2013|\u2014)\s*$'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    return name;
   }
 
   Widget _materialEditor(

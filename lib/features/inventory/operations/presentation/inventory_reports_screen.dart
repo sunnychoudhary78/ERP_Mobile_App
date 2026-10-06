@@ -19,7 +19,9 @@ const _periods = <String, String>{
 };
 
 class InventoryReportsScreen extends ConsumerStatefulWidget {
-  const InventoryReportsScreen({super.key});
+  final int initialTab;
+
+  const InventoryReportsScreen({super.key, this.initialTab = 0});
 
   @override
   ConsumerState<InventoryReportsScreen> createState() => _InventoryReportsScreenState();
@@ -135,6 +137,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 5,
+      initialIndex: widget.initialTab.clamp(0, 4).toInt(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Inventory reports'),
@@ -331,10 +334,30 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
     final marginRaw = _pick(p, ['marginPct', 'marginPercent', 'margin']);
     return {
       'name': _pick(p, ['productName', 'name', 'itemName']) ?? '—',
+      'sku': _pick(p, ['sku', 'productSku', 'itemSku']) ?? '',
       'onHand': _num(_pick(p, ['onHand', 'currentStock', 'stock', 'quantity'])),
       'cost': _num(_pick(p, ['costPrice', 'unitCost', 'cost'])),
-      'stockValue': _num(_pick(p, ['stockValue', 'inventoryValue', 'stockValueAtCost'])),
-      'outQty': _num(_pick(p, ['outQty', 'stockOutQty', 'soldQty'])),
+      'b2bPrice': _num(_pick(p, ['b2bPrice', 'b2b_price', 'sellingPrice'])),
+      'stockValue': _num(_pick(p, [
+        'stockValueAtCost',
+        'stockValue',
+        'inventoryValue',
+        'inventoryValueAtCost',
+      ])),
+      'stockValueB2b': _num(_pick(p, [
+        'stockValueAtB2b',
+        'stockValueAtB2B',
+        'stockValueB2b',
+        'inventoryValueAtB2b',
+        'b2bStockValue',
+      ])),
+      'outQty': _num(_pick(p, [
+        'outQty',
+        'stockOutQty',
+        'stockOutQuantity',
+        'outQuantity',
+        'soldQty',
+      ])),
       'outRevenue': revenue,
       'cogs': _num(_pick(p, ['cogs', 'stockOutCogs'])),
       'profit': profit,
@@ -394,17 +417,46 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       ['Period', _periods[_months] ?? _months],
       ['Purchase cost', f['purchaseCost']],
       ['Stock out sales', f['stockOutSubtotal']],
-      ['COGS', f['stockOutCogs']],
+      ['Stock out GST', f['stockOutGst']],
+      ['Stock out quantity', f['stockOutQty']],
+      ['COGS (stock out)', f['stockOutCogs']],
+      ['Gross profit', f['stockOutGrossProfit']],
       ['Total revenue (ex GST)', f['totalRevenueExGst']],
+      ['Total revenue (with GST)', f['totalRevenueWithGst']],
       ['Estimated net P/L', f['netProfitEstimate']],
-      ['Inventory on hand', f['inventoryValueAtCost']],
+      ['Inventory on hand (at cost)', f['inventoryValueAtCost']],
+      ['Inventory units', f['inventoryUnits']],
+      ['Inventory on hand (B2B)', f['inventoryValueAtB2b']],
       [],
-      ['Product', 'On hand', 'Cost', 'Stock value', 'Out qty', 'Out revenue', 'COGS', 'Profit', 'Margin %'],
+      [
+        'Product',
+        'SKU',
+        'On hand',
+        'Cost price',
+        'B2B price',
+        'Stock value at cost',
+        'Stock value at B2B',
+        'Stock out quantity',
+        'Stock out revenue',
+        'Stock out COGS',
+        'Stock out gross profit',
+        'Margin %',
+      ],
       ...products.map((p) {
         final r = _plRow(p);
         return [
-          r['name'], r['onHand'], r['cost'], r['stockValue'], r['outQty'],
-          r['outRevenue'], r['cogs'], r['profit'], (r['margin'] as num).round(),
+          r['name'],
+          r['sku'],
+          r['onHand'],
+          r['cost'],
+          r['b2bPrice'],
+          r['stockValue'],
+          r['stockValueB2b'],
+          r['outQty'],
+          r['outRevenue'],
+          r['cogs'],
+          r['profit'],
+          (r['margin'] as num).round(),
         ];
       }),
     ];
@@ -482,8 +534,11 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
               pickText(m, ['warehouseName']),
               if (ref.isNotEmpty) ref,
               fmtDate(m['createdAt']),
-            ].where((s) => s.toString().isNotEmpty).join('  •  '),
-            amount: '${isOut ? '-' : '+'}$qty units',
+            ].where((s) {
+              final value = s.toString().trim();
+              return value.isNotEmpty && value != '—' && value != '-';
+            }).join('  •  '),
+            amount: '$qty units',
             icon: isOut ? Icons.north_east : Icons.south_west,
           );
         }),

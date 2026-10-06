@@ -477,7 +477,7 @@ class _InventoryStockMovementsScreenState extends ConsumerState<InventoryStockMo
           ...body,
           'unitCost': num.tryParse(unitCost.text) ?? 0,
         });
-      if (kind == 'out')
+      if (kind == 'out') {
         await repo.stockOut({
           ...body,
           'generateBill': generateBill,
@@ -485,7 +485,8 @@ class _InventoryStockMovementsScreenState extends ConsumerState<InventoryStockMo
           if (generateBill) 'partyGstin': partyGstin.text.trim().toUpperCase(),
           if (generateBill) 'unitRate': num.parse(unitRate.text),
         });
-      if (kind == 'transfer' && toWarehouseId != null)
+      }
+      if (kind == 'transfer' && toWarehouseId != null) {
         await repo.transferStock({
           'itemId': itemId,
           'fromWarehouseId': warehouseId,
@@ -495,6 +496,7 @@ class _InventoryStockMovementsScreenState extends ConsumerState<InventoryStockMo
             'referenceNo': reference.text.trim(),
           if (notes.text.trim().isNotEmpty) 'notes': notes.text.trim(),
         });
+      }
       showSuccess(
         kind == 'in'
             ? 'Stock added'

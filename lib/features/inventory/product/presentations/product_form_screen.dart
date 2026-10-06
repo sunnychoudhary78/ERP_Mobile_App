@@ -10,6 +10,15 @@ import 'package:image_picker/image_picker.dart';
 import 'products_screen.dart';
 
 const _statusOptions = ['ACTIVE', 'PENDING', 'REJECTED', 'INACTIVE'];
+const _unitOptions = [
+  'Micrometer (µm)',
+  'ml',
+  'mm',
+  'Nos (numbers)',
+  'pack',
+  'pair',
+  'pcs (pieces)',
+];
 const _productTypeOptions = ['Physical', 'Service'];
 const _productTypeApiValues = {
   'Physical': 'FINISHED',
@@ -217,6 +226,32 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     if (source != null) await _pickImage(source);
   }
 
+  Future<void> _selectUnit() async {
+    final currentUnit = _unit.text.trim();
+    final options = [
+      ..._unitOptions,
+      if (currentUnit.isNotEmpty && !_unitOptions.contains(currentUnit))
+        currentUnit,
+    ];
+    final selectedUnit = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (_) => _UnitPickerSheet(
+        options: options,
+        selected: currentUnit,
+      ),
+    );
+
+    if (selectedUnit != null && mounted) {
+      setState(() => _unit.text = selectedUnit);
+    }
+  }
+
   num? _numOrNull(String text) {
     final t = text.trim();
     if (t.isEmpty) return null;
@@ -358,8 +393,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   children: [
                     _field(_name, 'Name *', validator: _requiredValidator),
                     _field(_sku, 'SKU *', validator: _requiredValidator),
-                    _field(_unit, 'Unit * (e.g. Nos, Kg)',
-                        validator: _requiredValidator),
+                    _unitField(),
                     categoriesAsync.when(
                       loading: () => const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
@@ -953,6 +987,42 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     );
   }
 
+  Widget _unitField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: _unit,
+        readOnly: true,
+        onTap: _saving ? null : _selectUnit,
+        validator: _requiredValidator,
+        decoration: InputDecoration(
+          labelText: 'Unit *',
+          suffixIcon: const Icon(Icons.expand_more_rounded),
+          filled: true,
+          fillColor: AppColors.surface,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.danger),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _field(
     TextEditingController controller,
     String label, {
@@ -993,6 +1063,93 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: AppColors.danger),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UnitPickerSheet extends StatefulWidget {
+  final List<String> options;
+  final String selected;
+
+  const _UnitPickerSheet({required this.options, required this.selected});
+
+  @override
+  State<_UnitPickerSheet> createState() => _UnitPickerSheetState();
+}
+
+class _UnitPickerSheetState extends State<_UnitPickerSheet> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = _searchController.text.trim().toLowerCase();
+    final options = widget.options
+        .where((unit) => unit.toLowerCase().contains(query))
+        .toList();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        16 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.65,
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Search units',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.close),
+                      ),
+                filled: true,
+                fillColor: AppColors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: options.isEmpty
+                  ? const Center(child: Text('No matching units'))
+                  : ListView.builder(
+                      itemCount: options.length,
+                      itemBuilder: (context, index) {
+                        final unit = options[index];
+                        final isSelected = unit == widget.selected;
+                        return ListTile(
+                          title: Text(unit),
+                          trailing: isSelected
+                              ? const Icon(Icons.check_rounded)
+                              : null,
+                          onTap: () => Navigator.of(context).pop(unit),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );
