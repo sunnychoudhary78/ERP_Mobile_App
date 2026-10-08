@@ -1,16 +1,20 @@
 import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:erp_app/features/inventory/product/data/provider/product_provider.dart';
+import 'package:excel/excel.dart' as xl;
+import 'package:file_saver/file_saver.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:erp_app/core/network/api_constants.dart';
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
-import 'package:erp_app/features/inventory/product/data/provider/product_provider.dart';
 import 'package:erp_app/features/inventory/product/presentations/product_details_screen.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_filex/open_filex.dart';
 import 'product_form_screen.dart';
 
 /// Resolves an item's (possibly relative, `/api/uploads/...`) imageUrl into
@@ -48,6 +52,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   Timer? _debounce;
+  bool _exportingProducts = false;
 
   @override
   void initState() {
@@ -98,12 +103,17 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
         ),
         actions: [
-          if (canManage)
-            IconButton(
-              tooltip: 'Import product rows',
-              icon: const Icon(Icons.upload_file_outlined),
-              onPressed: _importProducts,
-            ),
+          IconButton(
+            tooltip: 'Download products as Excel',
+            icon: _exportingProducts
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download_outlined),
+            onPressed: _exportingProducts ? null : _exportProducts,
+          ),
         ],
       ),
       floatingActionButton: canManage
@@ -136,87 +146,171 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     );
   }
 
-  Future<void> _importProducts() async {
-    final controller = TextEditingController();
-    final rows = await showDialog<List<Map<String, dynamic>>>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Import products'),
-        content: SizedBox(
-          width: 520,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Paste a JSON array of product objects (up to 500 rows).',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                minLines: 5,
-                maxLines: 10,
-                decoration: const InputDecoration(
-                  hintText: '[{"name":"Example","sku":"EX-1"}]',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              try {
-                final decoded = jsonDecode(controller.text);
-                if (decoded is! List ||
-                    decoded.isEmpty ||
-                    decoded.length > 500 ||
-                    decoded.any((e) => e is! Map)) {
-                  throw const FormatException('Provide 1 to 500 JSON objects.');
-                }
-                Navigator.pop(
-                  context,
-                  decoded
-                      .map((e) => Map<String, dynamic>.from(e as Map))
-                      .toList(),
-                );
-              } catch (error) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Invalid JSON: $error')));
-              }
-            },
-            child: const Text('Import'),
-          ),
-        ],
-      ),
-    );
-    if (rows == null || !mounted) {
-      controller.dispose();
-      return;
-    }
+  Future<void> _exportProducts() async {
+    setState(() => _exportingProducts = true);
     try {
-      await ref.read(inventoryRepositoryProvider).importItems(rows);
-      await ref.read(productsListProvider.notifier).refresh();
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Products imported')));
-    } catch (error) {
-      if (mounted)
+      final state = ref.read(productsListProvider);
+      final repository = ref.read(inventoryRepositoryProvider);
+      final products = <InventoryItem>[];
+      var page = 1;
+      var totalPages = 1;
+      do {
+        final result = await repository.getItems(
+          search: state.query,
+          page: page,
+          limit: 500,
+        );
+        products.addAll(result.items);
+        totalPages = result.totalPages;
+        page++;
+      } while (page <= totalPages);
+
+      final filteredProducts = products
+          .where((product) => state.statusFilter.matches(product.status))
+          .toList();
+
+      final bytes = _productsToXlsx(filteredProducts);
+      if (bytes == null) throw Exception('Could not generate Excel file');
+
+      final savedPath = await FileSaver.instance.saveFile(
+        name: 'products',
+        bytes: Uint8List.fromList(bytes),
+        fileExtension: 'xlsx',
+        mimeType: MimeType.microsoftExcel,
+      );
+
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(error.toString().replaceFirst('Exception: ', '')),
+            duration: const Duration(seconds: 6),
+            content: Text(
+              kIsWeb
+                  ? 'Exported ${filteredProducts.length} products'
+                  : 'Exported ${filteredProducts.length} products\n'
+                        'Saved to: $savedPath',
+            ),
+            action: (!kIsWeb && savedPath.isNotEmpty)
+                ? SnackBarAction(
+                    label: 'OPEN',
+                    onPressed: () => OpenFilex.open(savedPath),
+                  )
+                : null,
           ),
         );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Export failed: ${error.toString().replaceFirst('Exception: ', '')}',
+            ),
+          ),
+        );
+      }
     } finally {
-      controller.dispose();
+      if (mounted) setState(() => _exportingProducts = false);
     }
   }
+
+  List<int>? _productsToXlsx(List<InventoryItem> products) {
+    final excel = xl.Excel.createExcel();
+    const sheetName = 'Products';
+    excel.rename(excel.getDefaultSheet()!, sheetName);
+    final sheet = excel[sheetName];
+
+    const headers = [
+      'Product ID',
+      'Name',
+      'Warehouse',
+      'Status',
+      'Category',
+      'Brand',
+      'MRP',
+      'B2B Price',
+      'Cost',
+      'Selling',
+      'Type',
+      'Sourcing',
+      'Visibility',
+      'SKU',
+      'Stock',
+      'Unit',
+      'Dimensions',
+    ];
+
+    final headerStyle = xl.CellStyle(
+      bold: true,
+      backgroundColorHex: xl.ExcelColor.fromHexString('#E5E7EB'),
+    );
+
+    sheet.appendRow(headers.map((h) => xl.TextCellValue(h)).toList());
+    for (var i = 0; i < headers.length; i++) {
+      sheet
+          .cell(xl.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
+          .cellStyle = headerStyle;
+    }
+
+    for (final product in products) {
+      final dimensions = product.productDimensions.isEmpty
+          ? '—'
+          : product.productDimensions
+                .map((dimension) {
+                  final label = dimension['label']?.toString() ?? '';
+                  final value = dimension['value']?.toString();
+                  final unit = dimension['unit']?.toString();
+                  return [
+                    label,
+                    if (value != null && value.isNotEmpty) value,
+                    if (unit != null && unit.isNotEmpty) unit,
+                  ].join(' ');
+                })
+                .join('; ');
+
+      sheet.appendRow([
+        _xlCell(product.productCode ?? product.id),
+        _xlCell(product.name),
+        _xlCell(
+          product.stocks
+              .map((stock) => '${stock.warehouseName} (${stock.quantity})')
+              .join('; '),
+        ),
+        _xlCell(product.status ?? ''),
+        _xlCell(product.categoryName ?? ''),
+        _xlCell(product.brandName ?? ''),
+        _xlCell(product.mrp),
+        _xlCell(product.b2bPrice),
+        _xlCell(product.costPrice),
+        _xlCell(product.sellingPrice),
+        _xlCell(product.productType ?? ''),
+        _xlCell(product.sourcing ?? ''),
+        _xlCell(product.visibility ?? ''),
+        _xlCell(product.sku),
+        _xlCell(product.currentStock),
+        _xlCell(product.unit ?? ''),
+        _xlCell(dimensions),
+      ]);
+    }
+
+    const widths = [
+      16.0, 30.0, 32.0, 12.0, 18.0, 18.0, 10.0, 12.0, 10.0,
+      10.0, 14.0, 14.0, 14.0, 16.0, 10.0, 10.0, 36.0,
+    ];
+    for (var i = 0; i < widths.length; i++) {
+      sheet.setColumnWidth(i, widths[i]);
+    }
+
+    return excel.save();
+  }
+
+  /// Numbers stay numbers (so Excel can sort/sum them); everything else is text.
+  xl.CellValue _xlCell(dynamic value) {
+    if (value == null) return xl.TextCellValue('');
+    if (value is int) return xl.IntCellValue(value);
+    if (value is num) return xl.DoubleCellValue(value.toDouble());
+    return xl.TextCellValue(value.toString());
+  }
+
 
   Widget _buildBody(ProductsListState state) {
     if (state.isLoading && state.items.isEmpty) {

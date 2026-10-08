@@ -254,147 +254,16 @@ class _InventoryWarehousesScreenState
     );
   }
 
-  InputDecoration _fieldDecoration(String label, IconData icon) {
-    final scheme = Theme.of(context).colorScheme;
-    OutlineInputBorder border(Color color, [double width = 1]) =>
-        OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: color, width: width),
-        );
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, size: 20),
-      border: border(scheme.outlineVariant),
-      enabledBorder: border(scheme.outlineVariant),
-      focusedBorder: border(scheme.primary, 1.6),
-      errorBorder: border(scheme.error),
-      focusedErrorBorder: border(scheme.error, 1.6),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    );
-  }
-
   Future<void> _editWarehouse({Warehouse? existing}) async {
-    final name = TextEditingController(text: existing?.name ?? '');
-    final address = TextEditingController(text: existing?.address ?? '');
-    String status = (existing?.status ?? 'ACTIVE').toUpperCase();
-    if (status != 'ACTIVE' && status != 'INACTIVE') status = 'ACTIVE';
-    final key = GlobalKey<FormState>();
-
-    final save = await showDialog<bool>(
+    // The dialog owns (and disposes) its own controllers, so nothing is
+    // disposed while the close animation is still running.
+    final body = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModal) {
-          final scheme = Theme.of(context).colorScheme;
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-            title: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: scheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.warehouse_outlined, color: scheme.primary),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    existing == null ? 'Add warehouse' : 'Edit warehouse',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Form(
-                key: key,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: name,
-                      textCapitalization: TextCapitalization.words,
-                      textInputAction: TextInputAction.next,
-                      decoration: _fieldDecoration(
-                        'Warehouse name',
-                        Icons.badge_outlined,
-                      ),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'Name is required'
-                          : null,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: address,
-                      minLines: 1,
-                      maxLines: 3,
-                      textCapitalization: TextCapitalization.sentences,
-                      textInputAction: TextInputAction.next,
-                      decoration: _fieldDecoration(
-                        'Address',
-                        Icons.place_outlined,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    DropdownButtonFormField<String>(
-                      value: status,
-                      borderRadius: BorderRadius.circular(12),
-                      decoration: _fieldDecoration(
-                        'Status',
-                        Icons.toggle_on_outlined,
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'ACTIVE',
-                          child: Text('Active'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'INACTIVE',
-                          child: Text('Inactive'),
-                        ),
-                      ],
-                      onChanged: (v) => setModal(() => status = v ?? status),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton.icon(
-                onPressed: () {
-                  if (key.currentState!.validate()) {
-                    Navigator.pop(context, true);
-                  }
-                },
-                icon: const Icon(Icons.check, size: 18),
-                label: const Text('Save'),
-              ),
-            ],
-          );
-        },
-      ),
+      builder: (_) => _WarehouseDialog(existing: existing),
     );
 
-    final body = <String, dynamic>{
-      'name': name.text.trim(),
-      if (address.text.trim().isNotEmpty) 'address': address.text.trim(),
-      'status': status,
-    };
-    name.dispose();
-    address.dispose();
+    if (body == null) return; // cancelled
 
-    if (save != true) return;
     try {
       if (existing == null) {
         await ref.read(inventoryRepositoryProvider).saveWarehouse(body);
@@ -404,9 +273,171 @@ class _InventoryWarehousesScreenState
           ...body,
         });
       }
+      if (!mounted) return;
       showSuccess(existing == null ? 'Warehouse created' : 'Warehouse updated');
+      reload(); // refresh list (remove if showSuccess already calls reload)
     } catch (e) {
+      if (!mounted) return;
       showError(e);
     }
+  }
+}
+
+InputDecoration _warehouseFieldDecoration(
+  BuildContext context,
+  String label,
+  IconData icon,
+) {
+  final scheme = Theme.of(context).colorScheme;
+  OutlineInputBorder border(Color color, [double width = 1]) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: color, width: width),
+      );
+  return InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon, size: 20),
+    border: border(scheme.outlineVariant),
+    enabledBorder: border(scheme.outlineVariant),
+    focusedBorder: border(scheme.primary, 1.6),
+    errorBorder: border(scheme.error),
+    focusedErrorBorder: border(scheme.error, 1.6),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+  );
+}
+
+class _WarehouseDialog extends StatefulWidget {
+  const _WarehouseDialog({this.existing});
+
+  final Warehouse? existing;
+
+  @override
+  State<_WarehouseDialog> createState() => _WarehouseDialogState();
+}
+
+class _WarehouseDialogState extends State<_WarehouseDialog> {
+  late final TextEditingController _name;
+  late final TextEditingController _address;
+  late String _status;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    _name = TextEditingController(text: existing?.name ?? '');
+    _address = TextEditingController(text: existing?.address ?? '');
+    final s = (existing?.status ?? 'ACTIVE').toUpperCase();
+    _status = (s == 'ACTIVE' || s == 'INACTIVE') ? s : 'ACTIVE';
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _address.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    Navigator.of(context).pop(<String, dynamic>{
+      'name': _name.text.trim(),
+      if (_address.text.trim().isNotEmpty) 'address': _address.text.trim(),
+      'status': _status,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isNew = widget.existing == null;
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+      title: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.warehouse_outlined, color: scheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              isNew ? 'Add warehouse' : 'Edit warehouse',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _name,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.next,
+                decoration: _warehouseFieldDecoration(
+                  context,
+                  'Warehouse name',
+                  Icons.badge_outlined,
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _address,
+                minLines: 1,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.done,
+                decoration: _warehouseFieldDecoration(
+                  context,
+                  'Address',
+                  Icons.place_outlined,
+                ),
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                value: _status,
+                borderRadius: BorderRadius.circular(12),
+                decoration: _warehouseFieldDecoration(
+                  context,
+                  'Status',
+                  Icons.toggle_on_outlined,
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
+                  DropdownMenuItem(value: 'INACTIVE', child: Text('Inactive')),
+                ],
+                onChanged: (v) => setState(() => _status = v ?? _status),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.check, size: 18),
+          label: const Text('Save'),
+        ),
+      ],
+    );
   }
 }

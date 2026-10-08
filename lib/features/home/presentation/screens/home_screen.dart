@@ -119,7 +119,7 @@ class HomeScreen extends ConsumerWidget {
         anyOf: AppPermissions.crmVisits,
       ),
     ], anyOf: AppPermissions.crmModule),
-       LinkSection('Inventory', [
+    LinkSection('Inventory', [
       QuickLink(
         'Dashboard',
         '/crm/inventory_sales_screen',
@@ -978,104 +978,152 @@ class _ModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE8ECF3)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: Stack(
+    // Stop huge system font sizes from breaking the card layout.
+    return MediaQuery.withClampedTextScaling(
+      minScaleFactor: 0.9,
+      maxScaleFactor: 1.15,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 170 = the card width the original design was made for.
+          final double width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 170;
+          final double s = (width / 170).clamp(0.82, 1.25);
+          final bool boundedHeight = constraints.hasBoundedHeight;
+
+          final double pad = 14 * s;
+          final double iconBox = 40 * s;
+          final double arrowBox = 26 * s;
+
+          final footer = Row(
             children: [
-              // Faint decorative icon watermark, bleeding off the
-              // bottom-right corner of the card.
-              Positioned(
-                right: -18,
-                bottom: -14,
-                child: Icon(
-                  decorativeIcon,
-                  size: 96,
-                  color: accentColor.withValues(alpha: 0.06),
+              Expanded(
+                child: Text(
+                  'View Details',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12 * s,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                  ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              SizedBox(width: 6 * s),
+              Container(
+                width: arrowBox,
+                height: arrowBox,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 14 * s,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          );
+
+          final descriptionText = Text(
+            description,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.5 * s,
+              height: 1.35,
+              color: const Color(0xFF64748B),
+            ),
+          );
+
+          return Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20 * s),
+              border: Border.all(color: const Color(0xFFE8ECF3)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                child: Stack(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(icon, color: accentColor, size: 22),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                    // Faint decorative watermark, bleeding off the
+                    // bottom-right corner of the card.
+                    Positioned(
+                      right: -18 * s,
+                      bottom: -14 * s,
+                      child: Icon(
+                        decorativeIcon,
+                        size: 96 * s,
+                        color: accentColor.withValues(alpha: 0.06),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        height: 1.35,
-                        color: Color(0xFF64748B),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(pad, pad, pad, pad * 0.85),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: boundedHeight
+                            ? MainAxisSize.max
+                            : MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: iconBox,
+                            height: iconBox,
+                            decoration: BoxDecoration(
+                              color: accentColor.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(icon, color: accentColor, size: 22 * s),
+                          ),
+                          SizedBox(height: 12 * s),
+                          Text(
+                            title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14 * s,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                          SizedBox(height: 6 * s),
+                          // With a fixed card height, the description takes the
+                          // leftover space (and clips with "..." if too long).
+                          // With unbounded height, it just sizes to its text.
+                          if (boundedHeight)
+                            Expanded(
+                              child: ClipRect(
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: descriptionText,
+                                ),
+                              ),
+                            )
+                          else ...[
+                            descriptionText,
+                            SizedBox(height: 16 * s),
+                          ],
+                          SizedBox(height: boundedHeight ? 8 * s : 0),
+                          footer,
+                        ],
                       ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 44),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'View Details',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: accentColor,
-                          ),
-                        ),
-                        Container(
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            color: accentColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

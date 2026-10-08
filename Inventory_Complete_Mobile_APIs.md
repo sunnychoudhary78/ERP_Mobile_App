@@ -130,7 +130,7 @@ Used across Products, Purchase, Stock, BOM.
 | GET | `/api/lookups/product-categories` | lookup catalog | `search`/`q`, `limit` | `[{ id, name, type, hsnSac }]` |
 | GET | `/api/lookups/vendors` | lookup catalog | same | `[{ id, name }]` ACTIVE |
 | GET | `/api/lookups/warehouses` | lookup catalog | same | `[{ id, name }]` |
-| GET | `/api/lookups/items` | lookup catalog | `search`/`q`, `limit`, `purpose=bom` | item lite (+ category) |
+| GET | `/api/lookups/items` | lookup catalog | `search`/`q`, `limit` | item lite (+ category and `productType`) |
 
 Web also lists warehouses via `GET /api/warehouse?page=1&limit=500` and items via `GET /api/items?page=1&limit=500`.
 
@@ -192,6 +192,8 @@ GET /api/dashboard/stats
 ### Create / update body
 **Required create:** `name`, `sku`, `unit`, `categoryId`  
 **Optional:** `productCode`, `description`, `brandName`, `mrp`, `b2bPrice`, `productType`, `sourcing`, `visibility`, `status`, `sellingPrice`, `costPrice`, `reorderLevel`, `vendorId`, `rollLengthM`, `rollWidthMm`, `rollThicknessMic`, `productDimensions[]`, `openingStock`, `warehouseHint`
+
+`productType` values: `FINISHED` (Physical), `CONVERTING` (Tape / roll product (converting)), `SERVICE` (Service), or `DIGITAL` (Digital).
 
 `productDimensions[]` item: `{ key?, label, value?, unit? }`
 
@@ -283,7 +285,7 @@ Row: `{ id, name, type, status, hsnSac, createdAt, updatedAt }`
 }
 ```
 
-**Lookup:** `GET /api/lookups/items?purpose=bom&limit=1000`
+**Lookup:** `GET /api/lookups/items?limit=1000`
 
 ---
 
@@ -892,7 +894,7 @@ Implement screens in this order for web parity:
 | 14 | Purchase Received | receive / reject + bill from purchase |
 | 15 | Purchase Demand | purchase-demands + approvals |
 | 16 | Bills / Payments | bills + vendor-payments + vendor-credits |
-| 17 | BOM | bom CRUD + lookups/items?purpose=bom |
+| 17 | BOM | bom CRUD + lookups/items |
 | 18 | Documents | documents GET/POST |
 | 19 | Reports | report + financial + low-stock + transactions |
 | 20 | Approvals | approvals POST actions |
@@ -948,6 +950,3 @@ On write success with `approvalId`, show “Sent for approval” (same as web to
 ---
 
 *Generated to match live web Inventory behavior. Prefer this file over partial MVP docs when building full Inventory on mobile. For dashboard KPI field details see `Inventory_Dashboard_Mobile_APIs.md`; for stock-search-only MVP see `Inventory_Stock_Lookup_Mobile_APIs.md`.*
-
-
-

@@ -158,7 +158,7 @@ class InventoryApiService {
   }
 
   Future<List<ItemLookupResult>> lookupBomItems() {
-    return lookupItems('', limit: 1000, purpose: 'bom');
+    return lookupItems('', limit: 1000);
   }
 
   Future<Map<String, dynamic>> createBom(Map<String, dynamic> body) async {

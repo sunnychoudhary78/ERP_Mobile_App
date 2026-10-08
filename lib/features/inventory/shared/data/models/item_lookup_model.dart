@@ -7,6 +7,7 @@ class ItemLookupResult {
   final String? brandName;
   final String? unit;
   final String? hsnSac;
+  final String? productType;
 
   ItemLookupResult({
     required this.id,
@@ -16,6 +17,7 @@ class ItemLookupResult {
     this.brandName,
     this.unit,
     this.hsnSac,
+    this.productType,
   });
 
   factory ItemLookupResult.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class ItemLookupResult {
       brandName: json['brandName']?.toString(),
       unit: json['unit']?.toString(),
       hsnSac: json['hsnSac']?.toString() ?? categoryHsnSac,
+      productType: json['productType']?.toString(),
     );
   }
 }
