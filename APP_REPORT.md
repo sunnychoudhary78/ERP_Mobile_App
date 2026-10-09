@@ -72,6 +72,8 @@ CRM data is primarily loaded through the sales workspace and managed by [sales_w
 - Warehouse stock and low-stock views.
 - Inventory dashboard statistics.
 - Stock and financial reporting models/services.
+- Stock menu entry for Inventory lots, opening the `/inventory/lots` route.
+- Lot tracking and allocation, processing, sellable inventory, stock movements, warehouses, and ledger.
 
 ### Production
 

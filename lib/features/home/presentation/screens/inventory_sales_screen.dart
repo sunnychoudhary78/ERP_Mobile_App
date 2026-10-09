@@ -17,6 +17,11 @@ const Color _kBorder = Color(0xFFEBEEF5);
 const Color _kOrange = Color(0xFFFF7A1A);
 const Color _kOrangeSoft = Color(0xFFFFEBD9);
 
+String _unitLabel(String unit) {
+  final normalized = unit.trim();
+  return normalized.isEmpty ? 'Units' : normalized;
+}
+
 class InventorySalesScreen extends ConsumerWidget {
   const InventorySalesScreen({super.key});
 
@@ -124,24 +129,23 @@ class InventorySalesScreen extends ConsumerWidget {
       }
     }
 
-    final name = attempt(() => (auth as dynamic).user?.name?.toString()) ??
+    final name =
+        attempt(() => (auth as dynamic).user?.name?.toString()) ??
         attempt(() => (auth as dynamic).user?.fullName?.toString()) ??
         attempt(() => (auth as dynamic).user?.username?.toString()) ??
         attempt(() => (auth as dynamic).name?.toString());
 
     if (name == null) return 'U';
-    final parts =
-        name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = name
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.length == 1) {
       return parts.first.substring(0, min(2, parts.first.length)).toUpperCase();
     }
     return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 }
-
-
-
-
 
 class _DashboardBody extends ConsumerWidget {
   final InventoryDashboardStats stats;
@@ -154,8 +158,9 @@ class _DashboardBody extends ConsumerWidget {
     final financialAsync = ref.watch(financialReportProvider('12'));
     final canStock = auth.canAny(AppPermissions.stockLookup);
     final canLowStock = auth.canAny(AppPermissions.lowStock);
-    final canInventoryOperations =
-        auth.canAny(AppPermissions.inventoryOperations);
+    final canInventoryOperations = auth.canAny(
+      AppPermissions.inventoryOperations,
+    );
     final canPurchaseReceived = auth.canAny(AppPermissions.purchaseReceived);
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
@@ -326,8 +331,9 @@ class _FinancialSummaryCards extends StatelessWidget {
         ? data['netProfitEstimate'] as num
         : num.tryParse('${data['netProfitEstimate'] ?? ''}') ?? 0;
     final period = data['period']?.toString().trim();
-    final periodLabel =
-        period == null || period.isEmpty ? 'Last 12 months' : period;
+    final periodLabel = period == null || period.isEmpty
+        ? 'Last 12 months'
+        : period;
 
     final cards = <_FinCardData>[
       _FinCardData(
@@ -481,16 +487,16 @@ class _FinancialSummaryError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        child: ListTile(
-          leading: const Icon(Icons.error_outline),
-          title: const Text('Financial summary unavailable'),
-          trailing: IconButton(
-            tooltip: 'Retry',
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-          ),
-        ),
-      );
+    child: ListTile(
+      leading: const Icon(Icons.error_outline),
+      title: const Text('Financial summary unavailable'),
+      trailing: IconButton(
+        tooltip: 'Retry',
+        onPressed: onRetry,
+        icon: const Icon(Icons.refresh),
+      ),
+    ),
+  );
 }
 
 // ═══════════════════════════ Quick Links ═══════════════════════════
@@ -511,25 +517,25 @@ class _InventoryQuickLinks extends StatelessWidget {
         (
           label: 'Cost & P/L',
           icon: Icons.bar_chart_rounded,
-          route: '/inventory/reports/pl'
+          route: '/inventory/reports/pl',
         ),
       if (canInventoryOperations)
         (
           label: 'Movement Ledger',
           icon: Icons.description_outlined,
-          route: '/inventory/ledger'
+          route: '/inventory/ledger',
         ),
       if (canPurchaseReceived)
         (
           label: 'Purchase Received',
           icon: Icons.local_shipping_outlined,
-          route: '/purchase-received'
+          route: '/purchase-received',
         ),
       if (canInventoryOperations)
         (
           label: 'Stock OUT Bills',
           icon: Icons.receipt_long_outlined,
-          route: '/inventory/stock'
+          route: '/inventory/stock',
         ),
     ];
 
@@ -620,7 +626,8 @@ class _QuickLinkTile extends StatelessWidget {
 class _SectionCard extends StatelessWidget {
   final String title;
   final String? trailingText;
-  final VoidCallback? onTap; // when set, a chevron is shown and header is tappable
+  final VoidCallback?
+  onTap; // when set, a chevron is shown and header is tappable
   final Widget child;
 
   const _SectionCard({
@@ -762,11 +769,7 @@ class _QuickLinkGridCard extends StatelessWidget {
               subtitle,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 11,
-                color: _kMuted,
-                height: 1.3,
-              ),
+              style: const TextStyle(fontSize: 11, color: _kMuted, height: 1.3),
             ),
           ],
         ),
@@ -795,6 +798,8 @@ class _StockDistributionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final topItems = products.take(4).toList();
     final totalStock = topItems.fold<int>(0, (sum, p) => sum + p.currentStock);
+    final units = topItems.map((product) => _unitLabel(product.unit)).toSet();
+    final totalUnit = units.length == 1 ? units.single : 'Mixed units';
 
     return Row(
       children: [
@@ -827,6 +832,10 @@ class _StockDistributionSection extends StatelessWidget {
                       color: _kNavy,
                     ),
                   ),
+                  Text(
+                    totalUnit,
+                    style: const TextStyle(fontSize: 11, color: _kMuted),
+                  ),
                 ],
               ),
             ],
@@ -853,7 +862,7 @@ class _StockDistributionSection extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '${item.name} (${item.currentStock})',
+                        '${item.name} (${item.currentStock} ${_unitLabel(item.unit)})',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -916,7 +925,9 @@ class _DonutChartPainter extends CustomPainter {
       final sweepAngle = (items[i].currentStock / total) * 2 * pi;
       if (sweepAngle <= 0) continue;
       paint.color = colors[i % colors.length];
-      final drawSweep = items.length > 1 ? max(0.0, sweepAngle - gap) : sweepAngle;
+      final drawSweep = items.length > 1
+          ? max(0.0, sweepAngle - gap)
+          : sweepAngle;
       canvas.drawArc(rect, startAngle + gap / 2, drawSweep, false, paint);
       startAngle += sweepAngle;
     }
@@ -1024,8 +1035,11 @@ class _BusinessOverviewGrid extends StatelessWidget {
                       color: color.withValues(alpha: .14),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(item['icon'] as IconData,
-                        size: 18, color: color),
+                    child: Icon(
+                      item['icon'] as IconData,
+                      size: 18,
+                      color: color,
+                    ),
                   ),
                   const Spacer(),
                   if (trend != null) Icon(trend, size: 18, color: color),
@@ -1092,8 +1106,9 @@ class _StockMovementSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxVal =
-        max(movementIn, movementOut) == 0 ? 1 : max(movementIn, movementOut);
+    final maxVal = max(movementIn, movementOut) == 0
+        ? 1
+        : max(movementIn, movementOut);
 
     return Row(
       children: [
@@ -1187,11 +1202,15 @@ class _TopProductsList extends StatelessWidget {
     return Column(
       children: List.generate(topList.length, (index) {
         final product = topList[index];
-        final fraction = (product.currentStock / maxStock).clamp(0.05, 1.0);
+        final qty = product.currentStock;
+        final unit = _unitLabel(product.unit);
+        final fraction = (qty / maxStock).clamp(0.05, 1.0);
         final color = _kChartColors[index % _kChartColors.length];
 
         return Padding(
-          padding: EdgeInsets.only(bottom: index == topList.length - 1 ? 0 : 14),
+          padding: EdgeInsets.only(
+            bottom: index == topList.length - 1 ? 0 : 14,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1212,7 +1231,7 @@ class _TopProductsList extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${product.currentStock} units',
+                    '$qty $unit',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

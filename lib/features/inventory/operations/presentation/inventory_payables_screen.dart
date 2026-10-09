@@ -10,15 +10,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'inventory_ui_helpers.dart';
 
-
 class InventoryPayablesScreen extends ConsumerStatefulWidget {
-  const InventoryPayablesScreen({super.key});
+  const InventoryPayablesScreen({super.key, this.initialBillSearch = ''});
+
+  final String initialBillSearch;
 
   @override
-  ConsumerState<InventoryPayablesScreen> createState() => _InventoryPayablesScreenState();
+  ConsumerState<InventoryPayablesScreen> createState() =>
+      _InventoryPayablesScreenState();
 }
 
-class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScreen>
+class _InventoryPayablesScreenState
+    extends ConsumerState<InventoryPayablesScreen>
     with InventoryUiHelpers<InventoryPayablesScreen> {
   late Future<List<dynamic>> _load;
   final _search = TextEditingController();
@@ -27,6 +30,7 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
   @override
   void initState() {
     super.initState();
+    _search.text = widget.initialBillSearch;
     _load = _fetch();
   }
 
@@ -51,7 +55,8 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
   });
 
   List<BillView> _billViews(dynamic purchaseBills) => [
-    for (final b in (purchaseBills as dynamic).bills as List) BillView(asMap(b.raw)),
+    for (final b in (purchaseBills as dynamic).bills as List)
+      BillView(asMap(b.raw)),
   ];
 
   @override
@@ -69,7 +74,11 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
         appBar: AppBar(
           title: const Text('Payables'),
           bottom: const TabBar(
-            tabs: [Tab(text: 'Bills'), Tab(text: 'Payments'), Tab(text: 'Credits')],
+            tabs: [
+              Tab(text: 'Bills'),
+              Tab(text: 'Payments'),
+              Tab(text: 'Credits'),
+            ],
           ),
         ),
         floatingActionButton: canAdd
@@ -79,7 +88,11 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
                 label: const Text('Add payable'),
               )
             : null,
-        body: loadBody<List<dynamic>>(future: _load, what: 'payables', builder: _content),
+        body: loadBody<List<dynamic>>(
+          future: _load,
+          what: 'payables',
+          builder: _content,
+        ),
       ),
     );
   }
@@ -104,7 +117,10 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
             final ref = firstText(m, ['reference']);
             final bill = firstText(m, ['billNo']);
             return dataCard(
-              title: firstText(m, ['vendorName', 'vendor'], fallback: 'Vendor payment'),
+              title: firstText(m, [
+                'vendorName',
+                'vendor',
+              ], fallback: 'Vendor payment'),
               subtitle: [
                 if (bill.isNotEmpty) bill,
                 if (method.isNotEmpty) method,
@@ -128,7 +144,10 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
             final bill = firstText(m, ['billNo']);
             final reason = firstText(m, ['reason']);
             return dataCard(
-              title: firstText(m, ['vendorName', 'vendor'], fallback: 'Vendor credit'),
+              title: firstText(m, [
+                'vendorName',
+                'vendor',
+              ], fallback: 'Vendor credit'),
               subtitle: [
                 if (bill.isNotEmpty) bill,
                 if (reason.isNotEmpty) reason,
@@ -172,7 +191,12 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
           Expanded(child: _summaryTile('Total billed', inr(totalBilled), t)),
           const SizedBox(width: 10),
           Expanded(
-            child: _summaryTile('Outstanding', inr(totalDue), t, color: const Color(0xFFB45309)),
+            child: _summaryTile(
+              'Outstanding',
+              inr(totalDue),
+              t,
+              color: const Color(0xFFB45309),
+            ),
           ),
         ],
       ),
@@ -193,7 +217,13 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
         children: [
           for (final f in const ['ALL', 'OPEN', 'PAID'])
             ChoiceChip(
-              label: Text(f == 'ALL' ? 'All' : f == 'OPEN' ? 'Unpaid' : 'Paid'),
+              label: Text(
+                f == 'ALL'
+                    ? 'All'
+                    : f == 'OPEN'
+                    ? 'Unpaid'
+                    : 'Paid',
+              ),
               selected: _filter == f,
               onSelected: (_) => setState(() => _filter = f),
             ),
@@ -208,9 +238,16 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
             padding: const EdgeInsets.all(22),
             child: Column(
               children: [
-                Icon(Icons.receipt_long_outlined, size: 32, color: Theme.of(context).colorScheme.outline),
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
                 const SizedBox(height: 9),
-                Text('No purchase bills', style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  'No purchase bills',
+                  style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   'Outstanding vendor bills and balances appear here.',
@@ -226,7 +263,12 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
     ]);
   }
 
-  Widget _summaryTile(String label, String value, TextTheme t, {Color? color}) => Card(
+  Widget _summaryTile(
+    String label,
+    String value,
+    TextTheme t, {
+    Color? color,
+  }) => Card(
     margin: EdgeInsets.zero,
     child: Padding(
       padding: const EdgeInsets.all(12),
@@ -237,7 +279,13 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
           const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(value, style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: color)),
+            child: Text(
+              value,
+              style: t.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
           ),
         ],
       ),
@@ -259,7 +307,12 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
               Row(
                 children: [
                   Expanded(
-                    child: Text(b.billNo, style: t.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                    child: Text(
+                      b.billNo,
+                      style: t.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                   StatusChip(status),
                 ],
@@ -285,7 +338,9 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
                       'Balance',
                       inr(b.balance),
                       t,
-                      color: b.balance > 0 ? const Color(0xFFB45309) : const Color(0xFF15803D),
+                      color: b.balance > 0
+                          ? const Color(0xFFB45309)
+                          : const Color(0xFF15803D),
                     ),
                   ),
                 ],
@@ -293,7 +348,10 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(value: b.settledFraction, minHeight: 4),
+                child: LinearProgressIndicator(
+                  value: b.settledFraction,
+                  minHeight: 4,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -313,13 +371,21 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
       Text(k, style: t.labelSmall),
       FittedBox(
         fit: BoxFit.scaleDown,
-        child: Text(v, style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700, color: color)),
+        child: Text(
+          v,
+          style: t.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
       ),
     ],
   );
 
   Future<List<MapEntry<int, String>>> _vendorList() async {
-    final res = await ref.read(inventoryRepositoryProvider).getVendors(limit: 200);
+    final res = await ref
+        .read(inventoryRepositoryProvider)
+        .getVendors(limit: 200);
     return [for (final v in res.vendors) MapEntry<int, String>(v.id, v.name)];
   }
 
@@ -330,7 +396,11 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
       final changed = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (_) => PurchaseBillDetailScreen(bill: b, vendors: vendors, allBills: all),
+          builder: (_) => PurchaseBillDetailScreen(
+            bill: b,
+            vendors: vendors,
+            allBills: all,
+          ),
         ),
       );
       if (changed == true) reload();
@@ -359,12 +429,24 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
           padding: const EdgeInsets.all(22),
           child: Column(
             children: [
-              Icon(icon, size: 32, color: Theme.of(context).colorScheme.outline),
+              Icon(
+                icon,
+                size: 32,
+                color: Theme.of(context).colorScheme.outline,
+              ),
               const SizedBox(height: 9),
-              Text(emptyTitle,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+              Text(
+                emptyTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 4),
-              Text(emptyMessage, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                emptyMessage,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ),
         ),
@@ -382,7 +464,10 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
       builder: (c) => SafeArea(
         child: Wrap(
           children: [
-            if (auth.canAny(const [AppPermissions.billManage, AppPermissions.purchaseOrderManage]))
+            if (auth.canAny(const [
+              AppPermissions.billManage,
+              AppPermissions.purchaseOrderManage,
+            ]))
               ListTile(
                 leading: const Icon(Icons.receipt_long_outlined),
                 title: const Text('Create purchase bill'),
@@ -428,7 +513,9 @@ class _InventoryPayablesScreenState extends ConsumerState<InventoryPayablesScree
         bills: bills,
       );
       if (body == null) return;
-      await (credit ? repo.createVendorCredit(body) : repo.createVendorPayment(body));
+      await (credit
+          ? repo.createVendorCredit(body)
+          : repo.createVendorPayment(body));
       showSuccess(credit ? 'Vendor credit recorded' : 'Payment recorded');
       reload(); // the old screen never refreshed after saving
     } catch (e) {

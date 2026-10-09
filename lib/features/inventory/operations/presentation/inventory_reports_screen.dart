@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
@@ -24,7 +25,8 @@ class InventoryReportsScreen extends ConsumerStatefulWidget {
   const InventoryReportsScreen({super.key, this.initialTab = 0});
 
   @override
-  ConsumerState<InventoryReportsScreen> createState() => _InventoryReportsScreenState();
+  ConsumerState<InventoryReportsScreen> createState() =>
+      _InventoryReportsScreenState();
 }
 
 class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
@@ -56,7 +58,10 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
   Future<List<dynamic>> _fetchOverview() {
     final repo = ref.read(inventoryRepositoryProvider);
     // GET /dashboard/stats + GET /inventory/low-stock
-    return Future.wait<dynamic>([repo.getDashboardStats(), repo.getLowStockItems()]);
+    return Future.wait<dynamic>([
+      repo.getDashboardStats(),
+      repo.getLowStockItems(),
+    ]);
   }
 
   Future<Map<String, dynamic>> _fetchFinancial() async {
@@ -90,14 +95,45 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
 
   // ───────────────────────── helpers ─────────────────────────
 
-  num _num(dynamic v) => v is num ? v : (num.tryParse('${v ?? ''}') ?? 0);
+  /// Parses numbers and numeric strings like "1,234.50", "₹1,200" or "12.5%".
+  num _num(dynamic v) {
+    if (v is num) return v;
+    final cleaned = '${v ?? ''}'.replaceAll(RegExp(r'[₹,%\s]'), '');
+    return num.tryParse(cleaned) ?? 0;
+  }
 
-  dynamic _pick(Map<String, dynamic> m, List<String> keys) {
-    for (final k in keys) {
-      if (m[k] != null) return m[k];
+  String _normKey(String k) =>
+      k.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+  /// Like [_pick], but ignores case / underscores / dashes (so `stock_value`,
+  /// `StockValue` and `stockValue` all match) and also looks one level deep
+  /// into nested maps (e.g. `{ "item": { "sku": ... } }`).
+  /// Top-level keys always win over nested ones.
+  dynamic _pickLoose(Map<String, dynamic> m, List<String> keys) {
+    final wanted = keys.map(_normKey).toList();
+
+    dynamic scan(Map src) {
+      final lookup = <String, dynamic>{};
+      src.forEach((k, v) => lookup[_normKey('$k')] = v);
+      for (final w in wanted) {
+        final v = lookup[w];
+        if (v != null && '$v'.trim().isNotEmpty) return v;
+      }
+      return null;
+    }
+
+    final direct = scan(m);
+    if (direct != null) return direct;
+    for (final v in m.values) {
+      if (v is Map) {
+        final nested = scan(v);
+        if (nested != null) return nested;
+      }
     }
     return null;
   }
+
+  num _r2(num v) => num.parse(v.toStringAsFixed(2));
 
   dynamic _safe(dynamic Function() read) {
     try {
@@ -109,6 +145,133 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
 
   String _money(dynamic v) => '₹${fmtMoney(v)}';
 
+  // Red is reserved for LOW STOCK.
+  static const Color _lowRed = Color(0xFFD32F2F);
+  static const Color _lowRedBg = Color(0xFFFFEBEE);
+
+  static const Color _inGreen = Color(0xFF2E7D32);
+  static const Color _inGreenBg = Color(0xFFE8F5E9);
+
+  static const Color _outOrange = Color(0xFFEF6C00);
+  static const Color _outOrangeBg = Color(0xFFFFF3E0);
+
+  static const Color _okGreen = Color(0xFF2E7D32);
+
+  Widget _accentCard({
+    required String title,
+    String? subtitle,
+    required String trailing,
+    required IconData icon,
+    required Color accent,
+    required Color tint,
+    Color? titleColor,
+    String? badge,
+    bool emphasize = false,
+  }) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
+
+      // White background for every card.
+      color: Colors.white,
+
+      // Neutral border for every card.
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Colors.black12),
+      ),
+
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.black.withOpacity(.05),
+              child: Icon(icon, color: emphasize ? _lowRed : accent, size: 18),
+            ),
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+
+                      if (badge != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: emphasize ? _lowRed : accent,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badge,
+                            style: TextStyle(
+                              color: emphasize ? _lowRed : accent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: .4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+
+                  if (subtitle != null && subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            Text(
+              trailing,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String _csvCell(dynamic v) {
     final s = '${v ?? ''}';
     return s.contains(',') || s.contains('"') || s.contains('\n')
@@ -118,16 +281,17 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
 
   Future<void> _exportCsv(String fileName, List<List<dynamic>> rows) async {
     try {
-      final csv = rows.map((r) => r.map(_csvCell).join(',')).join('\n');
+      final csv = rows.map((r) => r.map(_csvCell).join(',')).join('\r\n');
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/$fileName');
-      await file.writeAsString(csv);
+      // UTF-8 BOM so Excel shows ₹ and non-English product names correctly.
+      await file.writeAsString('﻿$csv');
       await OpenFilex.open(file.path);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
   }
 
@@ -155,11 +319,31 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
         ),
         body: TabBarView(
           children: [
-            loadBody<List<dynamic>>(future: _overview, what: 'overview', builder: _overviewTab),
-            loadBody<Map<String, dynamic>>(future: _financial, what: 'cost & P/L', builder: _plTab),
-            loadBody<List<dynamic>>(future: _stock, what: 'stock report', builder: _stockTab),
-            loadBody<List<dynamic>>(future: _moves, what: 'movements', builder: _movementsTab),
-            loadBody<List<dynamic>>(future: _lots, what: 'lots', builder: _lotsTab),
+            loadBody<List<dynamic>>(
+              future: _overview,
+              what: 'overview',
+              builder: _overviewTab,
+            ),
+            loadBody<Map<String, dynamic>>(
+              future: _financial,
+              what: 'cost & P/L',
+              builder: _plTab,
+            ),
+            loadBody<List<dynamic>>(
+              future: _stock,
+              what: 'stock report',
+              builder: _stockTab,
+            ),
+            loadBody<List<dynamic>>(
+              future: _moves,
+              what: 'movements',
+              builder: _movementsTab,
+            ),
+            loadBody<List<dynamic>>(
+              future: _lots,
+              what: 'lots',
+              builder: _lotsTab,
+            ),
           ],
         ),
       ),
@@ -173,19 +357,34 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
     final low = data[1] as List<dynamic>;
 
     // Optional dashboard fields from doc 4.1 — shown only if your DashboardStats model has them.
-    final productsWithStock = _safe(() => (dashboard as dynamic).productsWithStock);
+    final productsWithStock = _safe(
+      () => (dashboard as dynamic).productsWithStock,
+    );
     final in30 = _safe(() => (dashboard as dynamic).movementIn30d);
     final out30 = _safe(() => (dashboard as dynamic).movementOut30d);
 
     Widget pair(Widget a, Widget b) => Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Row(children: [Expanded(child: a), const SizedBox(width: 10), Expanded(child: b)]),
+      child: Row(
+        children: [
+          Expanded(child: a),
+          const SizedBox(width: 10),
+          Expanded(child: b),
+        ],
+      ),
     );
 
     return refreshList([
-      sectionHeading('Inventory overview', 'Current stock, lots and recent activity'),
+      sectionHeading(
+        'Inventory overview',
+        'Current stock, lots and recent activity',
+      ),
       pair(
-        metricCard('Units in stock', '${dashboard.stockCount}', Icons.inventory_outlined),
+        metricCard(
+          'Units in stock',
+          '${dashboard.stockCount}',
+          Icons.inventory_outlined,
+        ),
         metricCard('Lots', '${dashboard.lotsCount}', Icons.layers_outlined),
       ),
       pair(
@@ -209,14 +408,21 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
           child: Text('No low stock items'),
         )
       else
-        ...low.take(8).map(
-          (item) => dataCard(
-            title: '${item.name} (${item.sku})',
-            subtitle: 'Reorder level: ${item.reorderLevel ?? '—'}',
-            amount: '${item.currentStock} units',
-            icon: Icons.warning_amber_outlined,
-          ),
-        ),
+        ...low
+            .take(8)
+            .map(
+              (item) => _accentCard(
+                title: '${item.name}',
+                subtitle: 'Reorder level: ${item.reorderLevel ?? '—'}',
+                trailing: '${item.currentStock} units',
+                icon: Icons.warning_amber_rounded,
+                accent: _lowRed,
+                tint: _lowRedBg,
+                titleColor: _lowRed,
+                badge: 'LOW',
+                emphasize: true,
+              ),
+            ),
     ], padding: const EdgeInsets.all(16));
   }
 
@@ -233,15 +439,28 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
           children: [
             Text(
               title.toUpperCase(),
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .4),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: .4,
+              ),
             ),
             const SizedBox(height: 6),
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
             const SizedBox(height: 4),
-            Text(sub, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+            Text(
+              sub,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
           ],
         ),
       ),
@@ -251,13 +470,25 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
   Widget _plTab(Map<String, dynamic> f) {
     final label = _periods[_months] ?? _months;
     final net = _num(f['netProfitEstimate']);
-    final products = ((f['byProduct'] as List?) ?? const [])
-        .map((e) => Map<String, dynamic>.from(e as Map))
+    final productsRaw = _pickLoose(f, ['byProduct', 'products', 'productWise']);
+    final products = (productsRaw is List ? productsRaw : const [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
         .toList();
+    if (kDebugMode && products.isNotEmpty) {
+      debugPrint('P/L byProduct keys: ${products.first.keys.toList()}');
+      debugPrint('P/L byProduct[0]: ${products.first}');
+    }
 
     Widget pair(Widget a, Widget b) => Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Row(children: [Expanded(child: a), const SizedBox(width: 10), Expanded(child: b)]),
+      child: Row(
+        children: [
+          Expanded(child: a),
+          const SizedBox(width: 10),
+          Expanded(child: b),
+        ],
+      ),
     );
 
     return refreshList([
@@ -275,7 +506,12 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
                   isExpanded: true,
                   value: _months,
                   items: _periods.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) {
                     if (v == null || v == _months) return;
@@ -298,70 +534,130 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       ),
       const SizedBox(height: 14),
       pair(
-        _kpi('Purchase cost', _money(f['purchaseCost']), '${f['purchaseCount'] ?? 0} received POs',
-            const Color(0xFFFFF8EE)),
-        _kpi('Stock out sales', _money(f['stockOutSubtotal']),
-            'GST ${_money(f['stockOutGst'])} · ${f['stockOutQty'] ?? 0} units', const Color(0xFFF1F4FF)),
+        _kpi(
+          'Purchase cost',
+          _money(f['purchaseCost']),
+          '${f['purchaseCount'] ?? 0} received POs',
+          const Color(0xFFFFF8EE),
+        ),
+        _kpi(
+          'Stock out sales',
+          _money(f['stockOutSubtotal']),
+          'GST ${_money(f['stockOutGst'])} · ${f['stockOutQty'] ?? 0} units',
+          const Color(0xFFF1F4FF),
+        ),
       ),
       pair(
-        _kpi('COGS (stock out)', _money(f['stockOutCogs']),
-            'Gross profit ${_money(f['stockOutGrossProfit'])}', const Color(0xFFFFF8EE)),
-        _kpi('Total revenue (ex GST)', _money(f['totalRevenueExGst']),
-            'With GST ${_money(f['totalRevenueWithGst'])}', const Color(0xFFF1F4FF)),
+        _kpi(
+          'COGS (stock out)',
+          _money(f['stockOutCogs']),
+          'Gross profit ${_money(f['stockOutGrossProfit'])}',
+          const Color(0xFFFFF8EE),
+        ),
+        _kpi(
+          'Total revenue (ex GST)',
+          _money(f['totalRevenueExGst']),
+          'With GST ${_money(f['totalRevenueWithGst'])}',
+          const Color(0xFFF1F4FF),
+        ),
       ),
       pair(
-        _kpi('Estimated net P/L', _money(f['netProfitEstimate']),
-            '${net >= 0 ? 'Earned more than spent' : 'Spent more than earned'} · $label',
-            net >= 0 ? const Color(0xFFEBFAF3) : const Color(0xFFFFEFEF)),
-        _kpi('Inventory on hand', _money(f['inventoryValueAtCost']),
-            '${f['inventoryUnits'] ?? 0} units · B2B ${_money(f['inventoryValueAtB2b'])}',
-            const Color(0xFFF1F4FF)),
+        _kpi(
+          'Estimated net P/L',
+          _money(f['netProfitEstimate']),
+          '${net >= 0 ? 'Earned more than spent' : 'Spent more than earned'} · $label',
+          net >= 0 ? const Color(0xFFEBFAF3) : const Color(0xFFFFEFEF),
+        ),
+        _kpi(
+          'Inventory on hand',
+          _money(f['inventoryValueAtCost']),
+          '${f['inventoryUnits'] ?? 0} units · B2B ${_money(f['inventoryValueAtB2b'])}',
+          const Color(0xFFF1F4FF),
+        ),
       ),
       const SizedBox(height: 6),
-      sectionHeading('Product-wise cost, revenue & profit', '${products.length} products · $label'),
+      sectionHeading(
+        'Product-wise cost & revenue',
+        '${products.length} products · $label',
+      ),
       if (products.isEmpty)
-        const Padding(padding: EdgeInsets.all(16), child: Text('No product P/L rows for this period'))
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('No product P/L rows for this period'),
+        )
       else
         ...products.map(_productPlCard),
     ], padding: const EdgeInsets.all(16));
   }
 
-  // byProduct[] keys are not spelled out in the API doc, so several likely names are tried.
-  // Print one row (debugPrint(products.first.toString())) and trim these lists to the real keys.
+  // byProduct[] keys are not spelled out in the API doc, so this matches many likely names.
+  // In debug builds the real keys of the first row are printed — trim the lists to those.
   Map<String, dynamic> _plRow(Map<String, dynamic> p) {
-    final revenue = _num(_pick(p, ['outRevenue', 'stockOutRevenue', 'stockOutSubtotal', 'revenue']));
-    final profit = _num(_pick(p, ['profit', 'grossProfit', 'stockOutGrossProfit']));
-    final marginRaw = _pick(p, ['marginPct', 'marginPercent', 'margin']);
+    dynamic raw(List<String> keys) => _pickLoose(p, keys);
+    num n(List<String> keys) => _num(raw(keys));
+
+    final onHand = n([
+      'onHand',
+      'onHandQty',
+      'currentStock',
+      'stock',
+      'stockQty',
+      'quantityOnHand',
+      'availableQty',
+      'quantity',
+      'qty',
+    ]);
+    final cost = n([
+      'costPrice',
+      'unitCost',
+      'cost',
+      'avgCost',
+      'averageCost',
+      'costPerUnit',
+      'purchasePrice',
+    ]);
+    final b2bPrice = n([
+      'b2bPrice',
+      'b2b',
+      'b2bRate',
+      'sellingPrice',
+      'salePrice',
+    ]);
+
+    final outQty = n([
+      'outQty',
+      'stockOutQty',
+      'stockOutQuantity',
+      'outQuantity',
+      'soldQty',
+      'soldQuantity',
+      'qtySold',
+    ]);
+    final revenue = n([
+      'outRevenue',
+      'stockOutRevenue',
+      'stockOutSubtotal',
+      'stockOutSales',
+      'stockOutAmount',
+      'salesRevenue',
+      'revenue',
+      'totalRevenue',
+      'revenueExGst',
+    ]);
+
+    // COGS: use the API value when available, otherwise derive from quantity and cost.
+    final cogsRaw = raw(['cogs', 'stockOutCogs', 'costOfGoodsSold', 'outCogs']);
+    final cogs = cogsRaw != null ? _num(cogsRaw) : outQty * cost;
+
     return {
-      'name': _pick(p, ['productName', 'name', 'itemName']) ?? '—',
-      'sku': _pick(p, ['sku', 'productSku', 'itemSku']) ?? '',
-      'onHand': _num(_pick(p, ['onHand', 'currentStock', 'stock', 'quantity'])),
-      'cost': _num(_pick(p, ['costPrice', 'unitCost', 'cost'])),
-      'b2bPrice': _num(_pick(p, ['b2bPrice', 'b2b_price', 'sellingPrice'])),
-      'stockValue': _num(_pick(p, [
-        'stockValueAtCost',
-        'stockValue',
-        'inventoryValue',
-        'inventoryValueAtCost',
-      ])),
-      'stockValueB2b': _num(_pick(p, [
-        'stockValueAtB2b',
-        'stockValueAtB2B',
-        'stockValueB2b',
-        'inventoryValueAtB2b',
-        'b2bStockValue',
-      ])),
-      'outQty': _num(_pick(p, [
-        'outQty',
-        'stockOutQty',
-        'stockOutQuantity',
-        'outQuantity',
-        'soldQty',
-      ])),
+      'name': raw(['productName', 'itemName', 'name']) ?? '—',
+      'sku': raw(['sku', 'productSku', 'itemSku']) ?? '',
+      'onHand': onHand,
+      'cost': cost,
+      'b2bPrice': b2bPrice,
+      'outQty': outQty,
       'outRevenue': revenue,
-      'cogs': _num(_pick(p, ['cogs', 'stockOutCogs'])),
-      'profit': profit,
-      'margin': marginRaw != null ? _num(marginRaw) : (revenue > 0 ? profit / revenue * 100 : 0),
+      'cogs': cogs,
     };
   }
 
@@ -371,10 +667,23 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(),
-              style: const TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w600)),
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10,
+              color: Colors.black54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -382,15 +691,16 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
 
   Widget _productPlCard(Map<String, dynamic> raw) {
     final r = _plRow(raw);
-    final profit = r['profit'] as num;
-    final profitColor = profit >= 0 ? Colors.green.shade700 : Colors.red.shade700;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${r['name']}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+            Text(
+              '${r['name']}',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 12,
@@ -398,12 +708,9 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
               children: [
                 _stat('On hand', '${r['onHand']}'),
                 _stat('Cost', _money(r['cost'])),
-                _stat('Stock value', _money(r['stockValue'])),
                 _stat('Out qty', '${r['outQty']}'),
                 _stat('Out revenue', _money(r['outRevenue'])),
                 _stat('COGS', _money(r['cogs'])),
-                _stat('Profit', _money(profit), color: profitColor),
-                _stat('Margin', '${(r['margin'] as num).round()}%', color: profitColor),
               ],
             ),
           ],
@@ -412,51 +719,32 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
     );
   }
 
-  Future<void> _exportPl(Map<String, dynamic> f, List<Map<String, dynamic>> products) {
+  Future<void> _exportPl(
+    Map<String, dynamic> f,
+    List<Map<String, dynamic>> products,
+  ) {
     final rows = <List<dynamic>>[
-      ['Period', _periods[_months] ?? _months],
-      ['Purchase cost', f['purchaseCost']],
-      ['Stock out sales', f['stockOutSubtotal']],
-      ['Stock out GST', f['stockOutGst']],
-      ['Stock out quantity', f['stockOutQty']],
-      ['COGS (stock out)', f['stockOutCogs']],
-      ['Gross profit', f['stockOutGrossProfit']],
-      ['Total revenue (ex GST)', f['totalRevenueExGst']],
-      ['Total revenue (with GST)', f['totalRevenueWithGst']],
-      ['Estimated net P/L', f['netProfitEstimate']],
-      ['Inventory on hand (at cost)', f['inventoryValueAtCost']],
-      ['Inventory units', f['inventoryUnits']],
-      ['Inventory on hand (B2B)', f['inventoryValueAtB2b']],
-      [],
       [
         'Product',
         'SKU',
         'On hand',
         'Cost price',
         'B2B price',
-        'Stock value at cost',
-        'Stock value at B2B',
         'Stock out quantity',
         'Stock out revenue',
         'Stock out COGS',
-        'Stock out gross profit',
-        'Margin %',
       ],
       ...products.map((p) {
         final r = _plRow(p);
         return [
           r['name'],
           r['sku'],
-          r['onHand'],
-          r['cost'],
-          r['b2bPrice'],
-          r['stockValue'],
-          r['stockValueB2b'],
-          r['outQty'],
-          r['outRevenue'],
-          r['cogs'],
-          r['profit'],
-          (r['margin'] as num).round(),
+          _r2(r['onHand'] as num),
+          _r2(r['cost'] as num),
+          _r2(r['b2bPrice'] as num),
+          _r2(r['outQty'] as num),
+          _r2(r['outRevenue'] as num),
+          _r2(r['cogs'] as num),
         ];
       }),
     ];
@@ -478,19 +766,16 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
     final current = (row.currentStock as num).toInt();
     final reorder = (row.reorderLevel as num?)?.toInt();
     final isLow = reorder != null && current <= reorder;
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isLow ? Colors.orange.shade50 : Colors.green.shade50,
-          child: Icon(
-            isLow ? Icons.warning_amber : Icons.inventory_2_outlined,
-            color: isLow ? Colors.orange : Colors.green,
-          ),
-        ),
-        title: Text(row.name as String),
-        subtitle: Text('${row.sku}  •  Reorder at ${reorder ?? '—'}'),
-        trailing: Text('$current units', style: const TextStyle(fontWeight: FontWeight.w700)),
-      ),
+    return _accentCard(
+      title: row.name as String,
+      subtitle: 'Reorder at ${reorder ?? '—'}',
+      trailing: '$current units',
+      icon: isLow ? Icons.warning_amber_rounded : Icons.inventory_2_outlined,
+      accent: isLow ? _lowRed : Colors.black54,
+      tint: _lowRedBg,
+      titleColor: isLow ? _lowRed : null,
+      badge: isLow ? 'LOW' : null,
+      emphasize: isLow,
     );
   }
 
@@ -507,7 +792,11 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       Wrap(
         spacing: 8,
         children: [
-          for (final e in const {'all': 'All', 'in': 'Stock in', 'out': 'Stock out'}.entries)
+          for (final e in const {
+            'all': 'All',
+            'in': 'Stock in',
+            'out': 'Stock out',
+          }.entries)
             ChoiceChip(
               label: Text(e.value),
               selected: _direction == e.key,
@@ -519,7 +808,9 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       if (rows.isEmpty)
         const Padding(
           padding: EdgeInsets.all(16),
-          child: Text('No movements. Stock in and stock out activity appears here.'),
+          child: Text(
+            'No movements. Stock in and stock out activity appears here.',
+          ),
         )
       else
         ...rows.map((movement) {
@@ -527,19 +818,25 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
           final isOut = pickText(m, ['direction']).toUpperCase() == 'OUT';
           final qty = pickText(m, ['quantity'], fallback: '0');
           final ref = pickText(m, ['referenceNo']);
-          return dataCard(
+          return _accentCard(
             title: pickText(m, ['itemName'], fallback: 'Stock movement'),
-            subtitle: [
-              pickText(m, ['type']).replaceAll('_', ' '),
-              pickText(m, ['warehouseName']),
-              if (ref.isNotEmpty) ref,
-              fmtDate(m['createdAt']),
-            ].where((s) {
-              final value = s.toString().trim();
-              return value.isNotEmpty && value != '—' && value != '-';
-            }).join('  •  '),
-            amount: '$qty units',
+            subtitle:
+                [
+                      pickText(m, ['type']).replaceAll('_', ' '),
+                      pickText(m, ['warehouseName']),
+                      if (ref.isNotEmpty) ref,
+                      fmtDate(m['createdAt']),
+                    ]
+                    .where((s) {
+                      final value = s.toString().trim();
+                      return value.isNotEmpty && value != '—' && value != '-';
+                    })
+                    .join('  •  '),
+            trailing: '${isOut ? '' : '+'}$qty units',
             icon: isOut ? Icons.north_east : Icons.south_west,
+            accent: isOut ? _outOrange : _inGreen,
+            tint: Colors.white,
+            badge: isOut ? 'OUT' : 'IN',
           );
         }),
     ], padding: const EdgeInsets.all(16));
@@ -559,7 +856,10 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       Row(
         children: [
           Expanded(
-            child: sectionHeading('Lot exports', '${maps.length} lots with purchase, processing & profit'),
+            child: sectionHeading(
+              'Lot exports',
+              '${maps.length} lots with purchase, processing & profit',
+            ),
           ),
           OutlinedButton.icon(
             onPressed: maps.isEmpty ? null : () => _exportLots(maps),
@@ -577,7 +877,8 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
           final status = pickText(m, ['status']);
           return dataCard(
             title: pickText(m, ['lotNumber'], fallback: 'Lot'),
-            subtitle: '$item  •  $status\n'
+            subtitle:
+                '$item  •  $status\n'
                 'Purchase ${_money(m['purchaseAmount'])}  •  '
                 'Selling ${_money(m['sellingAmount'])}  •  '
                 'Profit ${_money(m['profitAmount'])}',
@@ -591,25 +892,39 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
   Future<void> _exportLots(List<Map<String, dynamic>> lots) {
     final rows = <List<dynamic>>[
       [
-        'Lot', 'Item', 'Vendor', 'Warehouse', 'Status', 'Received', 'Raw', 'Processing',
-        'Processed', 'Available', 'Purchase amount', 'Processing amount', 'Selling amount', 'Profit',
+        'Lot',
+        'Item',
+        'Vendor',
+        'Warehouse',
+        'Status',
+        'Received',
+        'Raw',
+        'Processing',
+        'Processed',
+        'Available',
+        'Purchase amount',
+        'Processing amount',
+        'Selling amount',
+        'Profit',
       ],
-      ...lots.map((m) => [
-        m['lotNumber'],
-        _nested(m, 'item', 'name'),
-        _nested(m, 'vendor', 'name'),
-        _nested(m, 'warehouse', 'name'),
-        m['status'],
-        m['receivedQty'],
-        m['rawQty'],
-        m['processingQty'],
-        m['processedQty'],
-        m['availableQty'],
-        m['purchaseAmount'],
-        m['processingAmount'],
-        m['sellingAmount'],
-        m['profitAmount'],
-      ]),
+      ...lots.map(
+        (m) => [
+          m['lotNumber'],
+          _nested(m, 'item', 'name'),
+          _nested(m, 'vendor', 'name'),
+          _nested(m, 'warehouse', 'name'),
+          m['status'],
+          m['receivedQty'],
+          m['rawQty'],
+          m['processingQty'],
+          m['processedQty'],
+          m['availableQty'],
+          m['purchaseAmount'],
+          m['processingAmount'],
+          m['sellingAmount'],
+          m['profitAmount'],
+        ],
+      ),
     ];
     return _exportCsv('inventory_lots.csv', rows);
   }

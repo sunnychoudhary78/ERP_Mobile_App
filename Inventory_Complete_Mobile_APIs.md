@@ -874,6 +874,9 @@ Prefer Production module work-order APIs for FG flows (see §13).
 
 ## 23. Suggested mobile screen → API checklist
 
+In the mobile app, users can open **Stock → Inventory** to reach the inventory
+lots screen (`/inventory/lots`).
+
 Implement screens in this order for web parity:
 
 | # | Mobile screen | Primary APIs |
@@ -886,7 +889,7 @@ Implement screens in this order for web parity:
 | 6 | Stock IN / OUT | stock-in, stock-out, warehouse-stock chips, customers |
 | 7 | Stock OUT Bills | bills list/detail + payments-received |
 | 8 | Movement Ledger | transactions |
-| 9 | Inventory lots | `/inventory` or `/lot` + allocate + start-processing + send-for-selling |
+| 9 | Inventory (lots) | `/inventory` or `/lot` + allocate + start-processing + send-for-selling |
 | 10 | Processed / FG | processings complete + production work-orders |
 | 11 | Sellable | lots + sales list |
 | 12 | Vendors | vendors CRUD + import |

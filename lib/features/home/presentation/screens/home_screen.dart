@@ -224,7 +224,7 @@ class HomeScreen extends ConsumerWidget {
         anyOf: AppPermissions.lowStock,
       ),
       QuickLink(
-        'Lots',
+        'Inventory',
         '/inventory/lots',
         Icons.inventory_2_outlined,
         group: 'Stock',

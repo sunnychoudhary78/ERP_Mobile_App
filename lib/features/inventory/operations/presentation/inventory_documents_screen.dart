@@ -99,7 +99,8 @@ class _InventoryDocumentsScreenState
   Future<_DocsData> _fetch() async {
     final repo = ref.read(inventoryRepositoryProvider);
     final docs = await asList(repo.getDocuments());
-    if (kDebugMode && docs.isNotEmpty) debugPrint('DOCUMENT ROW: ${docs.first}');
+    if (kDebugMode && docs.isNotEmpty)
+      debugPrint('DOCUMENT ROW: ${docs.first}');
     // Lots are only used to show "LOT-000003 (item)" instead of a raw id.
     // A failure here must not break the documents list.
     var lots = <dynamic>[];
@@ -144,32 +145,120 @@ class _InventoryDocumentsScreenState
     return (raw.isEmpty ? 'DOCUMENT' : raw.replaceAll('_', ' ')).toUpperCase();
   }
 
-  /// The backend row should have `createdAt`, but try common alternatives and
-  /// finally any date-looking field so the date never silently shows "—".
-  String _dateOf(Map<String, dynamic> doc) {
-    const keys = [
-      'createdAt',
-      'created_at',
-      'uploadedAt',
-      'uploaded_at',
-      'date',
-      'createdOn',
-      'updatedAt',
-      'updated_at',
-    ];
-    for (final k in keys) {
-      final v = doc[k];
-      if (v != null && DateTime.tryParse('$v') != null) return fmtDate(v);
+  dynamic _auditValue(Map<String, dynamic> doc, List<String> keys) {
+    const auditKeys = ['audit', 'metadata', 'timestamps'];
+    for (final key in keys) {
+      final value = doc[key];
+      if (value != null) return value;
     }
-    for (final e in doc.entries) {
-      final k = e.key.toLowerCase();
-      if ((k.contains('date') || k.contains('creat') || k.contains('upload')) &&
-          e.value != null &&
-          DateTime.tryParse('${e.value}') != null) {
-        return fmtDate(e.value);
+    for (final auditKey in auditKeys) {
+      final audit = doc[auditKey];
+      if (audit is! Map) continue;
+      for (final key in keys) {
+        final value = audit[key];
+        if (value != null) return value;
       }
     }
-    return '—';
+    return null;
+  }
+
+  String _dateText(dynamic value) {
+    if (value is Map) {
+      value =
+          value['dateTime'] ??
+          value['timestamp'] ??
+          value['date'] ??
+          value['at'];
+    }
+    if (value == null) return '';
+    final parsed = DateTime.tryParse('$value');
+    if (parsed == null) return '';
+    final local = parsed.toLocal();
+    final date = fmtDate(local.toIso8601String());
+    final time =
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+    return '$date $time';
+  }
+
+  String _uploadedDate(Map<String, dynamic> doc) => _dateText(
+    _auditValue(doc, const [
+      'createdAt',
+      'created_at',
+      'createdDate',
+      'created_date',
+      'uploadedAt',
+      'uploaded_at',
+      'uploadedDate',
+      'uploaded_date',
+      'uploadDate',
+      'upload_date',
+      'date',
+      'createdOn',
+    ]),
+  );
+
+  String _updatedDate(Map<String, dynamic> doc) {
+    final updated = _dateText(
+      _auditValue(doc, const [
+        'updatedAt',
+        'updated_at',
+        'updatedDate',
+        'updated_date',
+        'lastUpdatedAt',
+        'last_updated_at',
+        'modifiedAt',
+        'modified_at',
+      ]),
+    );
+    return updated.isNotEmpty ? updated : _uploadedDate(doc);
+  }
+
+  String _actorName(Map<String, dynamic> doc, List<String> keys) {
+    for (final key in keys) {
+      final value = _auditValue(doc, [key]);
+      if (value is Map) {
+        final name = pickText(Map<String, dynamic>.from(value), [
+          'name',
+          'fullName',
+          'full_name',
+          'email',
+        ], fallback: '');
+        if (name.isNotEmpty) return name;
+      } else if (value != null && '$value'.trim().isNotEmpty) {
+        return '$value'.trim();
+      }
+    }
+    return '';
+  }
+
+  String _uploadedBy(Map<String, dynamic> doc) => _actorName(doc, const [
+    'uploadedByName',
+    'uploaded_by_name',
+    'uploadedByUser',
+    'uploaded_by_user',
+    'createdByName',
+    'created_by_name',
+    'createdByUser',
+    'created_by_user',
+    'uploadedBy',
+    'uploaded_by',
+    'createdBy',
+    'created_by',
+  ]);
+
+  String _updatedBy(Map<String, dynamic> doc) => _actorName(doc, const [
+    'updatedByName',
+    'updated_by_name',
+    'updatedByUser',
+    'updated_by_user',
+    'updatedBy',
+    'updated_by',
+  ]);
+
+  String _auditInfo(String date, String actor) {
+    final dateText = date.isEmpty ? 'Not available' : date;
+    return actor.isEmpty ? dateText : '$dateText · $actor';
   }
 
   bool _matches(Map<String, dynamic> doc, _DocsData data) {
@@ -281,7 +370,10 @@ class _InventoryDocumentsScreenState
                 if (data.lotById.containsKey(_DocsData._idOf(lot)))
                   DropdownMenuItem(
                     value: _DocsData._idOf(lot),
-                    child: Text(_lotLabel(lot), overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      _lotLabel(lot),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
             ],
             onChanged: (v) => setState(() => _lotFilter = v ?? _allLots),
@@ -366,20 +458,26 @@ class _InventoryDocumentsScreenState
                   Text(
                     lotName,
                     style: TextStyle(
-                      color: lotId == null
-                          ? Colors.black54
-                          : scheme.primary,
+                      color: lotId == null ? Colors.black54 : scheme.primary,
                       fontWeight: lotId == null
                           ? FontWeight.w500
                           : FontWeight.w700,
                     ),
                   ),
-                const Text('•', style: TextStyle(color: Colors.black38)),
-                Text(
-                  _dateOf(doc),
-                  style: const TextStyle(color: Colors.black54),
-                ),
               ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Uploaded: ${_auditInfo(_uploadedDate(doc), _uploadedBy(doc))}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Text(
+              'Updated: ${_auditInfo(_updatedDate(doc), _updatedBy(doc))}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 10),
             Padding(
@@ -471,8 +569,8 @@ class _InventoryDocumentsScreenState
               const SizedBox(height: 8),
               row('Type', _typeLabel(doc)),
               row('Lot', lotText),
-              row('Uploaded', _dateOf(doc)),
-              row('Updated', fmtDate(doc['updatedAt'])),
+              row('Uploaded', _auditInfo(_uploadedDate(doc), _uploadedBy(doc))),
+              row('Updated', _auditInfo(_updatedDate(doc), _updatedBy(doc))),
               row('File', pickText(doc, ['url'], fallback: '—')),
               const SizedBox(height: 12),
               SizedBox(
@@ -557,6 +655,7 @@ class _InventoryDocumentsScreenState
           type: draft.type,
           lotId: draft.lotId,
         );
+        reload();
         showSuccess('Document link added');
       } else {
         await repo.uploadDocument(
@@ -565,6 +664,7 @@ class _InventoryDocumentsScreenState
           lotId: draft.lotId,
           filePath: draft.filePath!,
         );
+        reload();
         showSuccess('Document uploaded');
       }
     } catch (e) {
@@ -741,10 +841,24 @@ class _DocumentFormState extends State<_DocumentForm> {
                   ),
                   validator: (v) {
                     final value = (v ?? '').trim();
-                    return Uri.tryParse(value)?.hasAbsolutePath == true &&
-                            value.startsWith('http')
+
+                    if (value.isEmpty) {
+                      return 'Enter a URL';
+                    }
+
+                    final uri = Uri.tryParse(value);
+
+                    final hasValidScheme =
+                        uri != null &&
+                        (uri.scheme.toLowerCase() == 'http' ||
+                            uri.scheme.toLowerCase() == 'https');
+
+                    final hasValidHost =
+                        uri != null && uri.hasAuthority && uri.host.isNotEmpty;
+
+                    return hasValidScheme && hasValidHost
                         ? null
-                        : 'Enter a valid URL';
+                        : 'Enter a valid URL starting with http:// or https://';
                   },
                 )
               else ...[

@@ -12,6 +12,7 @@ class InventoryItem {
   final num? sellingPrice;
   final int? categoryId;
   final String? categoryName;
+  final String? categoryType;
 
   // ───────── Products-screen fields (full item object) ─────────
   final String? imageUrl;
@@ -45,6 +46,7 @@ class InventoryItem {
     this.sellingPrice,
     this.categoryId,
     this.categoryName,
+    this.categoryType,
     this.imageUrl,
     this.description,
     this.mrp,
@@ -85,6 +87,7 @@ class InventoryItem {
       categoryId:
           json['categoryId'] == null ? null : _int(json['categoryId']),
       categoryName: category?['name']?.toString(),
+      categoryType: category?['type']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
       description: json['description']?.toString(),
       mrp: _numOrNull(json['mrp']),

@@ -13,6 +13,15 @@ import 'package:image_picker/image_picker.dart';
 import 'products_screen.dart';
 
 const _statusOptions = ['ACTIVE', 'PENDING', 'REJECTED', 'INACTIVE'];
+const _dimensionPresets = <String, String>{
+  'Length': 'mm',
+  'Width': 'mm',
+  'Thickness': 'mm',
+  'Height': 'mm',
+  'Diameter': 'mm',
+  'Weight': 'kg',
+  'Volume': 'L',
+};
 const _unitOptions = [
   'Micrometer (µm)',
   'ml',
@@ -457,8 +466,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     return num.tryParse(t);
   }
 
-  void _addDimension() {
-    setState(() => _dimensions.add(_ProductDimensionDraft()));
+  void _addDimension({String? label, String? unit}) {
+    setState(
+      () => _dimensions.add(_ProductDimensionDraft(label: label, unit: unit)),
+    );
   }
 
   void _removeDimension(int index) {
@@ -1542,47 +1553,83 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   }
 
   Widget _buildDimensions() {
-    if (_dimensions.isEmpty) {
-      return InkWell(
-        borderRadius: BorderRadius.circular(_radiusField),
-        onTap: _saving ? null : _addDimension,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(_radiusField),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            children: [
-              Icon(Icons.add_circle_outline_rounded,
-                  color: AppColors.primary, size: 26),
-              const SizedBox(height: 8),
-              Text(
-                'Add an attribute',
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.text,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Length, width, weight, grade and more',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var index = 0; index < _dimensions.length; index++)
-          _dimensionRow(index, _dimensions[index]),
+        Text(
+          'Quick-add a common attribute (default unit can be changed):',
+          style: TextStyle(fontSize: 12, color: AppColors.muted),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 2,
+          children: _dimensionPresets.entries.map((preset) {
+            return ActionChip(
+              avatar: Icon(
+                Icons.add_rounded,
+                size: 16,
+                color: AppColors.primary,
+              ),
+              label: Text('${preset.key} (${preset.value})'),
+              onPressed: _saving
+                  ? null
+                  : () => _addDimension(label: preset.key, unit: preset.value),
+              labelStyle: TextStyle(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.06),
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 8),
+        if (_dimensions.isEmpty)
+          InkWell(
+            borderRadius: BorderRadius.circular(_radiusField),
+            onTap: _saving ? null : _addDimension,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(_radiusField),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.add_circle_outline_rounded,
+                    color: AppColors.primary,
+                    size: 26,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Add a custom attribute',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Add any other product measurement or detail',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          for (var index = 0; index < _dimensions.length; index++)
+            _dimensionRow(index, _dimensions[index]),
       ],
     );
   }
@@ -1638,7 +1685,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               children: [
                 Expanded(
                   flex: 3,
-                  child: _field(dimension.value, 'Value', isLast: true),
+                  child: _field(
+                    dimension.value,
+                    'Value',
+                    keyboardType: _decimalKeyboard,
+                    inputFormatters: _decimalFormatters,
+                    isLast: true,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(

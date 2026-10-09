@@ -304,6 +304,7 @@ class _InventoryApprovalInboxScreenState
     final title = _requestTitle(row);
     final status = pickText(row, ['status'], fallback: 'Unknown');
     final fields = _basicRequestFields(row);
+    final isPurchaseCreate = _isPurchaseCreate(row);
     final requestedBy = _requesterName(row);
     final requestedAt = fmtDate(
       row['requestedAt'] ?? row['createdAt'] ?? row['submittedAt'],
@@ -324,21 +325,23 @@ class _InventoryApprovalInboxScreenState
                   padding: const EdgeInsets.fromLTRB(20, 18, 12, 16),
                   child: Row(
                     children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            dialogContext,
-                          ).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(13),
+                      if (!isPurchaseCreate) ...[
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              dialogContext,
+                            ).colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Icon(
+                            Icons.description_outlined,
+                            color: Theme.of(dialogContext).colorScheme.primary,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.description_outlined,
-                          color: Theme.of(dialogContext).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,22 +403,26 @@ class _InventoryApprovalInboxScreenState
                         ),
                       ]),
                       const SizedBox(height: 18),
-                      Text(
-                        '${_requestEntity(row).toUpperCase()} DETAILS',
-                        style: Theme.of(dialogContext).textTheme.labelLarge
-                            ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: .5,
-                            ),
-                      ),
-                      const SizedBox(height: 10),
-                      if (fields.isEmpty)
+                      if (isPurchaseCreate)
+                        _purchaseCreateDetails(dialogContext, row)
+                      else ...[
                         Text(
-                          'No basic request details were included in the approval response.',
-                          style: Theme.of(dialogContext).textTheme.bodyMedium,
-                        )
-                      else
-                        _requestFieldGrid(fields),
+                          '${_requestEntity(row).toUpperCase()} DETAILS',
+                          style: Theme.of(dialogContext).textTheme.labelLarge
+                              ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: .5,
+                              ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (fields.isEmpty)
+                          Text(
+                            'No basic request details were included in the approval response.',
+                            style: Theme.of(dialogContext).textTheme.bodyMedium,
+                          )
+                        else
+                          _requestFieldGrid(fields),
+                      ],
                     ],
                   ),
                 ),
@@ -459,6 +466,176 @@ class _InventoryApprovalInboxScreenState
     } else if (result == 'reject' && id != null) {
       await _approvalDecision(id, approve: false);
     }
+  }
+
+  bool _isPurchaseCreate(Map<String, dynamic> row) {
+    final type = pickText(row, [
+      'requestType',
+      'type',
+      'title',
+    ], fallback: '').toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+    return type.contains('purchasecreate');
+  }
+
+  Widget _purchaseCreateDetails(
+    BuildContext context,
+    Map<String, dynamic> row,
+  ) {
+    final payload = _purchaseCreatePayload(row);
+    final vendor = _displayPurchaseValue(
+      _purchaseValue(payload, ['vendorId', 'vendor']),
+    );
+    final warehouse = _displayPurchaseValue(
+      _purchaseValue(payload, ['warehouseId', 'warehouse']),
+    );
+    final rawItems = _purchaseValue(payload, ['items', 'lineItems', 'lines']);
+    final items = rawItems is List
+        ? rawItems.whereType<Map>().map(Map<String, dynamic>.from).toList()
+        : const <Map<String, dynamic>>[];
+    final theme = Theme.of(context);
+    final outline = theme.colorScheme.outlineVariant.withValues(alpha: .7);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'PURCHASE ORDER',
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: .5,
+          ),
+        ),
+        const SizedBox(height: 10),
+        _requestFieldGrid([
+          MapEntry('Vendor', vendor),
+          MapEntry('Warehouse', warehouse),
+        ]),
+        const SizedBox(height: 18),
+        Text(
+          'LINE ITEMS',
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: .5,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: outline),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              _purchaseLineCells(context, const [
+                'Product ID',
+                'Ordered Qty',
+                'Price',
+              ], header: true),
+              for (var index = 0; index < items.length; index++) ...[
+                Divider(height: 1, color: outline),
+                _purchaseLineCells(context, [
+                  _displayPurchaseValue(
+                    _purchaseValue(items[index], ['itemId', 'productId']),
+                  ),
+                  _displayPurchaseValue(
+                    _purchaseValue(items[index], [
+                      'orderedQty',
+                      'quantity',
+                      'qty',
+                    ]),
+                  ),
+                  _formatPurchasePrice(_purchaseValue(items[index], ['price'])),
+                ]),
+              ],
+              if (items.isEmpty)
+                _purchaseLineCells(context, const ['—', '—', '—']),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _purchaseLineCells(
+    BuildContext context,
+    List<String> values, {
+    bool header = false,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      color: header ? theme.colorScheme.surfaceContainerLow : null,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      child: Row(
+        children: [
+          for (var index = 0; index < values.length; index++)
+            Expanded(
+              child: SelectableText(
+                values[index],
+                maxLines: 2,
+                style: header
+                    ? theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .35,
+                      )
+                    : theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic> _purchaseCreatePayload(Map<String, dynamic> row) {
+    final payload = _requestPayload(row);
+    if (payload is! Map) return const {};
+    final root = Map<String, dynamic>.from(payload);
+    if (_purchaseValue(root, ['items', 'lineItems', 'lines']) is List) {
+      return root;
+    }
+    for (final key in ['purchaseOrder', 'purchase', 'data', 'requestData']) {
+      final nested = root[key];
+      if (nested is Map) {
+        final map = Map<String, dynamic>.from(nested);
+        if (_purchaseValue(map, ['items', 'lineItems', 'lines']) is List) {
+          return map;
+        }
+      }
+    }
+    return root;
+  }
+
+  dynamic _purchaseValue(Map<dynamic, dynamic> values, List<String> keys) {
+    for (final key in keys) {
+      for (final entry in values.entries) {
+        if (entry.key.toString().toLowerCase() == key.toLowerCase()) {
+          return entry.value;
+        }
+      }
+    }
+    return null;
+  }
+
+  String _displayPurchaseValue(dynamic value) {
+    if (value == null) return '—';
+    if (value is Map) {
+      return '${value['id'] ?? value['name'] ?? '—'}';
+    }
+    return '$value';
+  }
+
+  String _formatPurchasePrice(dynamic value) {
+    final price = value is num ? value : num.tryParse('$value');
+    if (price == null) return '—';
+    final fixed = price.abs().toStringAsFixed(2).split('.');
+    final whole = fixed[0];
+    final grouped = whole.length <= 3
+        ? whole
+        : '${whole.substring(0, whole.length - 3).replaceAllMapped(RegExp(r'\B(?=(\d{2})+(?!\d))'), (_) => ',')},${whole.substring(whole.length - 3)}';
+    return '${price < 0 ? '-' : ''}₹$grouped.${fixed[1]}';
   }
 
   dynamic _requestPayload(Map<String, dynamic> row) {
@@ -732,26 +909,27 @@ class _InventoryApprovalInboxScreenState
   );
 
   Future<void> _approvalDecision(dynamic id, {required bool approve}) async {
-    final note = TextEditingController();
-    final result = await textDialog(
-      title: approve ? 'Approve request' : 'Reject request',
-      label: 'Note (optional)',
-      controller: note,
-      multiline: true,
-      confirm: approve ? 'Approve' : 'Reject',
+    final note = await showDialog<String>(
+      context: context,
+      builder: (_) => _DecisionNoteDialog(approve: approve),
     );
-    if (!result) return;
+
+    if (note == null || !mounted) return;
+
     await mutate(
       () => approve
           ? ref
                 .read(inventoryRepositoryProvider)
-                .approveInventoryRequest(id, note: note.text.trim())
+                .approveInventoryRequest(id, note: note)
           : ref
                 .read(inventoryRepositoryProvider)
-                .rejectInventoryRequest(id, note: note.text.trim()),
+                .rejectInventoryRequest(id, note: note),
       approve ? 'Request approved' : 'Request rejected',
     );
   }
+
+
+  
 
   // Retained so the forwarding flow can be restored when needed.
   // ignore: unused_element
@@ -799,7 +977,7 @@ class _InventoryApprovalInboxScreenState
                   controller: note,
                   maxLines: 2,
                   decoration: const InputDecoration(
-                    labelText: 'Note (optional)',
+                    labelText: 'Note',
                     prefixIcon: Icon(Icons.notes_outlined),
                   ),
                 ),
@@ -917,5 +1095,73 @@ class _InventoryApprovalInboxScreenState
     } catch (e) {
       showError(e);
     }
+  }
+}
+
+
+class _DecisionNoteDialog extends StatefulWidget {
+  final bool approve;
+
+  const _DecisionNoteDialog({required this.approve});
+
+  @override
+  State<_DecisionNoteDialog> createState() => _DecisionNoteDialogState();
+}
+
+class _DecisionNoteDialogState extends State<_DecisionNoteDialog> {
+  final _note = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      Navigator.pop(context, _note.text.trim());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final approve = widget.approve;
+    return AlertDialog(
+      title: Text(approve ? 'Approve request' : 'Reject request'),
+      content: SizedBox(
+        width: 460,
+        child: Form(
+          key: _formKey,
+          child: TextFormField(
+            controller: _note,
+            autofocus: true,
+            minLines: 3,
+            maxLines: 5,
+            textCapitalization: TextCapitalization.sentences,
+            keyboardType: TextInputType.multiline,
+            decoration: InputDecoration(
+              labelText: 'Note *',
+              hintText: approve
+                  ? 'Add a note for this approval'
+                  : 'Explain why this is being rejected',
+              alignLabelWithHint: true,
+            ),
+            validator: (value) =>
+                (value ?? '').trim().isEmpty ? 'A note is required' : null,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(approve ? 'Approve' : 'Reject'),
+        ),
+      ],
+    );
   }
 }

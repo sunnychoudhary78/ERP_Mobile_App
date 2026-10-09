@@ -157,8 +157,34 @@ class InventoryApiService {
     );
   }
 
-  Future<List<ItemLookupResult>> lookupBomItems() {
-    return lookupItems('', limit: 1000);
+  Future<List<ItemLookupResult>> lookupBomItems() async {
+    const limit = 500;
+    final items = <ItemLookupResult>[];
+    var page = 1;
+    var totalPages = 1;
+
+    do {
+      final result = await getItems(page: page, limit: limit);
+      items.addAll(
+        result.items.map(
+          (item) => ItemLookupResult(
+            id: item.id,
+            name: item.name,
+            sku: item.sku,
+            productCode: item.productCode,
+            brandName: item.brandName,
+            unit: item.unit,
+            hsnSac: item.hsnSac,
+            categoryType: item.categoryType,
+            productType: item.productType,
+          ),
+        ),
+      );
+      totalPages = result.totalPages;
+      page++;
+    } while (page <= totalPages);
+
+    return items;
   }
 
   Future<Map<String, dynamic>> createBom(Map<String, dynamic> body) async {

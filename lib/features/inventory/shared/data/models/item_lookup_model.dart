@@ -7,6 +7,7 @@ class ItemLookupResult {
   final String? brandName;
   final String? unit;
   final String? hsnSac;
+  final String? categoryType;
   final String? productType;
 
   ItemLookupResult({
@@ -17,6 +18,7 @@ class ItemLookupResult {
     this.brandName,
     this.unit,
     this.hsnSac,
+    this.categoryType,
     this.productType,
   });
 
@@ -33,6 +35,7 @@ class ItemLookupResult {
       brandName: json['brandName']?.toString(),
       unit: json['unit']?.toString(),
       hsnSac: json['hsnSac']?.toString() ?? categoryHsnSac,
+      categoryType: category is Map ? category['type']?.toString() : null,
       productType: json['productType']?.toString(),
     );
   }

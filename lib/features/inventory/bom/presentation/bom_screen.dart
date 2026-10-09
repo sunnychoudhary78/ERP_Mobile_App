@@ -718,7 +718,11 @@ class _BomFormState extends ConsumerState<_BomForm> {
         .replaceAll(RegExp(r'\s+([|,\-]|\u2013|\u2014)\s*$'), '')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
-    return name;
+    final type = item.categoryType?.trim().isNotEmpty == true
+        ? item.categoryType!.trim()
+        : item.productType?.trim();
+    if (type == null || type.isEmpty) return name;
+    return '$name · ${type.toUpperCase().replaceAll('_', ' ')}';
   }
 
   Widget _materialEditor(

@@ -1,5 +1,6 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_payables_screen.dart';
 import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_order_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:flutter/material.dart';
@@ -254,9 +255,17 @@ class _PurchaseReceivedCard extends ConsumerWidget {
               alignment: WrapAlignment.end,
               children: [
                 if (isBilled)
-                  const Chip(
-                    avatar: Icon(Icons.check_circle, size: 16, color: Colors.green),
-                    label: Text('Billed'),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => InventoryPayablesScreen(
+                          initialBillSearch: order.poNumber,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    label: const Text('View Bill'),
                   ),
                 if (canBill && _canCreateBill && !isBilled)
                   FilledButton.tonalIcon(
