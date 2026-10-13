@@ -383,10 +383,276 @@ class _InventoryStockMovementsScreenState
           ? response['data']
           : response;
       if (!mounted) return;
-      await showDetails(mapOf(payload));
+      await _showBillSheet(mapOf(payload));
     } catch (e) {
       showError(e);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stock out bill details sheet (scrollable, wraps long text, no overflow)
+  // ---------------------------------------------------------------------------
+
+  Future<void> _showBillSheet(Map<String, dynamic> bill) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        builder: (context, controller) =>
+            _billSheetContent(context, bill, controller),
+      ),
+    );
+  }
+
+  Widget _billInfoRow(String label, String value, {bool bold = false}) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 6,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              softWrap: true,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _billSection(String text) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        text.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: scheme.primary,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+
+  Widget _billSheetContent(
+    BuildContext context,
+    Map<String, dynamic> bill,
+    ScrollController controller,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    String text(List<String> keys, {String fallback = '-'}) =>
+        pickText(bill, keys, fallback: fallback);
+
+    final billNo = text(['billNo', 'invoiceNo', 'reference'], fallback: 'Bill');
+    final total = bill['totalAmount'] ?? bill['amount'] ?? bill['grandTotal'];
+
+    // Line items (if the API sends them)
+    final dynamic rawItems = bill['items'] ?? bill['lines'] ?? bill['billItems'];
+    final items = rawItems is List ? rawItems : const [];
+
+    return ListView(
+      controller: controller,
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      children: [
+        // Header
+        Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: scheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                Icons.receipt_long_outlined,
+                color: scheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    billNo,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    'Stock out bill  •  ${fmtDate(bill['createdAt'])}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Total card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: scheme.primaryContainer,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Total amount',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '₹${fmtMoney(total)}',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Party details
+        _billSection('Buyer'),
+        _billInfoRow('Name', text(['partyName', 'customer', 'buyerName'])),
+        _billInfoRow('GSTIN', text(['partyGstin', 'buyerGstin', 'gstin'])),
+
+        const Divider(height: 24),
+
+        // Item / pricing details
+        _billSection('Details'),
+        _billInfoRow('Item', text(['itemName', 'item'])),
+        _billInfoRow('Quantity', text(['quantity', 'qty'])),
+        _billInfoRow('Unit rate', '₹${fmtMoney(bill['unitRate'])}'),
+        _billInfoRow(
+          'Taxable amount',
+          '₹${fmtMoney(bill['taxableAmount'] ?? bill['subtotal'])}',
+        ),
+        _billInfoRow('GST rate', '${text(['gstRate'], fallback: '0')}%'),
+        _billInfoRow(
+          'GST amount',
+          '₹${fmtMoney(bill['gstAmount'] ?? bill['taxAmount'])}',
+        ),
+        _billInfoRow('Total', '₹${fmtMoney(total)}', bold: true),
+
+        if (items.isNotEmpty) ...[
+          const Divider(height: 24),
+          _billSection('Items'),
+          for (final raw in items)
+            Builder(
+              builder: (_) {
+                final row = mapOf(raw);
+                final product = mapOf(row['item']);
+                final name = pickText(
+                  row,
+                  ['itemName', 'name'],
+                  fallback: pickText(product, ['name'], fallback: 'Item'),
+                );
+                return Card(
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  color: scheme.surfaceContainerHighest.withValues(alpha: .45),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'Qty ${pickText(row, ['quantity', 'qty'], fallback: '0')}'
+                                '  •  ₹${fmtMoney(row['unitRate'] ?? row['rate'])}',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '₹${fmtMoney(row['totalAmount'] ?? row['amount'])}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+
+        if (text(['notes', 'note'], fallback: '').isNotEmpty) ...[
+          const Divider(height: 24),
+          _billSection('Notes'),
+          Text(text(['notes', 'note'])),
+        ],
+
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+          ),
+          child: const Text('Close'),
+        ),
+      ],
+    );
   }
 }
 

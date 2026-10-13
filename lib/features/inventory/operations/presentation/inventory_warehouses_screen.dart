@@ -408,19 +408,42 @@ class _WarehouseDialogState extends State<_WarehouseDialog> {
                 ),
               ),
               const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _status,
-                borderRadius: BorderRadius.circular(12),
-                decoration: _warehouseFieldDecoration(
-                  context,
-                  'Status',
-                  Icons.toggle_on_outlined,
+              // Inline selector instead of a dropdown: no popup overlay, so
+              // nothing can shift when the keyboard resizes the dialog.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 8),
+                  child: Text(
+                    'Status',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
-                  DropdownMenuItem(value: 'INACTIVE', child: Text('Inactive')),
-                ],
-                onChanged: (v) => setState(() => _status = v ?? _status),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<String>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: 'ACTIVE',
+                      label: Text('Active'),
+                      icon: Icon(Icons.check_circle_outline, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: 'INACTIVE',
+                      label: Text('Inactive'),
+                      icon: Icon(Icons.pause_circle_outline, size: 18),
+                    ),
+                  ],
+                  selected: {_status},
+                  onSelectionChanged: (v) {
+                    FocusScope.of(context).unfocus();
+                    setState(() => _status = v.first);
+                  },
+                ),
               ),
             ],
           ),

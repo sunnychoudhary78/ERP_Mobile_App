@@ -1,5 +1,9 @@
 import 'dart:io';
-
+import 'package:erp_app/features/inventory/operations/presentation/inventory_ledger_screen.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_stock_movements_screen.dart';
+import 'package:erp_app/features/inventory/purchase/recives/presentation/purchase_received_screen.dart';
+import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
+import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -35,7 +39,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
   String _direction = 'all'; // all | in | out
 
   // Each tab loads on its own, so one failing/forbidden API doesn't kill the whole screen.
-  late Future<List<dynamic>> _overview;
+  late Future<(InventoryDashboardStats, List<InventoryItem>)> _overview;
   late Future<Map<String, dynamic>> _financial;
   late Future<List<dynamic>> _stock;
   late Future<List<dynamic>> _moves;
@@ -55,13 +59,17 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
     _lots = _fetchLots();
   }
 
-  Future<List<dynamic>> _fetchOverview() {
+  Future<(InventoryDashboardStats, List<InventoryItem>)>
+  _fetchOverview() async {
     final repo = ref.read(inventoryRepositoryProvider);
-    // GET /dashboard/stats + GET /inventory/low-stock
-    return Future.wait<dynamic>([
+    final results = await Future.wait<dynamic>([
       repo.getDashboardStats(),
       repo.getLowStockItems(),
     ]);
+    return (
+      results[0] as InventoryDashboardStats,
+      results[1] as List<InventoryItem>,
+    );
   }
 
   Future<Map<String, dynamic>> _fetchFinancial() async {
@@ -98,7 +106,9 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
   /// Parses numbers and numeric strings like "1,234.50", "₹1,200" or "12.5%".
   num _num(dynamic v) {
     if (v is num) return v;
-    final cleaned = '${v ?? ''}'.replaceAll(RegExp(r'[₹,%\s]'), '');
+    final cleaned = '${v ?? ''}'
+        .replaceAll(RegExp(r'[₹,%\s]'), '')
+        .replaceAll(',', '');
     return num.tryParse(cleaned) ?? 0;
   }
 
@@ -135,27 +145,94 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
 
   num _r2(num v) => num.parse(v.toStringAsFixed(2));
 
-  dynamic _safe(dynamic Function() read) {
-    try {
-      return read();
-    } catch (_) {
-      return null;
-    }
-  }
-
-  String _money(dynamic v) => '₹${fmtMoney(v)}';
+  String _money(dynamic v) => '₹${fmtMoney(_num(v))}';
 
   // Red is reserved for LOW STOCK.
   static const Color _lowRed = Color(0xFFD32F2F);
   static const Color _lowRedBg = Color(0xFFFFEBEE);
 
   static const Color _inGreen = Color(0xFF2E7D32);
-  static const Color _inGreenBg = Color(0xFFE8F5E9);
 
   static const Color _outOrange = Color(0xFFEF6C00);
-  static const Color _outOrangeBg = Color(0xFFFFF3E0);
 
-  static const Color _okGreen = Color(0xFF2E7D32);
+  // ───────────────────── CRM-style stat cards ─────────────────────
+
+  /// Decorative upward curve (values 0–1). Inventory APIs only return totals,
+  /// so there is no real history to plot. Pass `trend:` if you get real data.
+  static const _trendUp = <double>[0.15, 0.22, 0.2, 0.38, 0.35, 0.6, 0.68, 0.9];
+
+  /// CRM-style stat card: grey title, big value, subtitle, sparkline.
+  Widget _statCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color accent,
+    List<double> trend = _trendUp,
+  }) {
+    return Container(
+      height: 134,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, color: Colors.black54),
+          ),
+          const Spacer(),
+          SizedBox(
+            height: 30,
+            width: double.infinity,
+            child: CustomPaint(painter: _SparklinePainter(trend, accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 2 cards per row (4 on wide screens), correct width regardless of list padding.
+  Widget _statGrid(List<Widget> cards) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 900 ? 4 : 2;
+        const spacing = 12.0;
+        final w = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: cards.map((c) => SizedBox(width: w, child: c)).toList(),
+        );
+      },
+    );
+  }
 
   Widget _accentCard({
     required String title,
@@ -319,10 +396,13 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
         ),
         body: TabBarView(
           children: [
-            loadBody<List<dynamic>>(
+            loadBody<(InventoryDashboardStats, List<InventoryItem>)>(
               future: _overview,
               what: 'overview',
-              builder: _overviewTab,
+              builder: (data) => Builder(
+                builder: (tabContext) =>
+                    _overviewTab(data.$1, data.$2, tabContext),
+              ),
             ),
             loadBody<Map<String, dynamic>>(
               future: _financial,
@@ -352,78 +432,353 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
 
   // ───────────────────────── 1. Overview ─────────────────────────
 
-  Widget _overviewTab(List<dynamic> data) {
-    final dashboard = data[0];
-    final low = data[1] as List<dynamic>;
+  Widget _overviewTab(
+    InventoryDashboardStats dashboard,
+    List<InventoryItem> lowStockItems,
+    BuildContext tabContext,
+  ) {
+    final movementTotal = dashboard.movementIn30d + dashboard.movementOut30d;
+    final stockInRatio = movementTotal == 0
+        ? 0.0
+        : dashboard.movementIn30d / movementTotal;
 
-    // Optional dashboard fields from doc 4.1 — shown only if your DashboardStats model has them.
-    final productsWithStock = _safe(
-      () => (dashboard as dynamic).productsWithStock,
+    Widget metricsGrid() {
+      return _statGrid([
+        _statCard(
+          title: 'Units on hand',
+          value: '${dashboard.stockCount}',
+          subtitle: 'Total pieces in stock',
+          accent: const Color(0xFF188A63),
+        ),
+        _statCard(
+          title: 'Products with stock',
+          value: '${dashboard.productsWithStock}',
+          subtitle: 'SKUs that still have qty',
+          accent: const Color(0xFF3974A5),
+        ),
+        _statCard(
+          title: 'Running low',
+          value: '${dashboard.lowStockCount}',
+          subtitle: 'Below reorder level',
+          accent: const Color(0xFFF59E0B),
+        ),
+        _statCard(
+          title: 'GRN batches',
+          value: '${dashboard.purchasesCount}',
+          subtitle: 'Purchase receive records',
+          accent: const Color(0xFF7C3AED),
+        ),
+      ]);
+    }
+
+    Widget financialCards() {
+      return FutureBuilder<Map<String, dynamic>>(
+        future: _financial,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasError) {
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  'Could not load financial report: ${snapshot.error}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            );
+          }
+
+          final report = snapshot.data!;
+          final period = _periods[_months] ?? 'Last $_months months';
+          final expenseCount = report['purchaseCount'] ?? 0;
+          final salesCount = report['stockOutBillCount'] ?? 0;
+          final netProfit = _num(report['netProfitEstimate']);
+
+          return _statGrid([
+            _statCard(
+              title: 'Spent on purchases',
+              value: _money(report['purchaseCost']),
+              subtitle: '$expenseCount received orders · $period',
+              accent: const Color(0xFFF59E0B),
+            ),
+            _statCard(
+              title: 'Sales (stock out)',
+              value: _money(report['stockOutSubtotal']),
+              subtitle: '$salesCount bills · before GST',
+              accent: const Color(0xFF2563EB),
+            ),
+            _statCard(
+              title: 'Profit estimate',
+              value: _money(report['netProfitEstimate']),
+              subtitle:
+                  '${netProfit >= 0 ? 'Earned more than spent' : 'Spent more than earned'} · $period',
+              accent: netProfit >= 0
+                  ? const Color(0xFF188A63)
+                  : const Color(0xFFD32F2F),
+            ),
+            _statCard(
+              title: 'Stock value',
+              value: _money(report['inventoryValueAtCost']),
+              subtitle:
+                  'At cost · wholesale ${_money(report['inventoryValueAtB2b'])}',
+              accent: const Color(0xFF3974A5),
+            ),
+          ]);
+        },
+      );
+    }
+
+    Widget stockMovementPanel() {
+      return _overviewPanel(
+        title: 'Last 30 days — stock in vs out',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: stockInRatio,
+                minHeight: 10,
+                backgroundColor: const Color(0xFFFFE6D7),
+                color: const Color(0xFF00B884),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _movementSummary(
+                    title: 'Stock in',
+                    value: '${dashboard.movementIn30d} units',
+                    detail: 'Purchase Received (GRN)',
+                    color: const Color(0xFF087A5A),
+                    background: const Color(0xFFF0FBF7),
+                    icon: Icons.trending_up,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _movementSummary(
+                    title: 'Stock out',
+                    value: '${dashboard.movementOut30d} units',
+                    detail: dashboard.movementOut30d == 0
+                        ? 'No Stock OUT bills in the last 30 days'
+                        : 'Stock OUT in the last 30 days',
+                    color: const Color(0xFFB63D08),
+                    background: const Color(0xFFFFF8F2),
+                    icon: Icons.trending_down,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget quickLinksPanel() {
+      return _overviewPanel(
+        title: 'Quick links',
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _quickLink(
+              'Cost & P/L',
+              onTap: () => DefaultTabController.of(tabContext).animateTo(1),
+            ),
+            _quickLink(
+              'Movement Ledger',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const InventoryLedgerScreen(),
+                ),
+              ),
+            ),
+            _quickLink(
+              'Purchase Received',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PurchaseReceivedScreen(),
+                ),
+              ),
+            ),
+            _quickLink(
+              'Stock OUT Bills',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const InventoryStockMovementsScreen(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 900;
+        return RefreshIndicator(
+          onRefresh: () async => reload(),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              metricsGrid(),
+              const SizedBox(height: 12),
+              financialCards(),
+              const SizedBox(height: 12),
+              if (wide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: stockMovementPanel()),
+                    const SizedBox(width: 12),
+                    Expanded(child: quickLinksPanel()),
+                  ],
+                )
+              else ...[
+                stockMovementPanel(),
+                const SizedBox(height: 10),
+                quickLinksPanel(),
+              ],
+              const SizedBox(height: 10),
+              _overviewPanel(
+                title: 'Low stock',
+                child: lowStockItems.isEmpty
+                    ? const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text('No low stock items'),
+                        ),
+                      )
+                    : Column(
+                        children: lowStockItems
+                            .map(
+                              (item) => _accentCard(
+                                title: item.name,
+                                subtitle:
+                                    'Reorder level: ${item.reorderLevel ?? '—'}',
+                                trailing:
+                                    '${item.currentStock} ${item.unit ?? 'units'}',
+                                icon: Icons.warning_amber_rounded,
+                                accent: _lowRed,
+                                tint: _lowRedBg,
+                                titleColor: _lowRed,
+                                badge: 'LOW',
+                                emphasize: true,
+                              ),
+                            )
+                            .toList(),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
-    final in30 = _safe(() => (dashboard as dynamic).movementIn30d);
-    final out30 = _safe(() => (dashboard as dynamic).movementOut30d);
+  }
 
-    Widget pair(Widget a, Widget b) => Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
+  Widget _overviewPanel({required String title, required Widget child}) {
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 1,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: Colors.black12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: a),
-          const SizedBox(width: 10),
-          Expanded(child: b),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Text(
+              title.toUpperCase(),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(padding: const EdgeInsets.all(12), child: child),
         ],
       ),
     );
+  }
 
-    return refreshList([
-      sectionHeading(
-        'Inventory overview',
-        'Current stock, lots and recent activity',
+  Widget _movementSummary({
+    required String title,
+    required String value,
+    required String detail,
+    required Color color,
+    required Color background,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: background,
+        border: Border.all(color: Colors.black12),
+        borderRadius: BorderRadius.circular(8),
       ),
-      pair(
-        metricCard(
-          'Units in stock',
-          '${dashboard.stockCount}',
-          Icons.inventory_outlined,
-        ),
-        metricCard('Lots', '${dashboard.lotsCount}', Icons.layers_outlined),
-      ),
-      pair(
-        metricCard(
-          'Products with stock',
-          productsWithStock == null ? '—' : '$productsWithStock',
-          Icons.inventory_2_outlined,
-        ),
-        metricCard('Low stock', '${low.length}', Icons.warning_amber_outlined),
-      ),
-      if (in30 != null || out30 != null)
-        pair(
-          metricCard('Stock in (30d)', '${in30 ?? 0}', Icons.south_west),
-          metricCard('Stock out (30d)', '${out30 ?? 0}', Icons.north_east),
-        ),
-      const SizedBox(height: 6),
-      sectionHeading('Low stock', 'Items at or below their reorder level'),
-      if (low.isEmpty)
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('No low stock items'),
-        )
-      else
-        ...low
-            .take(8)
-            .map(
-              (item) => _accentCard(
-                title: '${item.name}',
-                subtitle: 'Reorder level: ${item.reorderLevel ?? '—'}',
-                trailing: '${item.currentStock} units',
-                icon: Icons.warning_amber_rounded,
-                accent: _lowRed,
-                tint: _lowRedBg,
-                titleColor: _lowRed,
-                badge: 'LOW',
-                emphasize: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 4),
+              Text(
+                title.toUpperCase(),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
               ),
             ),
-    ], padding: const EdgeInsets.all(16));
+          ),
+          const SizedBox(height: 3),
+          Text(
+            detail,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickLink(String title, {required VoidCallback onTap}) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        side: const BorderSide(color: Color(0xFFD5DCE7)),
+      ),
+      child: Text(title),
+    );
   }
 
   // ───────────────────────── 2. Cost & P/L ─────────────────────────
@@ -928,4 +1283,57 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
     ];
     return _exportCsv('inventory_lots.csv', rows);
   }
+}
+
+/// Smooth mini line chart with a soft gradient fill, like the CRM "Key stats" cards.
+class _SparklinePainter extends CustomPainter {
+  final List<double> points;
+  final Color color;
+
+  _SparklinePainter(this.points, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.length < 2) return;
+    final dx = size.width / (points.length - 1);
+    final offsets = [
+      for (var i = 0; i < points.length; i++)
+        Offset(i * dx, size.height - points[i].clamp(0.0, 1.0) * size.height),
+    ];
+
+    final line = Path()..moveTo(offsets.first.dx, offsets.first.dy);
+    for (var i = 1; i < offsets.length; i++) {
+      final p0 = offsets[i - 1];
+      final p1 = offsets[i];
+      final midX = (p0.dx + p1.dx) / 2;
+      line.cubicTo(midX, p0.dy, midX, p1.dy, p1.dx, p1.dy);
+    }
+
+    final fill = Path.from(line)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+
+    canvas.drawPath(
+      fill,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color.withOpacity(.18), color.withOpacity(0)],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.6
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SparklinePainter old) =>
+      old.points != points || old.color != color;
 }

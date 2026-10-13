@@ -151,19 +151,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     try {
       final state = ref.read(productsListProvider);
       final repository = ref.read(inventoryRepositoryProvider);
-      final products = <InventoryItem>[];
-      var page = 1;
-      var totalPages = 1;
-      do {
-        final result = await repository.getItems(
-          search: state.query,
-          page: page,
-          limit: 500,
-        );
-        products.addAll(result.items);
-        totalPages = result.totalPages;
-        page++;
-      } while (page <= totalPages);
+      final products = await repository.getAllItems(search: state.query);
 
       final filteredProducts = products
           .where((product) => state.statusFilter.matches(product.status))

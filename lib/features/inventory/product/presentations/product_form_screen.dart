@@ -30,6 +30,13 @@ const _unitOptions = [
   'pack',
   'pair',
   'pcs (pieces)',
+  'quintal (qtl)',
+  'roll',
+  'set',
+  'sqft (ft²)',
+  'sqm (m²)',
+  'ton',
+  'unit',
 ];
 const _sourcingOptions = {
   'Purchased': 'BUY',

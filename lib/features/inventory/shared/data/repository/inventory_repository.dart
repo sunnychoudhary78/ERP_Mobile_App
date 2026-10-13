@@ -119,6 +119,20 @@ class InventoryRepository {
     return _api.getItems(search: search, page: page, limit: limit);
   }
 
+  Future<List<InventoryItem>> getAllItems({
+    String search = '',
+    int limit = 500,
+  }) async {
+    final items = <InventoryItem>[];
+    var result = await getItems(search: search, page: 1, limit: limit);
+    items.addAll(result.items);
+    for (var page = result.page + 1; page <= result.totalPages; page++) {
+      result = await getItems(search: search, page: page, limit: limit);
+      items.addAll(result.items);
+    }
+    return items;
+  }
+
   Future<Map<String, dynamic>> createItem(
     Map<String, dynamic> body, {
     String? imagePath,
@@ -382,6 +396,7 @@ class InventoryRepository {
     String status = '',
     String query = '',
   }) => _api.getLots(page: page, limit: limit, status: status, query: query);
+  Future<List<dynamic>> getInventoryLots() => _api.getInventoryLots();
   Future<Map<String, dynamic>> getLotSummary(int id) => _api.getLotSummary(id);
   Future<List<dynamic>> getLotProcessings(int id) => _api.getLotProcessings(id);
   Future<Map<String, dynamic>> startLotProcessing(

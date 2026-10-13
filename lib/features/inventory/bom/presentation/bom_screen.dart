@@ -7,6 +7,23 @@ import 'package:erp_app/features/inventory/shared/data/models/item_lookup_model.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+const _bomUnitOptions = [
+  'Micrometer (µm)',
+  'ml',
+  'mm',
+  'Nos (numbers)',
+  'pack',
+  'pair',
+  'pcs (pieces)',
+  'quintal (qtl)',
+  'roll',
+  'set',
+  'sqft (ft²)',
+  'sqm (m²)',
+  'ton',
+  'unit',
+];
+
 class BomScreen extends ConsumerStatefulWidget {
   const BomScreen({super.key});
 
@@ -119,9 +136,7 @@ class _BomScreenState extends ConsumerState<BomScreen> {
 
   Widget _buildBody(BomState state) {
     if (state.isLoading && state.boms.isEmpty) {
-      return Center(
-        child: CircularProgressIndicator(color: AppColors.accent),
-      );
+      return Center(child: CircularProgressIndicator(color: AppColors.accent));
     }
     if (state.errorMessage != null && state.boms.isEmpty) {
       return _ErrorView(
@@ -258,7 +273,6 @@ class _BomCard extends StatelessWidget {
   final BillOfMaterials bom;
   final bool canManage;
   final VoidCallback onEdit;
-  
 
   const _BomCard({
     required this.bom,
@@ -295,90 +309,90 @@ class _BomCard extends StatelessWidget {
             children: [
               Container(
                 width: 4,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(12),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(12),
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            bom.item?.name ?? 'Item #${bom.itemId}',
-                            style: const TextStyle(
-                              fontFamily: 'serif',
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  '${bom.materials.length} material${bom.materials.length == 1 ? '' : 's'}',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.accent,
-                                  ),
-                                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              bom.item?.name ?? 'Item #${bom.itemId}',
+                              style: const TextStyle(
+                                fontFamily: 'serif',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
                               ),
-                              if (bom.description?.isNotEmpty == true) ...[
-                                const SizedBox(width: 8),
-                                Expanded(
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
                                   child: Text(
-                                    bom.description!,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    '${bom.materials.length} material${bom.materials.length == 1 ? '' : 's'}',
                                     style: TextStyle(
-                                      fontSize: 12.5,
-                                      color: AppColors.muted,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.accent,
                                     ),
                                   ),
                                 ),
+                                if (bom.description?.isNotEmpty == true) ...[
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      bom.description!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        color: AppColors.muted,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    if (canManage)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _RoundIconButton(
-                            icon: Icons.edit_outlined,
-                            color: AppColors.primary,
-                            onTap: onEdit,
-                          ),
-                        ],
-                      ),
-                  ],
+                      if (canManage)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _RoundIconButton(
+                              icon: Icons.edit_outlined,
+                              color: AppColors.primary,
+                              onTap: onEdit,
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -421,10 +435,11 @@ class _BomFormResult {
 class _MaterialDraft {
   int? itemId;
   final quantity = TextEditingController();
+  final quantityPerUnit = TextEditingController();
   final uom = TextEditingController();
   final scrapPct = TextEditingController(text: '0');
-  final consumptionFactor = TextEditingController(text: '1');
   final componentType = TextEditingController(text: 'RM');
+  bool autoCalculateQuantity = false;
 
   _MaterialDraft({BomMaterial? material}) {
     if (material != null) {
@@ -432,16 +447,15 @@ class _MaterialDraft {
       quantity.text = '${material.quantity}';
       uom.text = material.uom ?? '';
       scrapPct.text = '${material.scrapPct}';
-      consumptionFactor.text = '${material.consumptionFactor}';
       componentType.text = material.componentType ?? 'RM';
     }
   }
 
   void dispose() {
     quantity.dispose();
+    quantityPerUnit.dispose();
     uom.dispose();
     scrapPct.dispose();
-    consumptionFactor.dispose();
     componentType.dispose();
   }
 }
@@ -480,6 +494,7 @@ class _BomForm extends ConsumerStatefulWidget {
 class _BomFormState extends ConsumerState<_BomForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _descriptionController;
+  late final TextEditingController _productionQuantityController;
   int? _itemId;
   late final List<_MaterialDraft> _materials;
 
@@ -490,6 +505,7 @@ class _BomFormState extends ConsumerState<_BomForm> {
     _descriptionController = TextEditingController(
       text: widget.bom?.description ?? '',
     );
+    _productionQuantityController = TextEditingController(text: '1');
     _materials =
         widget.bom?.materials
             .map((material) => _MaterialDraft(material: material))
@@ -500,6 +516,7 @@ class _BomFormState extends ConsumerState<_BomForm> {
   @override
   void dispose() {
     _descriptionController.dispose();
+    _productionQuantityController.dispose();
     for (final material in _materials) {
       material.dispose();
     }
@@ -540,92 +557,106 @@ class _BomFormState extends ConsumerState<_BomForm> {
           Flexible(
             child: _KeyboardInsetPadding(
               child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      widget.bom == null ? 'Add BOM' : 'Edit BOM',
-                      style: const TextStyle(
-                        fontFamily: 'serif',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        widget.bom == null ? 'Add BOM' : 'Edit BOM',
+                        style: const TextStyle(
+                          fontFamily: 'serif',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 2,
-                      width: 48,
-                      color: AppColors.accent,
-                    ),
-                    const SizedBox(height: 18),
-                    _sectionLabel('Finished Item'),
-                    const SizedBox(height: 8),
-                    itemsAsync.when(
-                      loading: () => const LinearProgressIndicator(),
-                      error: (error, _) => Text(
-                        'Could not load item lookup: $error',
-                        style: TextStyle(color: AppColors.danger),
+                      const SizedBox(height: 8),
+                      Container(height: 2, width: 48, color: AppColors.accent),
+                      const SizedBox(height: 18),
+                      _sectionLabel('Finished Item'),
+                      const SizedBox(height: 8),
+                      itemsAsync.when(
+                        loading: () => const LinearProgressIndicator(),
+                        error: (error, _) => Text(
+                          'Could not load item lookup: $error',
+                          style: TextStyle(color: AppColors.danger),
+                        ),
+                        data: (items) => _itemDropdown(
+                          label: 'Finished item *',
+                          value: _itemId,
+                          items: items,
+                          onChanged: (value) => setState(() => _itemId = value),
+                        ),
                       ),
-                      data: (items) => _itemDropdown(
-                        label: 'Finished item *',
-                        value: _itemId,
-                        items: items,
-                        onChanged: (value) => setState(() => _itemId = value),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _descriptionController,
+                        decoration: _fieldDecoration('Description'),
+                        maxLines: 2,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: _fieldDecoration('Description'),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 22),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _sectionLabel('Materials'),
-                        TextButton.icon(
-                          onPressed: _addMaterial,
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.accent,
+                      const SizedBox(height: 22),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _sectionLabel('Materials'),
+                          TextButton.icon(
+                            onPressed: _addMaterial,
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.accent,
+                            ),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Add material'),
                           ),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Add material'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    ..._materials.asMap().entries.map(
-                      (entry) => _materialEditor(
-                        entry.key,
-                        entry.value,
-                        itemsAsync.asData?.value ?? const [],
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 50,
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _productionQuantityController,
+                        decoration: _fieldDecoration('Production quantity'),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onChanged: (_) {
+                          for (final material in _materials) {
+                            _syncCalculatedQuantity(material);
+                          }
+                          setState(() {});
+                        },
+                        validator: (value) =>
+                            _materials.any((m) => m.autoCalculateQuantity)
+                            ? _positiveNumber(value)
+                            : null,
+                      ),
+                      const SizedBox(height: 10),
+                      ..._materials.asMap().entries.map(
+                        (entry) => _materialEditor(
+                          entry.key,
+                          entry.value,
+                          itemsAsync.asData?.value ?? const [],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 50,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: itemsAsync.hasValue ? _submit : null,
+                          icon: const Icon(Icons.save_outlined),
+                          label: Text(
+                            widget.bom == null ? 'Create BOM' : 'Save Changes',
                           ),
                         ),
-                        onPressed: itemsAsync.hasValue ? _submit : null,
-                        icon: const Icon(Icons.save_outlined),
-                        label: Text(
-                          widget.bom == null ? 'Create BOM' : 'Save Changes',
-                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
             ),
           ),
         ],
@@ -748,8 +779,19 @@ class _BomFormState extends ConsumerState<_BomForm> {
                     label: 'Material item *',
                     value: material.itemId,
                     items: items,
-                    onChanged: (value) =>
-                        setState(() => material.itemId = value),
+                    onChanged: (value) {
+                      setState(() {
+                        material.itemId = value;
+                        final unit = items
+                            .where((item) => item.id == value)
+                            .firstOrNull
+                            ?.unit
+                            ?.trim();
+                        if (unit != null && unit.isNotEmpty) {
+                          material.uom.text = unit;
+                        }
+                      });
+                    },
                   ),
                 ),
                 if (_materials.length > 1)
@@ -761,12 +803,52 @@ class _BomFormState extends ConsumerState<_BomForm> {
               ],
             ),
             const SizedBox(height: 10),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text('Auto-calculate quantity'),
+              value: material.autoCalculateQuantity,
+              onChanged: (enabled) {
+                setState(() {
+                  material.autoCalculateQuantity = enabled ?? false;
+                  if (material.autoCalculateQuantity) {
+                    _syncCalculatedQuantity(material);
+                  } else {
+                    material.quantity.clear();
+                  }
+                });
+              },
+            ),
+            if (material.autoCalculateQuantity) ...[
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: material.quantityPerUnit,
+                decoration: _fieldDecoration('Material required per unit *'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                onChanged: (_) {
+                  _syncCalculatedQuantity(material);
+                  setState(() {});
+                },
+                validator: (value) => material.autoCalculateQuantity
+                    ? _positiveNumber(value)
+                    : null,
+              ),
+              const SizedBox(height: 10),
+            ],
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: material.quantity,
-                    decoration: _fieldDecoration('Quantity *'),
+                    readOnly: material.autoCalculateQuantity,
+                    decoration: _fieldDecoration(
+                      material.autoCalculateQuantity
+                          ? 'Calculated quantity *'
+                          : 'Quantity *',
+                    ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -774,12 +856,7 @@ class _BomFormState extends ConsumerState<_BomForm> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: material.uom,
-                    decoration: _fieldDecoration('UOM'),
-                  ),
-                ),
+                Expanded(child: _unitDropdown(material)),
               ],
             ),
             const SizedBox(height: 10),
@@ -792,18 +869,11 @@ class _BomFormState extends ConsumerState<_BomForm> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
+                    onChanged: (_) {
+                      _syncCalculatedQuantity(material);
+                      setState(() {});
+                    },
                     validator: _nonNegativeNumber,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: material.consumptionFactor,
-                    decoration: _fieldDecoration('Consumption factor'),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: _positiveNumber,
                   ),
                 ),
               ],
@@ -817,6 +887,53 @@ class _BomFormState extends ConsumerState<_BomForm> {
         ),
       ),
     );
+  }
+
+  Widget _unitDropdown(_MaterialDraft material) {
+    final currentUnit = material.uom.text.trim();
+    final units = [
+      ..._bomUnitOptions,
+      if (currentUnit.isNotEmpty && !_bomUnitOptions.contains(currentUnit))
+        currentUnit,
+    ];
+    return DropdownButtonFormField<String>(
+      initialValue: currentUnit.isEmpty ? null : currentUnit,
+      isExpanded: true,
+      decoration: _fieldDecoration('Unit'),
+      items: units
+          .map(
+            (unit) => DropdownMenuItem<String>(
+              value: unit,
+              child: Text(unit, overflow: TextOverflow.ellipsis),
+            ),
+          )
+          .toList(),
+      onChanged: (unit) {
+        if (unit != null) {
+          setState(() => material.uom.text = unit);
+        }
+      },
+    );
+  }
+
+  void _syncCalculatedQuantity(_MaterialDraft material) {
+    if (!material.autoCalculateQuantity) return;
+    final productionQuantity = num.tryParse(
+      _productionQuantityController.text.trim(),
+    );
+    final quantityPerUnit = num.tryParse(material.quantityPerUnit.text.trim());
+    final scrapPct = num.tryParse(material.scrapPct.text.trim());
+    if (productionQuantity == null ||
+        productionQuantity <= 0 ||
+        quantityPerUnit == null ||
+        quantityPerUnit <= 0 ||
+        scrapPct == null ||
+        scrapPct < 0) {
+      material.quantity.clear();
+      return;
+    }
+    material.quantity.text =
+        '${productionQuantity * quantityPerUnit * (1 + scrapPct / 100)}';
   }
 
   String? _positiveNumber(String? value) {
@@ -842,6 +959,9 @@ class _BomFormState extends ConsumerState<_BomForm> {
   }
 
   void _submit() {
+    for (final material in _materials) {
+      _syncCalculatedQuantity(material);
+    }
     if (!_formKey.currentState!.validate() || _itemId == null) return;
     if (_materials.any((material) => material.itemId == null)) return;
     final body = {
@@ -856,9 +976,6 @@ class _BomFormState extends ConsumerState<_BomForm> {
               if (material.uom.text.trim().isNotEmpty)
                 'uom': material.uom.text.trim(),
               'scrapPct': num.parse(material.scrapPct.text.trim()),
-              'consumptionFactor': num.parse(
-                material.consumptionFactor.text.trim(),
-              ),
               if (material.componentType.text.trim().isNotEmpty)
                 'componentType': material.componentType.text.trim(),
             },

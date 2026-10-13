@@ -593,7 +593,7 @@ class _PurchaseOrderItemDetails extends StatelessWidget {
           if (specifications.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              'Specifications',
+              'Dimensions',
               style: TextStyle(
                 color: AppColors.muted,
                 fontSize: 12,
@@ -723,43 +723,111 @@ String _quantityText(double? quantity, String unit) {
 
 List<_OrderDetailValue> _specificationEntries(Map<String, dynamic> item) {
   final entries = <_OrderDetailValue>[];
+  void add(_OrderDetailValue row) {
+    final exists = entries.any(
+      (entry) => entry.label.toLowerCase() == row.label.toLowerCase(),
+    );
+    if (!exists) entries.add(row);
+  }
+
+  const dimensionKeys = {
+    'productDimensions',
+    'rollLengthM',
+    'rollWidthMm',
+    'rollThicknessMic',
+  };
   final specifications = item['specifications'] ?? item['productDimensions'];
   if (specifications is Map) {
-    for (final entry in specifications.entries) {
+    final map = Map<String, dynamic>.from(specifications);
+    final dims = map['productDimensions'];
+    for (final row in _dimensionRows(
+      dims is List ? dims : const [],
+      lengthM: map['rollLengthM'],
+      widthMm: map['rollWidthMm'],
+      thicknessMic: map['rollThicknessMic'],
+    )) {
+      add(row);
+    }
+    for (final entry in map.entries) {
       final value = entry.value;
-      if (value != null && value.toString().trim().isNotEmpty) {
-        entries.add(
-          _OrderDetailValue(appPrettyLabel(entry.key.toString()), '$value'),
-        );
+      // Nested maps/lists are never printed raw.
+      if (dimensionKeys.contains(entry.key) || value is Map || value is List) {
+        continue;
+      }
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty) {
+        add(_OrderDetailValue(appPrettyLabel(entry.key), _cleanNumber(text)));
       }
     }
   } else if (specifications is List) {
-    for (final dimension in specifications.whereType<Map>()) {
-      final label = _detailText(Map<String, dynamic>.from(dimension), [
-        'label',
-        'name',
-      ]);
-      final value = _detailText(Map<String, dynamic>.from(dimension), [
-        'value',
-      ]);
-      final unit = _detailText(Map<String, dynamic>.from(dimension), ['unit']);
-      if (label.isNotEmpty && value.isNotEmpty) {
-        entries.add(
-          _OrderDetailValue(label, '$value${unit.isEmpty ? '' : ' $unit'}'),
-        );
-      }
+    for (final row in _dimensionRows(specifications)) {
+      add(row);
     }
   }
   for (final key in ['length', 'width', 'thickness', 'weight']) {
     final value = _detailText(item, [key]);
-    if (value.isNotEmpty &&
-        !entries.any(
-          (entry) => entry.label.toLowerCase() == key.toLowerCase(),
-        )) {
-      entries.add(_OrderDetailValue(appPrettyLabel(key), value));
+    if (value.isNotEmpty) {
+      add(_OrderDetailValue(appPrettyLabel(key), _cleanNumber(value)));
     }
   }
   return entries;
+}
+
+/// 5.0 -> "5", 2.50 -> "2.5"; non-numeric text is returned unchanged.
+String _cleanNumber(String value) {
+  final parsed = double.tryParse(value.trim());
+  if (parsed == null) return value.trim();
+  return parsed == parsed.roundToDouble()
+      ? parsed.toInt().toString()
+      : parsed.toString();
+}
+
+final _trailingUnitInLabel = RegExp(r'\s*[\(\[]([^\)\]]+)[\)\]]\s*$');
+
+/// Turns one `{label, value, unit}` map into a clean "Label  ->  value unit"
+/// row. A unit baked into the label, e.g. "Length (mm)", is moved onto the
+/// value so it never appears next to the label.
+_OrderDetailValue? _dimensionRow(Map<dynamic, dynamic> raw) {
+  final data = Map<String, dynamic>.from(raw);
+  var label = _detailText(data, ['label', 'name']);
+  var unit = _detailText(data, ['unit']);
+  final value = _cleanNumber(_detailText(data, ['value']));
+  final match = _trailingUnitInLabel.firstMatch(label);
+  if (match != null) {
+    if (unit.isEmpty) unit = match.group(1)!.trim();
+    label = label.substring(0, match.start).trim();
+  }
+  if (label.isEmpty || value.isEmpty) return null;
+  final alreadyHasUnit =
+      unit.isEmpty || value.toLowerCase().endsWith(unit.toLowerCase());
+  return _OrderDetailValue(label, alreadyHasUnit ? value : '$value $unit');
+}
+
+List<_OrderDetailValue> _dimensionRows(
+  Iterable<dynamic> dimensions, {
+  Object? lengthM,
+  Object? widthMm,
+  Object? thicknessMic,
+}) {
+  final rows = <_OrderDetailValue>[];
+  for (final dimension in dimensions) {
+    if (dimension is! Map) continue;
+    final row = _dimensionRow(dimension);
+    if (row != null) rows.add(row);
+  }
+  void addRoll(String label, Object? raw, String unit) {
+    final text = _cleanNumber(raw?.toString() ?? '');
+    final exists = rows.any(
+      (row) => row.label.toLowerCase() == label.toLowerCase(),
+    );
+    if (text.isEmpty || exists) return;
+    rows.add(_OrderDetailValue(label, '$text $unit'));
+  }
+
+  addRoll('Length', lengthM, 'm');
+  addRoll('Width', widthMm, 'mm');
+  addRoll('Thickness', thicknessMic, 'mic');
+  return rows;
 }
 
 class _InfoRow extends StatelessWidget {
@@ -1183,28 +1251,9 @@ class _CreateOrderSheetState extends State<_CreateOrderSheet> {
                   ),
                 ),
               ],
-            )
-          else
-            Text(
-              'Measure  —',
-              style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
-                'Line total',
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
-              ),
-              const Spacer(),
-              Text(
-                _formatInr(_lineTotal(line)),
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
           if (item != null && _hasProductDimensions(item)) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             _ProductDimensions(item: item),
           ],
         ],
@@ -1310,49 +1359,36 @@ class _ProductDimensions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final details = <String>[];
-    for (final dimension in item.productDimensions) {
-      final label = dimension['label']?.toString().trim() ?? '';
-      final value = dimension['value']?.toString().trim() ?? '';
-      final unit = dimension['unit']?.toString().trim() ?? '';
-      if (label.isEmpty) continue;
-      details.add(
-        '$label${value.isEmpty ? '' : ': $value'}${unit.isEmpty ? '' : ' $unit'}',
-      );
-    }
-    if (item.rollLengthM != null &&
-        !details.any((detail) => detail.toLowerCase().startsWith('length'))) {
-      details.add('Length: ${item.rollLengthM} m');
-    }
-    if (item.rollWidthMm != null &&
-        !details.any((detail) => detail.toLowerCase().startsWith('width'))) {
-      details.add('Width: ${item.rollWidthMm} mm');
-    }
-    if (item.rollThicknessMic != null &&
-        !details.any(
-          (detail) => detail.toLowerCase().startsWith('thickness'),
-        )) {
-      details.add('Thickness: ${item.rollThicknessMic} mic');
-    }
-    if (details.isEmpty) return const SizedBox.shrink();
+    final rows = _dimensionRows(
+      item.productDimensions,
+      lengthM: item.rollLengthM,
+      widthMm: item.rollWidthMm,
+      thicknessMic: item.rollThicknessMic,
+    );
+    if (rows.isEmpty) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
       ),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 6,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final detail in details)
-            Text(
-              detail,
-              style: TextStyle(fontSize: 12, color: AppColors.muted),
+          Text(
+            'Dimensions',
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
+          ),
+          const SizedBox(height: 4),
+          for (final row in rows)
+            _OrderDetailRow(label: row.label, value: row.value),
         ],
       ),
     );

@@ -783,6 +783,41 @@ class InventoryApiService {
     }),
     const ['lots', 'data'],
   );
+
+  Future<List<dynamic>> getInventoryLots() async {
+    const limit = 500;
+    final rows = <dynamic>[];
+    var page = 1;
+    var totalPages = 1;
+
+    do {
+      final response = await _getInventory(ApiEndpoints.inventory, {
+        'page': page,
+        'limit': limit,
+        'status': '',
+      });
+      final pageRows = _extractList(response, const ['lots', 'data']);
+      rows.addAll(pageRows);
+
+      dynamic data = response;
+      if (data is Map && data['data'] != null) data = data['data'];
+      final pagination = data is Map && data['pagination'] is Map
+          ? Map<String, dynamic>.from(data['pagination'] as Map)
+          : const <String, dynamic>{};
+      final reportedPages = int.tryParse(
+        '${pagination['totalPages'] ?? ''}',
+      );
+      final total = int.tryParse('${pagination['total'] ?? ''}');
+      totalPages = reportedPages ??
+          (total == null
+              ? (pageRows.length >= limit ? page + 1 : page)
+              : (total / limit).ceil());
+      page++;
+    } while (page <= totalPages);
+
+    return rows;
+  }
+
   Future<Map<String, dynamic>> getLotSummary(int id) async =>
       Map<String, dynamic>.from(
         (await _getInventory(ApiEndpoints.lotSummary('$id')))['data'] as Map,

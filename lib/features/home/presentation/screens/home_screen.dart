@@ -225,8 +225,15 @@ class HomeScreen extends ConsumerWidget {
       ),
       QuickLink(
         'Inventory',
-        '/inventory/lots',
+        '/inventory/products',
         Icons.inventory_2_outlined,
+        group: 'Stock',
+        anyOf: [AppPermissions.inventoryView],
+      ),
+      QuickLink(
+        'Inventory lots',
+        '/inventory/lots',
+        Icons.layers_outlined,
         group: 'Stock',
         anyOf: AppPermissions.inventoryOperations,
       ),

@@ -16,6 +16,7 @@ import 'package:erp_app/features/inventory/stocklookup/presentation/screens/stoc
 import 'package:erp_app/features/inventory/operations/presentation/inventory_operations_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_reports_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_advanced_screen.dart';
+import 'package:erp_app/features/inventory/operations/presentation/inventory_products_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_processed_fg_screen.dart';
 import 'package:erp_app/features/inventory/operations/presentation/inventory_sellable_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
@@ -143,6 +144,8 @@ class AppRoutes {
       AppPermissions.inventoryOperations,
       const InventoryOperationsScreen(initialTab: 1),
     ),
+    '/inventory/products': (_) =>
+        _gate([AppPermissions.inventoryView], const InventoryProductsScreen()),
     '/inventory/stock': (_) => _gate(
       AppPermissions.inventoryOperations,
       const InventoryOperationsScreen(initialTab: 2),

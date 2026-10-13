@@ -138,7 +138,7 @@ class ProductsListNotifier extends Notifier<ProductsListState> {
       final result = await _repo.getItems(
         search: state.query,
         page: page,
-        limit: 25,
+        limit: 500,
       );
       state = state.copyWith(
         isLoading: false,
