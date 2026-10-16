@@ -1,6 +1,6 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_payables_screen.dart';
+import 'package:erp_app/features/inventory/lots/presentation/inventory_payables_screen.dart';
 import 'package:erp_app/features/inventory/purchase/orders/data/model/purchase_order_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:flutter/material.dart';

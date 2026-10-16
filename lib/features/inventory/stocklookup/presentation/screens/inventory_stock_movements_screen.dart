@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'inventory_ui_helpers.dart';
+import '../../../lots/widget/inventory_ui_helpers.dart';
 
 class InventoryStockMovementsScreen extends ConsumerStatefulWidget {
   const InventoryStockMovementsScreen({super.key});

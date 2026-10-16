@@ -1,4 +1,4 @@
-import 'package:erp_app/features/inventory/operations/data/utlis/payable_utlis.dart';
+import 'package:erp_app/features/inventory/lots/data/utlis/payable_utlis.dart';
 import 'package:flutter/material.dart';
 
 

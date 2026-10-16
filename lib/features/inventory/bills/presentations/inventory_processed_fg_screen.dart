@@ -1,12 +1,12 @@
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_lots_screen.dart';
+import 'package:erp_app/features/inventory/lots/presentation/inventory_lots_screen.dart';
 import 'package:erp_app/features/production/data/models/production_model.dart';
 import 'package:erp_app/features/production/data/repository/production_repository.dart';
 import 'package:erp_app/features/production/presentation/screens/work_order_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'inventory_ui_helpers.dart';
+import '../../lots/widget/inventory_ui_helpers.dart';
 
 /// A focused view of processed lot balances and work orders that produce FG.
 class InventoryProcessedFgScreen extends ConsumerStatefulWidget {

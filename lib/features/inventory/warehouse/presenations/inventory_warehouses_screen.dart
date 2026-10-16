@@ -5,7 +5,7 @@ import 'package:erp_app/features/inventory/shared/presentation/providers/invento
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'inventory_ui_helpers.dart';
+import '../../lots/widget/inventory_ui_helpers.dart';
 
 class InventoryWarehousesScreen extends ConsumerStatefulWidget {
   const InventoryWarehousesScreen({super.key});

@@ -1,10 +1,10 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_accounts_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_approval_inbox_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_hub_list.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_legacy_production_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_legacy_sales_screen.dart';
+import 'package:erp_app/features/inventory/accounts/presentations/inventory_accounts_screen.dart';
+import 'package:erp_app/features/inventory/approval/presentation/inventory_approval_inbox_screen.dart';
+import 'package:erp_app/features/inventory/bills/presentations/inventory_hub_list.dart';
+import 'package:erp_app/features/inventory/lots/presentation/inventory_legacy_production_screen.dart';
+import 'package:erp_app/features/inventory/lots/presentation/inventory_legacy_sales_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

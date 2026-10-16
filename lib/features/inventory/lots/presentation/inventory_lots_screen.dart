@@ -1,10 +1,11 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:erp_app/features/inventory/lots/widget/allocate_stock_dailog.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'inventory_ui_helpers.dart';
+import '../widget/inventory_ui_helpers.dart';
 
 class InventoryLotsScreen extends ConsumerStatefulWidget {
   const InventoryLotsScreen({super.key});
@@ -38,8 +39,7 @@ class _InventoryLotsScreenState extends ConsumerState<InventoryLotsScreen>
     _load = _fetch();
   });
 
-
-   Future<List<dynamic>> _fetchAllocData() {
+  Future<List<dynamic>> _fetchAllocData() {
     final repo = ref.read(inventoryRepositoryProvider);
     final f = Future.wait<dynamic>([
       repo.getItems(limit: 500).then((r) => r.items),
@@ -193,220 +193,19 @@ class _InventoryLotsScreenState extends ConsumerState<InventoryLotsScreen>
   // (_fieldDecoration, _dialogHeader, _dialogBody, _cancelButton).
 
   Future<void> _allocateDirectStock() async {
-    // Dialog opens instantly; data comes from the prefetched/cached future.
     _allocData ??= _fetchAllocData();
-    final data = _allocData!;
- 
-    int? itemId, warehouseId;
-    String destination = 'processed';
-    final qty = TextEditingController();
-    final note = TextEditingController();
-    final key = GlobalKey<FormState>();
- 
-    final save = await showDialog<bool>(
+
+    final payload = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModal) => FutureBuilder<List<dynamic>>(
-          future: data,
-          builder: (context, snap) {
-            final ready = snap.connectionState == ConnectionState.done &&
-                snap.hasData &&
-                !snap.hasError;
-            final items =
-                ready ? snap.data![0] as List<dynamic> : const <dynamic>[];
-            final warehouses =
-                ready ? snap.data![1] as List<dynamic> : const <dynamic>[];
- 
-            Widget body;
-            if (snap.hasError) {
-              body = SizedBox(
-                height: 140,
-                child: Center(
-                  child: Text(
-                    'Could not load products. Close and try again.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
-                ),
-              );
-            } else if (!ready) {
-              body = const SizedBox(
-                height: 140,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            } else {
-              body = Form(
-                key: key,
-                child: _dialogBody([
-                  DropdownButtonFormField<int>(
-                    value: itemId,
-                    isExpanded: true,
-                    menuMaxHeight: 320,
-                    borderRadius: BorderRadius.circular(12),
-                    decoration: _fieldDecoration(
-                      context,
-                      label: 'Product',
-                      icon: Icons.inventory_2_outlined,
-                    ),
-                    items: [
-                      for (final item in items)
-                        DropdownMenuItem<int>(
-                          value: item.id as int,
-                          child: Text(
-                            '${item.name}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: (v) => setModal(() => itemId = v),
-                    validator: (v) => v == null ? 'Select a product' : null,
-                  ),
-                  DropdownButtonFormField<int>(
-                    value: warehouseId,
-                    isExpanded: true,
-                    menuMaxHeight: 320,
-                    borderRadius: BorderRadius.circular(12),
-                    decoration: _fieldDecoration(
-                      context,
-                      label: 'Warehouse',
-                      icon: Icons.warehouse_outlined,
-                    ),
-                    items: [
-                      for (final w in warehouses)
-                        DropdownMenuItem<int>(
-                          value: w.id as int,
-                          child: Text(
-                            '${w.name}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: (v) => setModal(() => warehouseId = v),
-                    validator: (v) => v == null ? 'Select a warehouse' : null,
-                  ),
-                  TextFormField(
-                    controller: qty,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textInputAction: TextInputAction.next,
-                    decoration: _fieldDecoration(
-                      context,
-                      label: 'Quantity',
-                      icon: Icons.scale_outlined,
-                    ),
-                    validator: (v) =>
-                        (num.tryParse((v ?? '').trim()) ?? 0) <= 0
-                            ? 'Enter a positive quantity'
-                            : null,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4, bottom: 6),
-                        child: Text(
-                          'Destination',
-                          style:
-                              Theme.of(context).textTheme.labelLarge?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        child: SegmentedButton<String>(
-                          showSelectedIcon: false,
-                          segments: const [
-                            ButtonSegment(
-                              value: 'processed',
-                              icon: Icon(
-                                Icons.precision_manufacturing_outlined,
-                                size: 18,
-                              ),
-                              label: Text('Processed'),
-                            ),
-                            ButtonSegment(
-                              value: 'sellable',
-                              icon: Icon(Icons.sell_outlined, size: 18),
-                              label: Text('Sellable'),
-                            ),
-                          ],
-                          selected: {destination},
-                          onSelectionChanged: (s) =>
-                              setModal(() => destination = s.first),
-                        ),
-                      ),
-                    ],
-                  ),
-                  TextFormField(
-                    controller: note,
-                    minLines: 2,
-                    maxLines: 3,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: _fieldDecoration(
-                      context,
-                      label: 'Reason / note *',
-                      icon: Icons.notes_outlined,
-                    ),
-                    validator: (v) => v == null || v.trim().isEmpty
-                        ? 'A note is required'
-                        : null,
-                  ),
-                ]),
-              );
-            }
- 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              title: _dialogHeader(
-                context,
-                icon: Icons.add_box_outlined,
-                title: 'Allocate direct stock',
-                subtitle: 'Add stock straight into a warehouse',
-              ),
-              content: body,
-              actions: [
-                _cancelButton(context),
-                FilledButton.icon(
-                  onPressed: ready
-                      ? () {
-                          if (key.currentState!.validate()) {
-                            Navigator.pop(context, true);
-                          }
-                        }
-                      : null,
-                  icon: const Icon(Icons.check_rounded, size: 18),
-                  label: const Text('Allocate'),
-                ),
-              ],
-            );
-          },
-        ),
+      builder: (_) => AllocateStockDialog(
+        future: _allocData!,
+        loader: () => _allocData = _fetchAllocData(),
       ),
     );
- 
-    final qtyText = qty.text;
-    final noteText = note.text.trim();
-    qty.dispose();
-    note.dispose();
- 
-    if (save != true || itemId == null || warehouseId == null) return;
+    if (payload == null) return;
+
     try {
-      await ref.read(inventoryRepositoryProvider).allocateDirectStock({
-        'itemId': itemId,
-        'warehouseId': warehouseId,
-        'quantity': num.parse(qtyText),
-        'destination': destination,
-        'noteMessage': noteText,
-      });
+      await ref.read(inventoryRepositoryProvider).allocateDirectStock(payload);
       showSuccess('Stock allocated');
       reload();
     } catch (e) {

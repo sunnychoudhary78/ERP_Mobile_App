@@ -1,14 +1,14 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
-import 'package:erp_app/features/inventory/operations/data/utlis/payable_utlis.dart';
-import 'package:erp_app/features/inventory/operations/presentation/create_purchase_bill.dart';
-import 'package:erp_app/features/inventory/operations/presentation/payable_settlement_dailogbox.dart';
-import 'package:erp_app/features/inventory/operations/presentation/purchase_bill_details_screen.dart';
+import 'package:erp_app/features/inventory/lots/data/utlis/payable_utlis.dart';
+import 'package:erp_app/features/inventory/lots/presentation/create_purchase_bill.dart';
+import 'package:erp_app/features/inventory/accounts/presentations/payable_settlement_dailogbox.dart';
+import 'package:erp_app/features/inventory/bills/presentations/purchase_bill_details_screen.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'inventory_ui_helpers.dart';
+import '../widget/inventory_ui_helpers.dart';
 
 class InventoryPayablesScreen extends ConsumerStatefulWidget {
   const InventoryPayablesScreen({super.key, this.initialBillSearch = ''});

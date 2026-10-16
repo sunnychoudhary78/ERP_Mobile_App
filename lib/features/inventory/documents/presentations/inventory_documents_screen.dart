@@ -12,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'inventory_ui_helpers.dart';
+import '../../lots/widget/inventory_ui_helpers.dart';
 
 /// API origin used to resolve `/api/uploads/<file>` urls (same as the web
 /// `resolveUploadUrl`). No trailing slash and no `/api`.

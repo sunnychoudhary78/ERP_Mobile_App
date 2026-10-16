@@ -1,13 +1,13 @@
-import 'package:erp_app/features/inventory/operations/presentation/inventory_documents_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_hub_list.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_ledger_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_lots_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_processed_fg_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_payables_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_reports_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_sellable_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_stock_movements_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_warehouses_screen.dart';
+import 'package:erp_app/features/inventory/documents/presentations/inventory_documents_screen.dart';
+import 'package:erp_app/features/inventory/bills/presentations/inventory_hub_list.dart';
+import 'package:erp_app/features/inventory/approval/data/inventory_ledger_screen.dart';
+import 'package:erp_app/features/inventory/lots/presentation/inventory_lots_screen.dart';
+import 'package:erp_app/features/inventory/bills/presentations/inventory_processed_fg_screen.dart';
+import 'package:erp_app/features/inventory/lots/presentation/inventory_payables_screen.dart';
+import 'package:erp_app/features/inventory/documents/presentations/inventory_reports_screen.dart';
+import 'package:erp_app/features/inventory/lots/presentation/inventory_sellable_screen.dart';
+import 'package:erp_app/features/inventory/stocklookup/presentation/screens/inventory_stock_movements_screen.dart';
+import 'package:erp_app/features/inventory/warehouse/presenations/inventory_warehouses_screen.dart';
 import 'package:flutter/material.dart';
 
 

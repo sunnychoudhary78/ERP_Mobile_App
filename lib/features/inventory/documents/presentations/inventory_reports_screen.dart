@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_ledger_screen.dart';
-import 'package:erp_app/features/inventory/operations/presentation/inventory_stock_movements_screen.dart';
+import 'package:erp_app/features/inventory/approval/data/inventory_ledger_screen.dart';
+import 'package:erp_app/features/inventory/stocklookup/presentation/screens/inventory_stock_movements_screen.dart';
 import 'package:erp_app/features/inventory/purchase/recives/presentation/purchase_received_screen.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
 import 'package:erp_app/features/inventory/shared/data/models/inventory_item_model.dart';
@@ -11,7 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'inventory_ui_helpers.dart';
+import '../../lots/widget/inventory_ui_helpers.dart';
 
 /// Web: /inventory/reports  →  Overview | Cost & P/L | Stock on Hand | Movements | Lot Exports
 /// API doc section 17 (+ 4 dashboard, 13 lots, 16 movement ledger).
@@ -76,7 +76,116 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
     final repo = ref.read(inventoryRepositoryProvider);
     // GET /inventory/reports/financial?months=1|3|6|12|all
     final res = await repo.getFinancialReport(months: _months);
-    return Map<String, dynamic>.from(res.raw as Map);
+    return _normalizeFinancial(Map<String, dynamic>.from(res.raw as Map));
+  }
+
+  /// The financial API keys are matched loosely (case / underscore insensitive,
+  /// unwrapped from `data` / `result` / `report` / `summary`), so Stock value,
+  /// Profit and Profit margin no longer show blank/₹0 when the backend uses a
+  /// slightly different key name. Missing profit values are derived.
+  Map<String, dynamic> _normalizeFinancial(Map<String, dynamic> raw) {
+    var src = Map<String, dynamic>.from(raw);
+    for (final wrapper in const ['data', 'result', 'report', 'summary']) {
+      final w = src[wrapper];
+      if (w is Map) src = {...src, ...Map<String, dynamic>.from(w)};
+    }
+
+    dynamic pick(List<String> k) => _pickLoose(src, k);
+    num n(List<String> k) => _num(pick(k));
+
+    final purchaseCost = n([
+      'purchaseCost',
+      'totalPurchaseCost',
+      'purchaseAmount',
+      'totalPurchase',
+    ]);
+    final sales = n([
+      'stockOutSubtotal',
+      'stockOutSales',
+      'salesSubtotal',
+      'totalSales',
+      'stockOutRevenue',
+      'stockOutAmount',
+    ]);
+    final cogs = n(['stockOutCogs', 'cogs', 'costOfGoodsSold']);
+
+    final grossRaw = pick(['stockOutGrossProfit', 'grossProfit']);
+    final gross = grossRaw != null ? _num(grossRaw) : sales - cogs;
+
+    final revenueRaw = pick([
+      'totalRevenueExGst',
+      'revenueExGst',
+      'totalRevenue',
+    ]);
+    final revenue = revenueRaw != null ? _num(revenueRaw) : sales;
+
+    final netRaw = pick([
+      'netProfitEstimate',
+      'netProfit',
+      'profitEstimate',
+      'netProfitLoss',
+      'profit',
+    ]);
+    final net = netRaw != null ? _num(netRaw) : revenue - purchaseCost;
+
+    // Profit margin % = gross profit / sales (ex GST). API value wins if present.
+    final marginRaw = pick([
+      'profitMargin',
+      'grossMargin',
+      'marginPercent',
+      'profitMarginPercent',
+    ]);
+    final marginParsed = marginRaw == null
+        ? null
+        : num.tryParse('$marginRaw'.replaceAll(RegExp(r'[₹,%\s]'), ''));
+    final num? margin =
+        marginParsed ?? (sales > 0 ? gross / sales * 100 : null);
+
+    final out = <String, dynamic>{
+      ...src,
+      'purchaseCost': purchaseCost,
+      'purchaseCount': pick(['purchaseCount', 'receivedCount', 'grnCount']) ?? 0,
+      'stockOutSubtotal': sales,
+      'stockOutBillCount':
+          pick(['stockOutBillCount', 'stockOutCount', 'billCount']) ?? 0,
+      'stockOutGst': n(['stockOutGst', 'gst', 'gstAmount']),
+      'stockOutQty': n(['stockOutQty', 'stockOutQuantity', 'soldQty']),
+      'stockOutCogs': cogs,
+      'stockOutGrossProfit': gross,
+      'totalRevenueExGst': revenue,
+      'totalRevenueWithGst': n([
+        'totalRevenueWithGst',
+        'revenueWithGst',
+      ]),
+      'netProfitEstimate': net,
+      'profitMargin': margin,
+      'inventoryValueAtCost': n([
+        'inventoryValueAtCost',
+        'stockValue',
+        'inventoryValue',
+        'totalStockValue',
+        'stockValueAtCost',
+      ]),
+      'inventoryValueAtB2b': n([
+        'inventoryValueAtB2b',
+        'stockValueAtB2b',
+        'inventoryValueB2b',
+      ]),
+      'inventoryUnits': n(['inventoryUnits', 'stockUnits', 'totalUnits']),
+    };
+
+    if (kDebugMode) {
+      debugPrint('Financial raw keys: ${raw.keys.toList()}');
+      debugPrint('Financial normalized: $out');
+    }
+    return out;
+  }
+
+  /// Shows "-" when there is no margin (no sales), like the web.
+  String _pct(dynamic v) {
+    if (v == null) return '-';
+    final n = v is num ? v : num.tryParse('$v'.replaceAll(RegExp(r'[%\s]'), ''));
+    return n == null ? '-' : '${n.toStringAsFixed(1)}%';
   }
 
   Future<List<dynamic>> _fetchStock() async {
@@ -528,6 +637,20 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
                   'At cost · wholesale ${_money(report['inventoryValueAtB2b'])}',
               accent: const Color(0xFF3974A5),
             ),
+            _statCard(
+              title: 'Profit margin',
+              value: _pct(report['profitMargin']),
+              subtitle: 'Gross profit ÷ sales · $period',
+              accent: _num(report['profitMargin']) >= 0
+                  ? const Color(0xFF188A63)
+                  : const Color(0xFFD32F2F),
+            ),
+            _statCard(
+              title: 'Gross profit',
+              value: _money(report['stockOutGrossProfit']),
+              subtitle: 'Sales minus COGS · $period',
+              accent: const Color(0xFF7C3AED),
+            ),
           ]);
         },
       );
@@ -924,10 +1047,26 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
           net >= 0 ? const Color(0xFFEBFAF3) : const Color(0xFFFFEFEF),
         ),
         _kpi(
-          'Inventory on hand',
+          'Stock value',
           _money(f['inventoryValueAtCost']),
           '${f['inventoryUnits'] ?? 0} units · B2B ${_money(f['inventoryValueAtB2b'])}',
           const Color(0xFFF1F4FF),
+        ),
+      ),
+      pair(
+        _kpi(
+          'Gross profit',
+          _money(f['stockOutGrossProfit']),
+          'Sales − COGS · $label',
+          const Color(0xFFEBFAF3),
+        ),
+        _kpi(
+          'Profit margin',
+          _pct(f['profitMargin']),
+          'Gross profit ÷ sales (ex GST)',
+          _num(f['profitMargin']) >= 0
+              ? const Color(0xFFEBFAF3)
+              : const Color(0xFFFFEFEF),
         ),
       ),
       const SizedBox(height: 6),
@@ -1013,6 +1152,22 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       'outQty': outQty,
       'outRevenue': revenue,
       'cogs': cogs,
+      'stockValue': raw([
+                'stockValue',
+                'inventoryValue',
+                'valueAtCost',
+                'stockValueAtCost',
+              ]) !=
+              null
+          ? _num(raw([
+              'stockValue',
+              'inventoryValue',
+              'valueAtCost',
+              'stockValueAtCost',
+            ]))
+          : onHand * cost,
+      'profit': revenue - cogs,
+      'margin': revenue > 0 ? (revenue - cogs) / revenue * 100 : null,
     };
   }
 
@@ -1063,9 +1218,16 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
               children: [
                 _stat('On hand', '${r['onHand']}'),
                 _stat('Cost', _money(r['cost'])),
+                _stat('Stock value', _money(r['stockValue'])),
                 _stat('Out qty', '${r['outQty']}'),
                 _stat('Out revenue', _money(r['outRevenue'])),
                 _stat('COGS', _money(r['cogs'])),
+                _stat(
+                  'Profit',
+                  _money(r['profit']),
+                  color: (r['profit'] as num) >= 0 ? _inGreen : _lowRed,
+                ),
+                _stat('Margin', _pct(r['margin'])),
               ],
             ),
           ],
@@ -1088,6 +1250,9 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
         'Stock out quantity',
         'Stock out revenue',
         'Stock out COGS',
+        'Stock value',
+        'Profit',
+        'Margin %',
       ],
       ...products.map((p) {
         final r = _plRow(p);
@@ -1100,6 +1265,9 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
           _r2(r['outQty'] as num),
           _r2(r['outRevenue'] as num),
           _r2(r['cogs'] as num),
+          _r2(r['stockValue'] as num),
+          _r2(r['profit'] as num),
+          r['margin'] == null ? '-' : _r2(r['margin'] as num),
         ];
       }),
     ];

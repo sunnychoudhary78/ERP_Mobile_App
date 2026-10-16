@@ -1,4 +1,4 @@
-import 'package:erp_app/features/inventory/operations/data/utlis/payable_utlis.dart';
+import 'package:erp_app/features/inventory/lots/data/utlis/payable_utlis.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
