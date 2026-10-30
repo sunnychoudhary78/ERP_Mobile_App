@@ -25,6 +25,10 @@ abstract final class AppPermissions {
   static const salesCrmActivitiesManage = 'sales_crm_activities.manage';
   static const salesApprovalsManage = 'sales_approvals.manage';
   static const salesVisitsManage = 'sales_visits.manage';
+  static const salesTrackingSync = 'sales_tracking.sync';
+  static const salesDistanceClaimsView = 'sales_distance_claims.view';
+  static const salesDistanceClaimsReview = 'sales_distance_claims.review';
+  static const salesDistanceClaimsManage = 'sales_distance_claims.manage';
   static const customerView = 'customer.view';
   static const customerManage = 'customer.manage';
   static const salesCustomersView = 'sales_customers.view';

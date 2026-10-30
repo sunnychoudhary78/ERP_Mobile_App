@@ -1,3 +1,5 @@
+import 'entitlements_model.dart';
+
 class UserDetails {
   String? id;
   String? userId;
@@ -16,6 +18,9 @@ class UserDetails {
   DateTime? createdAt;
   DateTime? subscriptionEndDate;
 
+  /// Company/module entitlements (`entitlements.modules` / `.features`).
+  Entitlements entitlements = Entitlements.empty;
+
   UserDetails({
     this.id,
     this.userId,
@@ -33,6 +38,7 @@ class UserDetails {
     this.active,
     this.createdAt,
     this.subscriptionEndDate,
+    this.entitlements = Entitlements.empty,
   });
 
   UserDetails.fromJson(Map<String, dynamic> json) {
@@ -79,6 +85,13 @@ class UserDetails {
       json['company']?['subscription_end_date'] ??
           json['subscription_end_date'],
     );
+
+    final entitlementsJson = json['entitlements'];
+    if (entitlementsJson is Map) {
+      entitlements = Entitlements.fromJson(
+        Map<String, dynamic>.from(entitlementsJson),
+      );
+    }
   }
 
   static DateTime? _parseDate(dynamic value) {

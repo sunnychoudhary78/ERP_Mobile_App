@@ -1,4 +1,6 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/core/permissions/sales_entitlement.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
@@ -19,6 +21,8 @@ import 'package:erp_app/features/inventory/lots/presentation/inventory_advanced_
 import 'package:erp_app/features/inventory/lots/presentation/inventory_products_screen.dart';
 import 'package:erp_app/features/inventory/bills/presentations/inventory_processed_fg_screen.dart';
 import 'package:erp_app/features/inventory/lots/presentation/inventory_sellable_screen.dart';
+import 'package:erp_app/features/profile/presentations/screen/change_password_screen.dart';
+import 'package:erp_app/features/profile/presentations/screen/my_team_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
 import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
 import 'package:erp_app/features/tracking/presentation/tracking_screen.dart';
@@ -56,6 +60,12 @@ import '../features/production/presentation/screens/work_orders_screen.dart';
 
 Widget _gate(List<String> anyOf, Widget child) {
   return PermissionGate(anyOf: anyOf, child: child);
+}
+
+/// Doc 05 item 5: Sales Tracking / Visits / Claims surfaces require the
+/// company entitlement *and* the matching permission.
+Widget _salesGate(bool Function(AuthState) entitlement, Widget child) {
+  return PermissionGate(anyOf: const [], entitlement: entitlement, child: child);
 }
 
 class AppRoutes {
@@ -102,9 +112,9 @@ class AppRoutes {
     '/crm/quotes/form': (_) =>
         _gate(AppPermissions.crmLeadsManage, const QuoteFormScreen()),
     '/crm/visits': (_) =>
-        _gate(AppPermissions.crmVisits, const VisitCheckInScreen()),
+        _salesGate(salesCanVisit, const VisitCheckInScreen()),
     '/crm/tracking': (_) =>
-        _gate(AppPermissions.crmVisits, const VisitTrackingScreen()),
+        _salesGate(salesCanVisit, const VisitTrackingScreen()),
     '/crm/crm_sales_screen': (_) =>
         _gate(AppPermissions.crmModule, const CrmSalesScreen()),
     '/crm/hrms_sales_screen': (_) =>
@@ -184,11 +194,16 @@ class AppRoutes {
     ),
 
     // Tracking
-    '/tracking-dashboard': (_) => const TrackingDashboardScreen(),
-    '/tracking_screen': (_) => const TrackingScreen(),
-    '/claim_reward_screen': (_) => const ClaimRewardScreen(),
+    '/tracking-dashboard': (_) =>
+        _salesGate(salesCanTrack, const TrackingDashboardScreen()),
+    '/tracking_screen': (_) =>
+        _salesGate(salesCanTrack, const TrackingScreen()),
+    '/claim_reward_screen': (_) =>
+        _salesGate(salesCanClaim, const ClaimRewardScreen()),
 
     // profile
     '/profile': (_) => const ProfileScreen(),
+    '/change-password': (_) => const ChangePasswordScreen(),
+    '/my-team': (_) => const MyTeamScreen(),
   };
 }

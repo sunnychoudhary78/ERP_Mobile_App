@@ -1,16 +1,71 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/permissions/app_permissions.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/user_profile_providers.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isUploadingPhoto = false;
+
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 1024,
+    );
+    if (picked == null) return;
+
+    setState(() => _isUploadingPhoto = true);
+    try {
+      await ref
+          .read(authProvider.notifier)
+          .uploadProfilePhoto(File(picked.path));
+      if (!mounted) return;
+      _showSnack('Profile photo updated');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(
+        e.toString().replaceFirst('Exception: ', ''),
+        isError: true,
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final profile = authState.profile;
+    final self = ref.watch(selfEmployeeProvider).asData?.value;
+    final vehicleType = ref.watch(vehicleTypeProvider).asData?.value;
+    final canViewTeam = authState.canAny(AppPermissions.teamDashboard);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -18,7 +73,11 @@ class ProfileScreen extends ConsumerWidget {
       body: profile == null
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: () => ref.read(authProvider.notifier).tryAutoLogin(),
+              onRefresh: () async {
+                await ref.read(authProvider.notifier).refreshProfile();
+                ref.invalidate(selfEmployeeProvider);
+                ref.invalidate(vehicleTypeProvider);
+              },
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
                 children: [
@@ -26,6 +85,8 @@ class ProfileScreen extends ConsumerWidget {
                     fullName: profile.associatesName ?? 'User',
                     designation: profile.designation,
                     profileUrl: authState.profileUrl,
+                    isUploading: _isUploadingPhoto,
+                    onTapPhoto: _pickAndUploadPhoto,
                   ),
                   const SizedBox(height: 20),
 
@@ -37,7 +98,15 @@ class ProfileScreen extends ConsumerWidget {
                         icon: Icons.email_outlined,
                         label: 'Email',
                         value: profile.email,
+                        isLast: self?.contactPrimary == null,
                       ),
+                      if (self?.contactPrimary != null)
+                        _InfoTile(
+                          icon: Icons.phone_outlined,
+                          label: 'Phone',
+                          value: self!.contactPrimary,
+                          isLast: true,
+                        ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -51,16 +120,26 @@ class ProfileScreen extends ConsumerWidget {
                         label: 'Designation',
                         value: profile.designation,
                       ),
-                      // _InfoTile(
-                      //   icon: Icons.confirmation_number_outlined,
-                      //   label: 'Payroll code',
-                      //   value: profile.payrollCode,
-                      // ),
-                      // _InfoTile(
-                      //   icon: Icons.apartment_outlined,
-                      //   label: 'Department',
-                      //   value: profile.departmentName,
-                      // ),
+                      _InfoTile(
+                        icon: Icons.confirmation_number_outlined,
+                        label: 'Payroll code',
+                        value: self?.payrollCode ?? profile.payrollCode,
+                      ),
+                      _InfoTile(
+                        icon: Icons.account_tree_outlined,
+                        label: 'Reports to',
+                        value: self?.manager?.name,
+                      ),
+                      // Vehicle type comes from the claim preview (doc 05).
+                      // Hidden when unavailable (e.g. 403 / no permission).
+                      if (vehicleType != null)
+                        _InfoTile(
+                          icon: vehicleType == 'four_wheeler'
+                              ? Icons.directions_car_outlined
+                              : Icons.two_wheeler_outlined,
+                          label: 'Vehicle type',
+                          value: _vehicleLabel(vehicleType),
+                        ),
                       _InfoTile(
                         icon: profile.active == false
                             ? Icons.cancel_outlined
@@ -102,10 +181,44 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                     ],
                   ),
+                  const SizedBox(height: 20),
+
+                  _SectionLabel('ACCOUNT'),
+                  const SizedBox(height: 8),
+                  _InfoCard(
+                    children: [
+                      if (canViewTeam)
+                        _ActionTile(
+                          icon: Icons.groups_outlined,
+                          label: 'My team',
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/my-team'),
+                          isLast: false,
+                        ),
+                      _ActionTile(
+                        icon: Icons.lock_outline_rounded,
+                        label: 'Change password',
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/change-password'),
+                        isLast: true,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
     );
+  }
+
+  static String _vehicleLabel(String raw) {
+    switch (raw) {
+      case 'two_wheeler':
+        return 'Bike (2W)';
+      case 'four_wheeler':
+        return 'Car (4W)';
+      default:
+        return raw.replaceAll('_', ' ');
+    }
   }
 
   static String? _formatDate(DateTime? date) {
@@ -122,11 +235,15 @@ class _ProfileHeader extends StatelessWidget {
   final String fullName;
   final String? designation;
   final String profileUrl;
+  final bool isUploading;
+  final VoidCallback onTapPhoto;
 
   const _ProfileHeader({
     required this.fullName,
     required this.designation,
     required this.profileUrl,
+    required this.isUploading,
+    required this.onTapPhoto,
   });
 
   String get _initials {
@@ -164,22 +281,51 @@ class _ProfileHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: Colors.white.withValues(alpha: 0.18),
-            backgroundImage: profileUrl.isNotEmpty
-                ? NetworkImage(profileUrl)
-                : null,
-            child: profileUrl.isEmpty
-                ? Text(
-                    _initials,
-                    style: const TextStyle(
+          GestureDetector(
+            onTap: isUploading ? null : onTapPhoto,
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: Colors.white.withValues(alpha: 0.18),
+                  backgroundImage: profileUrl.isNotEmpty
+                      ? NetworkImage(profileUrl)
+                      : null,
+                  child: profileUrl.isEmpty
+                      ? Text(
+                          _initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        )
+                      : null,
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                      shape: BoxShape.circle,
                     ),
-                  )
-                : null,
+                    child: isUploading
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 14,
+                            color: AppColors.primaryDark,
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -300,6 +446,54 @@ class _InfoTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isLast;
+
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          border: isLast
+              ? null
+              : Border(bottom: BorderSide(color: AppColors.border)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.muted,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }

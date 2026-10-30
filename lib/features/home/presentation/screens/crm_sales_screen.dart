@@ -1,5 +1,7 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/core/permissions/sales_entitlement.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +20,9 @@ class QuickActionItem {
   final String route;
   final List<String> anyOf;
 
+  /// Extra entitlement check (doc 05). Null = no extra check.
+  final bool Function(AuthState auth)? entitlement;
+
   const QuickActionItem({
     required this.title,
     required this.subtitle,
@@ -26,6 +31,7 @@ class QuickActionItem {
     required this.backgroundColor,
     required this.route,
     this.anyOf = const [],
+    this.entitlement,
   });
 }
 
@@ -104,6 +110,7 @@ final quickActionsProvider = Provider<List<QuickActionItem>>((ref) {
       backgroundColor: Color(0xFFFEE2E2),
       route: '/crm/visits',
       anyOf: AppPermissions.crmVisits,
+      entitlement: salesCanVisit,
     ),
     QuickActionItem(
       title: 'Tracking Overview',
@@ -113,9 +120,12 @@ final quickActionsProvider = Provider<List<QuickActionItem>>((ref) {
       backgroundColor: Color(0xFFFEF3C7),
       route: '/crm/tracking',
       anyOf: AppPermissions.crmVisits,
+      entitlement: salesCanVisit,
     ),
   ];
-  return all.where((a) => auth.canAny(a.anyOf)).toList(growable: false);
+  return all
+      .where((a) => auth.canAny(a.anyOf) && (a.entitlement?.call(auth) ?? true))
+      .toList(growable: false);
 });
 
 

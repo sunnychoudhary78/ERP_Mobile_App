@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models/entitlements_model.dart';
 import '../../data/models/user_details_model.dart';
 import '../../data/models/user_model.dart';
 
@@ -12,6 +13,7 @@ class AuthState {
   final String companyLogoUrl;
   final bool isSubscriptionExpired;
   final List<String> permissions;
+  final Entitlements entitlements;
   final String? errorMessage;
 
   const AuthState({
@@ -22,6 +24,7 @@ class AuthState {
     this.profileUrl = '',
     this.companyLogoUrl = '',
     this.permissions = const [],
+    this.entitlements = Entitlements.empty,
     this.isSubscriptionExpired = false,
     this.errorMessage,
   });
@@ -35,6 +38,7 @@ class AuthState {
     String? companyLogoUrl,
     bool? isSubscriptionExpired,
     List<String>? permissions,
+    Entitlements? entitlements,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -49,6 +53,7 @@ class AuthState {
       profileUrl: profileUrl ?? this.profileUrl,
       companyLogoUrl: companyLogoUrl ?? this.companyLogoUrl,
       permissions: permissions ?? this.permissions,
+      entitlements: entitlements ?? this.entitlements,
       isSubscriptionExpired:
           isSubscriptionExpired ?? this.isSubscriptionExpired,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),

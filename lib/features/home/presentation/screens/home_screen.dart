@@ -1,5 +1,6 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
 import 'package:erp_app/core/permissions/nav_links.dart';
+import 'package:erp_app/core/permissions/sales_entitlement.dart';
 import 'package:erp_app/features/home/presentation/screens/crm_sales_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/hrms_screen.dart';
 import 'package:erp_app/features/home/presentation/screens/inventory_sales_screen.dart';
@@ -111,12 +112,14 @@ class HomeScreen extends ConsumerWidget {
         '/crm/visits',
         Icons.location_on_outlined,
         anyOf: AppPermissions.crmVisits,
+        entitlement: salesCanVisit,
       ),
       QuickLink(
         'Team tracking',
         '/crm/tracking',
         Icons.map_outlined,
         anyOf: AppPermissions.crmVisits,
+        entitlement: salesCanVisit,
       ),
     ], anyOf: AppPermissions.crmModule),
     LinkSection('Inventory', [

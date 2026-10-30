@@ -57,6 +57,7 @@ class AuthNotifier extends Notifier<AuthState> {
         isInitializing: false,
         profile: profile,
         permissions: permissions,
+        entitlements: profile.entitlements,
         profileUrl: profile.profilePicture != null
             ? ApiConstants.imageBaseUrl + profile.profilePicture!
             : '',
@@ -111,6 +112,7 @@ class AuthNotifier extends Notifier<AuthState> {
         authUser: userModel.user,
         profile: profile,
         permissions: permissions,
+        entitlements: profile.entitlements,
         profileUrl: profile.profilePicture != null
             ? ApiConstants.imageBaseUrl + profile.profilePicture!
             : '',
@@ -227,8 +229,47 @@ class AuthNotifier extends Notifier<AuthState> {
     await _registerFcmIfAvailable();
   }
 
+  /// Reloads `/auth/me` + permissions (e.g. after a photo upload) without
+  /// touching the stored JWT.
+  Future<void> refreshProfile({bool bustImageCache = false}) async {
+    final profileJson = await _authApi.fetchProfile();
+    final profile = UserDetails.fromJson(profileJson);
+    final permissions = await _authApi.fetchPermissions();
 
-  
+    final String picturePath = profile.profilePicture ?? '';
+    state = state.copyWith(
+      profile: profile,
+      permissions: permissions,
+      entitlements: profile.entitlements,
+      profileUrl: picturePath.isEmpty
+          ? ''
+          : ApiConstants.imageBaseUrl +
+                picturePath +
+                (bustImageCache
+                    ? '?t=${DateTime.now().millisecondsSinceEpoch}'
+                    : ''),
+      companyLogoUrl: profile.companyLogoFilename != null
+          ? ApiConstants.companyLogoBaseUrl + profile.companyLogoFilename!
+          : '',
+    );
+  }
+
+  /// `POST /auth/change-password` — current + new password.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _authApi.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
+  /// `POST /employee-photo/photo` then refresh `/me` so the new photo shows.
+  Future<void> uploadProfilePhoto(File photo) async {
+    await _authApi.uploadEmployeePhoto(photo);
+    await refreshProfile(bustImageCache: true);
+  }
 
   Future<void> forgotPassword(String email) async {
     await _authApi.forgotPassword(email);

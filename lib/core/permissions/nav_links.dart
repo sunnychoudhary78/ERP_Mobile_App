@@ -7,7 +7,15 @@ class LinkSection {
   final List<QuickLink> links;
   final List<String> anyOf;
 
-  const LinkSection(this.title, this.links, {this.anyOf = const []});
+  /// Extra entitlement/module check (doc 05). Null = no extra check.
+  final bool Function(AuthState auth)? entitlement;
+
+  const LinkSection(
+    this.title,
+    this.links, {
+    this.anyOf = const [],
+    this.entitlement,
+  });
 }
 
 class QuickLink {
@@ -22,7 +30,15 @@ class QuickLink {
   /// Empty = visible to all authenticated users (web sidebar semantics).
   final List<String> anyOf;
 
-  const QuickLink(this.label, this.route, this.icon, {this.anyOf = const [],this.group,});
+  /// Extra entitlement/module check (doc 05). Null = no extra check.
+  final bool Function(AuthState auth)? entitlement;
+
+  const QuickLink(this.label, this.route, this.icon, {this.anyOf = const [],this.group, this.entitlement,});
+}
+
+bool _allows(AuthState auth, List<String> anyOf, bool Function(AuthState)? ent) {
+  if (!auth.canAny(anyOf)) return false;
+  return ent == null || ent(auth);
 }
 
 /// Keep sections/links the user may see; drop empty sections.
@@ -31,10 +47,10 @@ List<LinkSection> filterLinkSections(
   AuthState auth,
 ) {
   return sections
-      .where((section) => auth.canAny(section.anyOf))
+      .where((section) => _allows(auth, section.anyOf, section.entitlement))
       .map((section) {
         final links = section.links
-            .where((link) => auth.canAny(link.anyOf))
+            .where((link) => _allows(auth, link.anyOf, link.entitlement))
             .toList(growable: false);
         return LinkSection(section.title, links);
       })

@@ -2,7 +2,7 @@ class ApiEndpoints {
   // ───────── AUTH ─────────
   static const String login = 'auth/login'; // done
   static const String permissions = 'auth/permissions';
-  static const String changePassword = 'auth/change-password'; // not done
+  static const String changePassword = 'auth/change-password'; // done
   static const String forgotPassword = 'auth/forgot-password'; // not done
   static const String resetPassword = 'auth/reset-password';
   static const String registerFcmToken = 'auth/register-fcm-token';
@@ -10,7 +10,12 @@ class ApiEndpoints {
 
   // ───────── USER / EMPLOYEE ─────────
   static const String userDetails = 'auth/me'; // done
+  static const String employeeSingle = 'employees/single'; // done
   static const String employeeLeaveBalance = 'employees/leave-balance';
+  static const String employeePhoto = 'employee-photo/photo'; // done
+
+  // ───────── SALES TRACKING (doc 05) ─────────
+  static const String salesClaimsMyPreview = 'sales/claims/my/preview'; // done
 
   // ───────── ATTENDANCE ─────────
   static const String attendance = 'attendance';
