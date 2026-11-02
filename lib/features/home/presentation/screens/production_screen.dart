@@ -13,8 +13,8 @@ const _brandPurple = Color(0xFF635BFF);
 const _brandTeal = Color(0xFF00D2B8);
 const _brandGreen = Color(0xFF00C853);
 const _brandYellow = Color(0xFFFFC01D);
-const _bgCard = Color(0xFFF8F9FA);
-const _textDark = Color(0xFF1E2022);
+Color get _bgCard => AppColors.card;
+Color get _textDark => AppColors.text;
 
 class ProductionDashboardScreen extends ConsumerStatefulWidget {
   const ProductionDashboardScreen({super.key});
@@ -52,9 +52,9 @@ class _ProductionDashboardScreenState
     return PermissionGate(
       anyOf: AppPermissions.productionModule,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.card,
         appBar: AppBar(
-          title: const Text(
+          title: Text(
             'Production Dashboard',
             style: TextStyle(
               fontWeight: FontWeight.w700,
@@ -62,10 +62,10 @@ class _ProductionDashboardScreenState
               color: _textDark,
             ),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.card,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: _textDark),
+            icon: Icon(Icons.arrow_back, color: _textDark),
             onPressed: () => Navigator.maybePop(context),
           ),
         ),
@@ -140,7 +140,7 @@ class _ProductionUnitsBreakdownCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Production Units Breakdown',
                   style: TextStyle(
                     fontSize: 18,
@@ -195,7 +195,7 @@ class _ProductionUnitsBreakdownCard extends StatelessWidget {
                     _brandGreen,
                     _brandYellow,
                   ],
-                  center: const Column(
+                  center: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
@@ -258,7 +258,7 @@ class _ProductionUnitsBreakdownCard extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: _textDark,
@@ -287,7 +287,7 @@ class _ProductionOverviewGrid extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Production Overview',
             style: TextStyle(
               fontSize: 18,
@@ -377,7 +377,7 @@ class _OverviewKpiTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -391,10 +391,10 @@ class _OverviewKpiTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: AppColors.text,
                     ),
                   ),
                 ),
@@ -403,7 +403,7 @@ class _OverviewKpiTile extends StatelessWidget {
             ),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: _textDark,
@@ -441,7 +441,7 @@ class _ProductionStageOverviewCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Production Stage Overview',
               style: TextStyle(
                 fontSize: 18,
@@ -475,7 +475,7 @@ class _ProductionStageOverviewCard extends StatelessWidget {
                   flex: 2,
                   child: Column(
                     children: [
-                      const Text(
+                      Text(
                         'PRODUCTION\nEFFICIENCY',
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -495,7 +495,7 @@ class _ProductionStageOverviewCard extends StatelessWidget {
                             child: CircularProgressIndicator(
                               value: _efficiency / 100,
                               strokeWidth: 8,
-                              backgroundColor: Colors.grey.shade200,
+                              backgroundColor: AppColors.surface,
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                 Colors.black,
                               ),
@@ -503,7 +503,7 @@ class _ProductionStageOverviewCard extends StatelessWidget {
                           ),
                           Text(
                             '${_efficiency.toInt()}%',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                               color: _textDark,
@@ -547,7 +547,7 @@ class _ProductionStageOverviewCard extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             '$name ($count)',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: _textDark,

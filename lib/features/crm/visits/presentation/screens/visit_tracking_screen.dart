@@ -15,7 +15,7 @@ class VisitTrackingScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Visit Tracking',
           style: TextStyle(
             fontSize: 20,
@@ -25,7 +25,7 @@ class VisitTrackingScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.text),
+            icon: Icon(Icons.refresh_rounded, color: AppColors.text),
             onPressed: () =>
                 ref.read(salesWorkspaceProvider.notifier).refresh(),
             tooltip: 'Refresh Data',
@@ -62,7 +62,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Active Visits & Logs',
                             style: TextStyle(
                               fontSize: 20,
@@ -81,7 +81,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                             ),
                             child: Text(
                               '${visits.length} Total',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppColors.text,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -91,7 +91,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      const Divider(height: 1, color: AppColors.border),
+                      Divider(height: 1, color: AppColors.border),
                     ],
                   ),
                 ),
@@ -99,7 +99,7 @@ class VisitTrackingScreen extends ConsumerWidget {
 
               // 4. Visits List
               visits.isEmpty
-                  ? const SliverToBoxAdapter(
+                  ? SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.all(32.0),
                         child: Column(
@@ -273,7 +273,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                                 Expanded(
                                   child: Text(
                                     visit.clientName ?? 'Unnamed Client',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.text,
@@ -299,7 +299,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                                     ),
                                     child: Text(
                                       '${visit.at}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 11,
                                         color: AppColors.text,
                                         fontWeight: FontWeight.w500,
@@ -311,7 +311,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.person_outline,
                                   size: 16,
                                   color: AppColors.muted,
@@ -319,7 +319,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                                 const SizedBox(width: 6),
                                 Text(
                                   visit.repName ?? 'Unassigned',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     color: AppColors.muted,
                                   ),
@@ -329,7 +329,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.location_on_outlined,
                                   size: 16,
                                   color: AppColors.muted,
@@ -338,7 +338,7 @@ class VisitTrackingScreen extends ConsumerWidget {
                                 Expanded(
                                   child: Text(
                                     visit.location ?? 'No location',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 14,
                                       color: AppColors.muted,
                                     ),

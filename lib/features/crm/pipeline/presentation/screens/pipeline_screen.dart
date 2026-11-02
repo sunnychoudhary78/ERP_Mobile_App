@@ -18,12 +18,12 @@ class PipelineScreen extends ConsumerWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text(
+        title: Text(
           'Sales Pipeline',
           style: TextStyle(
             color: AppColors.text,
@@ -51,7 +51,7 @@ class PipelineScreen extends ConsumerWidget {
                   child: _HeaderSummarySection(stages: stages),
                 ),
 
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
                     child: Text(
@@ -68,7 +68,7 @@ class PipelineScreen extends ConsumerWidget {
 
                 // Pipeline List Section
                 if (pipelines.isEmpty)
-                  const SliverFillRemaining(
+                  SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
                       child: Text(
@@ -289,7 +289,7 @@ class _StatBox extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: AppColors.muted,
@@ -308,7 +308,7 @@ class _StatBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 12, color: AppColors.muted),
+            style: TextStyle(fontSize: 12, color: AppColors.muted),
           ),
         ],
       ),
@@ -359,7 +359,7 @@ class _PipelineCard extends StatelessWidget {
                   children: [
                     Text(
                       pipeline['title'] as String,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: AppColors.text,
@@ -368,7 +368,7 @@ class _PipelineCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       pipeline['subtitle'] as String,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
                         color: AppColors.muted,
                       ),
@@ -392,7 +392,7 @@ class _PipelineCard extends StatelessWidget {
                       Container(
                         width: 6,
                         height: 6,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: AppColors.danger,
                           shape: BoxShape.circle,
                         ),
@@ -400,7 +400,7 @@ class _PipelineCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         '$stalledCount stalled',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: AppColors.danger,
@@ -469,7 +469,7 @@ class _PipelineCard extends StatelessWidget {
                 ),
                 child: Text(
                   '${_formatCurrency(totalValue)} in pipeline',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primary,
@@ -598,7 +598,7 @@ class _TeamAvatarStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (members.isEmpty) {
-      return const Text(
+      return Text(
         'Unassigned',
         style: TextStyle(fontSize: 12, color: AppColors.muted),
       );
@@ -625,7 +625,7 @@ class _TeamAvatarStack extends StatelessWidget {
                       backgroundColor: AppColors.accent.withOpacity(0.2),
                       child: Text(
                         visible[i][0].toUpperCase(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
@@ -645,7 +645,7 @@ class _TeamAvatarStack extends StatelessWidget {
                       backgroundColor: AppColors.border,
                       child: Text(
                         '+$remaining',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: AppColors.text,
@@ -660,7 +660,7 @@ class _TeamAvatarStack extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           'team member${members.length > 1 ? 's' : ''}',
-          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+          style: TextStyle(fontSize: 12, color: AppColors.muted),
         ),
       ],
     );

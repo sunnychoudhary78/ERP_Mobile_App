@@ -97,20 +97,20 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
                   TextField(
                     controller: _controller,
                     focusNode: _searchFocusNode,
-                    style: const TextStyle(fontSize: 15, color: AppColors.text),
+                    style: TextStyle(fontSize: 15, color: AppColors.text),
                     decoration: InputDecoration(
                       hintText: 'Search by name / SKU / product code...',
-                      hintStyle: const TextStyle(
+                      hintStyle: TextStyle(
                         color: AppColors.muted,
                         fontSize: 14,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search,
                         color: AppColors.muted,
                       ),
                       suffixIcon: state.query.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.clear,
                                 color: AppColors.muted,
                               ),
@@ -171,7 +171,7 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
     }
 
     if (state.isLoading && state.items.isEmpty) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
@@ -190,7 +190,7 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
       itemCount: state.items.length + (state.isLoading ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= state.items.length) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.all(16),
             child: Center(
               child: CircularProgressIndicator(color: AppColors.primary),
@@ -232,7 +232,7 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
             const SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.text,
@@ -242,7 +242,7 @@ class _StockLookupScreenState extends ConsumerState<StockLookupScreen> {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: AppColors.muted),
+              style: TextStyle(fontSize: 14, color: AppColors.muted),
             ),
           ],
         ),
@@ -265,7 +265,7 @@ class _ItemTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
       ),
       child: InkWell(
         onTap: onTap,
@@ -281,7 +281,7 @@ class _ItemTile extends StatelessWidget {
                   children: [
                     Text(
                       item.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: AppColors.text,
@@ -290,7 +290,7 @@ class _ItemTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'SKU: ${item.sku}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.muted,
                       ),
@@ -298,7 +298,7 @@ class _ItemTile extends StatelessWidget {
                     if (item.brandName != null)
                       Text(
                         'Brand: ${item.brandName}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.muted,
                         ),
@@ -330,7 +330,7 @@ class _ItemTile extends StatelessWidget {
                         color: AppColors.danger.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
+                      child: Text(
                         'LOW STOCK',
                         style: TextStyle(
                           color: AppColors.danger,
@@ -367,7 +367,7 @@ class _ItemDetailScreen extends ConsumerWidget {
         title: const Text("Item Detials"),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -388,7 +388,7 @@ class _ItemDetailScreen extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     item.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: AppColors.text,
@@ -400,7 +400,7 @@ class _ItemDetailScreen extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     'SKU: ${item.sku}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: AppColors.muted,
                     ),
@@ -422,7 +422,7 @@ class _ItemDetailScreen extends ConsumerWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.warning_amber_rounded,
                           color: AppColors.danger,
                           size: 24,
@@ -432,7 +432,7 @@ class _ItemDetailScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'LOW STOCK ALERT',
                                 style: TextStyle(
                                   color: AppColors.danger,
@@ -542,7 +542,7 @@ class _ItemInfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Item Details',
             style: TextStyle(
               fontSize: 18,
@@ -591,7 +591,7 @@ class _ItemInfoCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'STATUS',
                       style: TextStyle(
                         fontSize: 11,
@@ -670,7 +670,7 @@ class _ItemInfoCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
             color: AppColors.muted,
@@ -680,7 +680,7 @@ class _ItemInfoCard extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
             color: AppColors.text,
@@ -711,7 +711,7 @@ class _ItemInfoCard extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: AppColors.muted,
@@ -751,7 +751,7 @@ class _WarehouseStockCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Warehouse Stock',
             style: TextStyle(
               fontSize: 18,
@@ -763,7 +763,7 @@ class _WarehouseStockCard extends StatelessWidget {
           stockAsync.when(
             data: (rows) {
               if (rows.isEmpty) {
-                return const Padding(
+                return Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.0),
                   child: Text(
                     'No warehouse stock available.',
@@ -776,14 +776,14 @@ class _WarehouseStockCard extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: rows.length,
                 separatorBuilder: (_, __) =>
-                    const Divider(height: 20, color: AppColors.border),
+                    Divider(height: 20, color: AppColors.border),
                 itemBuilder: (context, index) {
                   final row = rows[index];
                   final isLow = row.quantity < 15; // Example dynamic check
 
                   return Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.storefront_outlined,
                         color: AppColors.muted,
                         size: 20,
@@ -792,7 +792,7 @@ class _WarehouseStockCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           row.warehouseName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: AppColors.text,
@@ -812,7 +812,7 @@ class _WarehouseStockCard extends StatelessWidget {
                 },
               );
             },
-            loading: () => const Padding(
+            loading: () => Padding(
               padding: EdgeInsets.all(16.0),
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
@@ -824,7 +824,7 @@ class _WarehouseStockCard extends StatelessWidget {
                 isForbidden
                     ? 'You do not have permission to view warehouse stock.'
                     : 'Error: $e',
-                style: const TextStyle(color: AppColors.danger),
+                style: TextStyle(color: AppColors.danger),
               );
             },
           ),
@@ -867,7 +867,7 @@ class _SuggestionsDropdown extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         itemCount: visible.length,
         separatorBuilder: (_, __) =>
-            const Divider(height: 1, color: AppColors.border),
+            Divider(height: 1, color: AppColors.border),
         itemBuilder: (context, index) {
           final r = visible[index];
           final subtitleParts = [
@@ -876,14 +876,14 @@ class _SuggestionsDropdown extends StatelessWidget {
           ];
           return ListTile(
             dense: true,
-            leading: const Icon(
+            leading: Icon(
               Icons.inventory_2_outlined,
               size: 18,
               color: AppColors.muted,
             ),
             title: Text(
               r.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.text,
@@ -891,7 +891,7 @@ class _SuggestionsDropdown extends StatelessWidget {
             ),
             subtitle: Text(
               subtitleParts.join(' • '),
-              style: const TextStyle(fontSize: 12, color: AppColors.muted),
+              style: TextStyle(fontSize: 12, color: AppColors.muted),
             ),
             onTap: () => onTap(r),
           );

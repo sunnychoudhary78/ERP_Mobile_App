@@ -18,11 +18,11 @@ class WorkOrderDetailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Work Order Details',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: AppColors.text,
             fontSize: 20,
           ),
         ),
@@ -31,7 +31,7 @@ class WorkOrderDetailScreen extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -77,10 +77,10 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     wo.itemName ?? '-',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: AppColors.text,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -88,9 +88,9 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${wo.quantity ?? 0} units',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: AppColors.text,
                     ),
                   ),
                 ],
@@ -107,9 +107,9 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     wo.warehouse ?? '-',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: AppColors.text,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -120,9 +120,9 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     wo.factoryName ?? '-',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: AppColors.text,
                     ),
                   ),
                 ],
@@ -132,23 +132,23 @@ class WorkOrderDetailScreen extends ConsumerWidget {
               // 4. Production Stages Card
               _CardWrapper(
                 children: [
-                  const Text(
+                  Text(
                     'Production Stages',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: AppColors.text,
                     ),
                   ),
                   const SizedBox(height: 8),
                   const Divider(color: Color(0xFFE0E0E0), height: 1),
                   const SizedBox(height: 12),
                   if (wo.stages.isEmpty)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       child: Text(
                         'No stages available',
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
+                        style: TextStyle(color: AppColors.muted, fontSize: 13),
                       ),
                     )
                   else
@@ -163,12 +163,12 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Execution Logs',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                          color: AppColors.text,
                         ),
                       ),
                       Container(
@@ -182,9 +182,9 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                         ),
                         child: Text(
                           'Machine: ${wo.execution?.machine ?? '-'}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.black87,
+                            color: AppColors.text,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -204,19 +204,19 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                           style: BorderStyle.solid,
                         ),
                       ),
-                      child: const Column(
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.history_toggle_off_rounded,
                             size: 32,
-                            color: Colors.grey,
+                            color: AppColors.muted,
                           ),
                           SizedBox(height: 8),
                           Text(
                             'No execution logs yet',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.muted,
                               fontSize: 13,
                               fontStyle: FontStyle.italic,
                             ),
@@ -234,12 +234,12 @@ class WorkOrderDetailScreen extends ConsumerWidget {
               // 6. Order Info Card
               _CardWrapper(
                 children: [
-                  const Text(
+                  Text(
                     'Order Info',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: AppColors.text,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -252,9 +252,9 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     wo.dueDate ?? '-',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: AppColors.text,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -303,9 +303,9 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                       ),
                       child: Text(
                         wo.sourceType ?? 'sales_order',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.black87,
+                          color: AppColors.text,
                         ),
                       ),
                     ),
@@ -318,9 +318,9 @@ class WorkOrderDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     wo.customerName ?? '-',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: AppColors.text,
                     ),
                   ),
                 ],
@@ -352,7 +352,7 @@ class _HeaderCard extends StatelessWidget {
           children: [
             Text(
               woTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.text,
@@ -419,10 +419,10 @@ class _HeaderCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     (wo.status ?? 'DEMAND_OPEN').toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: AppColors.text,
                     ),
                   ),
                 ],
@@ -470,7 +470,7 @@ class _StageItemCard extends StatelessWidget {
         children: [
           Icon(
             stage.completed ? Icons.check_circle : Icons.check_circle_outlined,
-            color: stage.completed ? Colors.green : Colors.grey,
+            color: stage.completed ? Colors.green : AppColors.muted,
             size: 24,
           ),
           const SizedBox(width: 10),
@@ -480,18 +480,18 @@ class _StageItemCard extends StatelessWidget {
               children: [
                 Text(
                   stage.code,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    color: AppColors.text,
                   ),
                 ),
                 Text(
                   stage.completed ? 'Completed' : 'Pending',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: AppColors.text,
                   ),
                 ),
               ],
@@ -500,18 +500,18 @@ class _StageItemCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text(
+              Text(
                 'Out    Scrap',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: AppColors.text,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 '${stage.outputQty}           ${stage.scrapQty}',
-                style: const TextStyle(fontSize: 12, color: Colors.black87),
+                style: TextStyle(fontSize: 12, color: AppColors.text),
               ),
             ],
           ),
@@ -532,7 +532,7 @@ class _CardWrapper extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E2E2)),
       ),
@@ -553,10 +553,10 @@ class _DetailFieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.bold,
-        color: Colors.black54,
+        color: AppColors.muted,
         letterSpacing: 0.5,
       ),
     );
@@ -573,7 +573,7 @@ class _IconLabelRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: Colors.black87),
+        Icon(icon, size: 14, color: AppColors.text),
         const SizedBox(width: 6),
         _DetailFieldLabel(label),
       ],
@@ -607,7 +607,7 @@ class _ExecutionLogRow extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '${log.operator} · ${log.timestamp} · Out: ${log.outputQty} Scrap: ${log.scrapQty}',
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
+            style: TextStyle(color: AppColors.muted, fontSize: 11),
           ),
         ],
       ),

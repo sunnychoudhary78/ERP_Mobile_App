@@ -73,7 +73,7 @@ class _LowStockCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -109,7 +109,7 @@ class _LowStockCard extends StatelessWidget {
                         color: AppColors.danger.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.warning_rounded,
                         color: AppColors.danger,
                         size: 22,
@@ -147,7 +147,7 @@ class _LowStockCard extends StatelessWidget {
                       children: [
                         Text(
                           '${item.currentStock}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 18,
                             color: AppColors.danger,
@@ -172,7 +172,7 @@ class _LowStockCard extends StatelessWidget {
                     value: stockRatio,
                     minHeight: 5,
                     backgroundColor: AppColors.border.withOpacity(0.3),
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.danger),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.danger),
                   ),
                 ),
               ],
@@ -274,7 +274,7 @@ class _ErrorStateView extends StatelessWidget {
                         color: AppColors.danger.withOpacity(0.08),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.error_outline_rounded,
                         size: 48,
                         color: AppColors.danger,

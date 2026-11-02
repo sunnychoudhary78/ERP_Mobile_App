@@ -317,24 +317,24 @@ class HomeScreen extends ConsumerWidget {
               .join();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FB),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E293B)),
+            icon: Icon(Icons.menu_rounded, color: AppColors.text),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Dashboard',
               style: TextStyle(
-                color: Color(0xFF0F172A),
+                color: AppColors.text,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -342,7 +342,7 @@ class HomeScreen extends ConsumerWidget {
             Text(
               'Overview of your business',
               style: TextStyle(
-                color: Color(0xFF64748B),
+                color: AppColors.muted,
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
@@ -359,7 +359,7 @@ class HomeScreen extends ConsumerWidget {
                 ref.read(authProvider.notifier).logout();
               }
             },
-            icon: const Icon(Icons.logout_rounded, color: Color(0xFF1E293B)),
+            icon: Icon(Icons.logout_rounded, color: AppColors.text),
           ),
           const SizedBox(width: 4),
         ],
@@ -524,12 +524,12 @@ class HomeScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Quick Actions',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.text,
                       ),
                     ),
                     // TextButton(
@@ -584,16 +584,16 @@ class HomeScreen extends ConsumerWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.card,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: AppColors.border),
                         ),
-                        child: const Text(
+                        child: Text(
                           'No quick actions are available for your account yet. '
                           'Please contact your administrator for access.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Color(0xFF475569),
+                            color: AppColors.muted,
                             fontSize: 14,
                             height: 1.4,
                           ),
@@ -615,12 +615,12 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
 
                 // 4. MODULES SECTION
-                const Text(
+                Text(
                   'Modules',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.text,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -697,24 +697,24 @@ class HomeScreen extends ConsumerWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.card,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: AppColors.border),
                         ),
-                        child: const Column(
+                        child: Column(
                           children: [
                             Icon(
                               Icons.widgets_outlined,
                               size: 40,
-                              color: Color(0xFF64748B),
+                              color: AppColors.muted,
                             ),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             Text(
                               'No modules are assigned to your account yet. '
                               'Please contact your administrator for access.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: Color(0xFF475569),
+                                color: AppColors.muted,
                                 fontSize: 14,
                                 height: 1.4,
                               ),
@@ -848,7 +848,7 @@ class _MetricCard extends StatelessWidget {
       width: 140,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
@@ -866,7 +866,7 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            style: TextStyle(fontSize: 11, color: AppColors.muted),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -875,10 +875,10 @@ class _MetricCard extends StatelessWidget {
             children: [
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  color: AppColors.text,
                 ),
               ),
               const SizedBox(width: 6),
@@ -893,9 +893,9 @@ class _MetricCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 2),
-          const Text(
+          Text(
             'vs last month',
-            style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+            style: TextStyle(fontSize: 10, color: AppColors.muted),
           ),
         ],
       ),
@@ -921,7 +921,7 @@ class _QuickActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppColors.card,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -930,7 +930,7 @@ class _QuickActionTile extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -947,10 +947,10 @@ class _QuickActionTile extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  color: AppColors.text,
                 ),
                 maxLines: 1,
               ),
@@ -958,7 +958,7 @@ class _QuickActionTile extends StatelessWidget {
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                style: TextStyle(fontSize: 10, color: AppColors.muted),
                 maxLines: 1,
               ),
             ],
@@ -1043,19 +1043,19 @@ class _ModuleCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 11.5 * s,
               height: 1.35,
-              color: const Color(0xFF64748B),
+              color: AppColors.muted,
             ),
           );
 
           return Container(
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.card,
               borderRadius: BorderRadius.circular(20 * s),
-              border: Border.all(color: const Color(0xFFE8ECF3)),
+              border: Border.all(color: AppColors.border),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -1103,7 +1103,7 @@ class _ModuleCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14 * s,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF0F172A),
+                              color: AppColors.text,
                             ),
                           ),
                           SizedBox(height: 6 * s),
@@ -1169,25 +1169,19 @@ class _SummaryItem extends StatelessWidget {
               child: Icon(icon, color: iconColor, size: 14),
             ),
             const SizedBox(width: 4),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-            ),
+            Text(title, style: TextStyle(fontSize: 11, color: AppColors.muted)),
           ],
         ),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.text,
           ),
         ),
-        Text(
-          subtitle,
-          style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-        ),
+        Text(subtitle, style: TextStyle(fontSize: 10, color: AppColors.muted)),
       ],
     );
   }
@@ -1212,7 +1206,7 @@ class _NotificationBellButton extends StatelessWidget {
             hasUnread
                 ? Icons.notifications_rounded
                 : Icons.notifications_outlined,
-            color: const Color(0xFF1E293B),
+            color: AppColors.text,
             size: 24,
           ),
           if (hasUnread)
@@ -1225,10 +1219,7 @@ class _NotificationBellButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.danger,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFFF8FAFC),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: AppColors.card, width: 1.5),
                 ),
                 child: Text(
                   unreadCount > 99 ? '99+' : '$unreadCount',
@@ -1285,7 +1276,7 @@ class _LogoutDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -1301,11 +1292,11 @@ class _LogoutDialog extends StatelessWidget {
             Container(
               width: 64,
               height: 64,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.surface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.logout_rounded,
                 color: AppColors.primary,
                 size: 30,
@@ -1336,11 +1327,8 @@ class _LogoutDialog extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(false),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black87,
-                        side: const BorderSide(
-                          color: AppColors.border,
-                          width: 1.4,
-                        ),
+                        foregroundColor: AppColors.text,
+                        side: BorderSide(color: AppColors.border, width: 1.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),

@@ -51,7 +51,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: AppColors.surface,
@@ -76,7 +76,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: AppColors.surface,
@@ -125,7 +125,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Follow-up logged successfully!'),
             backgroundColor: AppColors.success,
           ),
@@ -188,7 +188,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
           color: AppColors.card,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: AppColors.border, width: 0.8),
+            side: BorderSide(color: AppColors.border, width: 0.8),
           ),
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -209,7 +209,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: AppColors.primary.withOpacity(0.1),
-                          child: const Icon(
+                          child: Icon(
                             Icons.person_outline,
                             color: AppColors.primary,
                           ),
@@ -221,7 +221,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
                             children: [
                               Text(
                                 'Lead: ${widget.leadName}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.text,
@@ -229,7 +229,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
                               ),
                               Text(
                                 'ID: ${widget.leadId}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   color: AppColors.muted,
                                 ),
@@ -243,7 +243,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
                   const SizedBox(height: 24),
 
                   // Follow-up Details - matches web "Timeline" section
-                  const Text(
+                  Text(
                     'Follow-up Details',
                     style: TextStyle(
                       fontSize: 16,
@@ -323,15 +323,15 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
                       prefixIcon: const Icon(Icons.note_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.border),
+                        borderSide: BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.border),
+                        borderSide: BorderSide(color: AppColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.primary),
+                        borderSide: BorderSide(color: AppColors.primary),
                       ),
                       filled: true,
                       fillColor: AppColors.surface,
@@ -384,13 +384,13 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
                         child: OutlinedButton(
                           onPressed: _isSubmitting ? null : () => Navigator.pop(context),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.border),
+                            side: BorderSide(color: AppColors.border),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(
                               fontSize: 16,
@@ -422,7 +422,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: AppColors.muted,
@@ -441,7 +441,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
               isExpanded: true,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               icon: Icon(icon, color: AppColors.muted, size: 20),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.text,
                 fontSize: 14,
               ),
@@ -470,7 +470,7 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: AppColors.muted,
@@ -494,13 +494,13 @@ class _FollowUpScreenState extends ConsumerState<FollowUpScreen> {
                 Expanded(
                   child: Text(
                     value,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.text,
                       fontSize: 14,
                     ),
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_drop_down,
                   color: AppColors.muted,
                 ),

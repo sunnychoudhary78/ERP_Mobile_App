@@ -1,4 +1,5 @@
 import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:erp_app/features/crm/shared/data/models/sales_workspace_model.dart';
 import 'package:erp_app/shared/widgets/permission_gate.dart';
@@ -107,7 +108,7 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                     fillColor: Colors.grey.shade100,
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: AppColors.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -138,7 +139,7 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                           }
                         },
                         selectedColor: const Color(0xFF1B4F72),
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor: AppColors.surface,
                         labelStyle: TextStyle(
                           color: isSelected
                               ? Colors.white
@@ -178,7 +179,7 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -246,9 +247,9 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -325,9 +326,9 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -407,7 +408,7 @@ class _CrmApprovalsScreenState extends ConsumerState<CrmApprovalsScreen> {
                       decoration: BoxDecoration(
                         color: isWon
                             ? Colors.green.shade50
-                            : Colors.grey.shade100,
+                            : AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(

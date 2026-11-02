@@ -27,7 +27,7 @@ class TrackingScreen extends StatelessWidget {
                 child: Container(
                   width: 18,
                   height: 18,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
                   ),
@@ -64,7 +64,7 @@ class TrackingScreen extends StatelessWidget {
                 children: [
                   const _CircleIcon(icon: Icons.location_on_rounded),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -99,7 +99,7 @@ class TrackingScreen extends StatelessWidget {
                     label: const Text('Live Tracking'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.accent),
+                      side: BorderSide(color: AppColors.accent),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -120,7 +120,7 @@ class TrackingScreen extends StatelessWidget {
                 children: [
                   const _CircleIcon(icon: Icons.headset_mic_rounded),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -142,7 +142,7 @@ class TrackingScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 18,
                     color: AppColors.primary,
@@ -169,7 +169,7 @@ class _TrackingHeroCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [AppColors.primaryDark, AppColors.accent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -219,10 +219,10 @@ class _TrackingHeroCard extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.card,
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -258,7 +258,7 @@ class _ShipmentProgressCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               _CircleIcon(icon: Icons.inventory_2_outlined, small: true),
               SizedBox(width: 10),
@@ -331,7 +331,7 @@ class _ProgressStep extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: completed ? color : Colors.white,
+              color: completed ? color : AppColors.card,
               shape: BoxShape.circle,
               border: Border.all(color: color, width: 3),
             ),
@@ -365,7 +365,7 @@ class _ProgressStep extends StatelessWidget {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 9, color: AppColors.muted),
+            style: TextStyle(fontSize: 9, color: AppColors.muted),
           ),
         ],
       ),
@@ -398,7 +398,7 @@ class _DeliveryDetailsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Delivery Details',
             style: TextStyle(
               fontSize: 16,
@@ -414,7 +414,7 @@ class _DeliveryDetailsCard extends StatelessWidget {
             value: 'Aug 24, 2026\nBefore 8:00 PM',
           ),
 
-          const Divider(color: AppColors.border),
+          Divider(color: AppColors.border),
 
           const _DetailRow(
             icon: Icons.local_shipping_outlined,
@@ -422,7 +422,7 @@ class _DeliveryDetailsCard extends StatelessWidget {
             value: 'BlueDart Express',
           ),
 
-          const Divider(color: AppColors.border),
+          Divider(color: AppColors.border),
 
           const _DetailRow(
             icon: Icons.shield_outlined,
@@ -460,7 +460,7 @@ class _DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.text,
                 fontWeight: FontWeight.w600,
               ),
@@ -469,7 +469,7 @@ class _DetailRow extends StatelessWidget {
           Text(
             value,
             textAlign: TextAlign.right,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.text,
               fontWeight: FontWeight.w600,
               fontSize: 13,
@@ -477,7 +477,7 @@ class _DetailRow extends StatelessWidget {
           ),
           if (showCopy) ...[
             const SizedBox(width: 8),
-            const Icon(Icons.copy_rounded, size: 17, color: AppColors.muted),
+            Icon(Icons.copy_rounded, size: 17, color: AppColors.muted),
           ],
         ],
       ),

@@ -212,7 +212,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                   children: [
                     Text(
                       '${filteredActivities.length} Activity Logged',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.muted,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -237,7 +237,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                             color: AppColors.muted.withOpacity(0.5),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'No follow-ups match selected filters.',
                             style: TextStyle(color: AppColors.muted, fontSize: 14),
                           ),
@@ -314,7 +314,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                         ],
                       ),
                     ),
-                    const Divider(height: 1, color: AppColors.border),
+                    Divider(height: 1, color: AppColors.border),
                     Expanded(
                       child: ListView.separated(
                         controller: scrollController,
@@ -338,7 +338,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                                 backgroundColor: AppColors.primary.withOpacity(0.12),
                                 child: Text(
                                   name.isNotEmpty ? name[0].toUpperCase() : 'L',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -353,9 +353,9 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                               ),
                               subtitle: Text(
                                 lead.email.isNotEmpty ? lead.email : lead.phone,
-                                style: const TextStyle(color: AppColors.muted, fontSize: 14),
+                                style: TextStyle(color: AppColors.muted, fontSize: 14),
                               ),
-                              trailing: const Icon(
+                              trailing: Icon(
                                 Icons.chevron_right_rounded,
                                 color: AppColors.muted,
                               ),
@@ -389,7 +389,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
               child: Center(
                 child: Text(
                   error.toString().replaceFirst('Exception: ', ''),
-                  style: const TextStyle(color: AppColors.danger),
+                  style: TextStyle(color: AppColors.danger),
                 ),
               ),
             ),
@@ -451,7 +451,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                     children: [
                       Text(
                         activity.subject.isEmpty ? (activity.type ?? 'Activity') : activity.subject,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.text,
@@ -460,7 +460,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${activity.type ?? 'Activity'} • ${activity.related ?? '—'}',
-                        style: const TextStyle(color: AppColors.muted, fontSize: 14),
+                        style: TextStyle(color: AppColors.muted, fontSize: 14),
                       ),
                     ],
                   ),
@@ -485,7 +485,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                 ),
               ],
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Divider(height: 1, color: AppColors.border),
             ),
@@ -494,11 +494,11 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.schedule, size: 14, color: AppColors.muted),
+                    Icon(Icons.schedule, size: 14, color: AppColors.muted),
                     const SizedBox(width: 4),
                     Text(
                       'Due: ${activity.dueAt ?? '—'}',
-                      style: const TextStyle(color: AppColors.muted, fontSize: 14),
+                      style: TextStyle(color: AppColors.muted, fontSize: 14),
                     ),
                   ],
                 ),
@@ -521,7 +521,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Row(
-                        children: const [
+                        children: [
                           Icon(Icons.check_circle_outline, size: 16, color: AppColors.success),
                           SizedBox(width: 4),
                           Text(

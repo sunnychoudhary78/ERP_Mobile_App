@@ -102,7 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           Container(
             width: 48,
             height: 48,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.primary,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(11),
@@ -119,7 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               obscureText: isPassword && _obscurePassword,
               textInputAction: textInputAction,
               onSubmitted: onSubmitted,
-              style: const TextStyle(fontSize: 14, color: AppColors.text),
+              style: TextStyle(fontSize: 14, color: AppColors.text),
               decoration: InputDecoration(
                 hintText: hintText,
                 hintStyle: TextStyle(
@@ -168,7 +168,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         const SizedBox(height: 6),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: AppColors.text,
@@ -243,7 +243,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               errorBuilder: (context, error, stackTrace) => Container(
                                 width: 64,
                                 height: 64,
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   color: AppColors.primary,
                                   shape: BoxShape.circle,
                                 ),
@@ -260,7 +260,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'ERP',
                               style: TextStyle(
                                 fontSize: 18,
@@ -275,7 +275,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
                         // Header Text: Welcome Back
                         RichText(
-                          text: const TextSpan(
+                          text: TextSpan(
                             style: TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
@@ -291,7 +291,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
+                        Text(
                           'Sign in to continue',
                           style: TextStyle(fontSize: 14, color: AppColors.muted),
                         ),
@@ -316,7 +316,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // EMAIL OR EMPLOYEE ID
-                              const Text(
+                              Text(
                                 'EMAIL OR EMPLOYEE ID',
                                 style: TextStyle(
                                   fontSize: 11,
@@ -337,7 +337,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               const SizedBox(height: 18),
 
                               // PASSWORD
-                              const Text(
+                              Text(
                                 'PASSWORD',
                                 style: TextStyle(
                                   fontSize: 11,
@@ -381,7 +381,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Text(
+                                      Text(
                                         'Remember me',
                                         style: TextStyle(
                                           fontSize: 12.5,
@@ -394,7 +394,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     onTap: () {
                                       Navigator.pushNamed(context, '/forgot_password_screen');
                                     },
-                                    child: const Text(
+                                    child: Text(
                                       'Forgot Password?',
                                       style: TextStyle(
                                         fontSize: 12.5,
@@ -453,7 +453,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               const SizedBox(height: 20),
 
                               // OR Divider
-                              const Row(
+                              Row(
                                 children: [
                                   Expanded(child: Divider(color: AppColors.border)),
                                   Padding(
@@ -481,18 +481,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     // OTP Login action
                                   },
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: AppColors.border),
+                                    side: BorderSide(color: AppColors.border),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     backgroundColor: AppColors.surface,
                                   ),
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.shield_outlined,
                                     color: AppColors.primary,
                                     size: 20,
                                   ),
-                                  label: const Text(
+                                  label: Text(
                                     'Login with OTP',
                                     style: TextStyle(
                                       fontSize: 14,
@@ -533,7 +533,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         const SizedBox(height: 24),
 
                         // Footer Copyright
-                        const Text(
+                        Text(
                           '© 2025 IT ERP. All rights reserved.',
                           style: TextStyle(
                             fontSize: 12,

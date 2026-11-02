@@ -86,7 +86,7 @@ class ContactDetailScreen extends ConsumerWidget {
                             label: 'PHONE',
                             value: c.phone,
                           ),
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(vertical: 16),
                             child: Divider(
                               height: 1,
@@ -129,7 +129,7 @@ class ContactDetailScreen extends ConsumerWidget {
                                         const SizedBox(width: 8),
                                         Text(
                                           c.owner,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.text,
                                           ),
@@ -156,7 +156,7 @@ class ContactDetailScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.show_chart,
                                 size: 20,
                                 color: AppColors.muted,
@@ -207,7 +207,7 @@ class ContactDetailScreen extends ConsumerWidget {
               // Bottom Sticky Action Button
               Container(
                 padding: const EdgeInsets.all(16.0),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.surface,
                   border: Border(
                     top: BorderSide(color: AppColors.border),
@@ -277,7 +277,7 @@ class _HeaderProfileCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 contact.role,
-                style: const TextStyle(color: AppColors.muted),
+                style: TextStyle(color: AppColors.muted),
               ),
             ],
           ),

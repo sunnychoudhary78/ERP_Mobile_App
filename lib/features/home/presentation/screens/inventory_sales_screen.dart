@@ -7,15 +7,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:erp_app/features/inventory/shared/data/models/dashboard_stats_model.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
+import 'package:erp_app/core/theme/app_theme.dart';
 
 // ═══════════════════════════ Design tokens ═══════════════════════════
 
-const Color _kBg = Color(0xFFF5F7FB);
-const Color _kNavy = Color(0xFF0F1B3D);
-const Color _kMuted = Color(0xFF6B7487);
-const Color _kBorder = Color(0xFFEBEEF5);
+Color get _kBg => AppColors.surface;
+Color get _kNavy => AppColors.text;
+Color get _kMuted => AppColors.muted;
+Color get _kBorder => AppColors.border;
 const Color _kOrange = Color(0xFFFF7A1A);
 const Color _kOrangeSoft = Color(0xFFFFEBD9);
+
+bool _isDarkMode(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _trackColor(BuildContext context) =>
+    _isDarkMode(context) ? AppColors.border : const Color(0xFFF0F3F8);
 
 String _unitLabel(String unit) {
   final normalized = unit.trim();
@@ -42,7 +49,7 @@ class InventorySalesScreen extends ConsumerWidget {
           titleSpacing: 0,
           leading: Navigator.of(context).canPop()
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, color: _kNavy),
+                  icon: Icon(Icons.arrow_back_rounded, color: _kNavy),
                   onPressed: () => Navigator.maybePop(context),
                 )
               : null,
@@ -51,7 +58,7 @@ class InventorySalesScreen extends ConsumerWidget {
             padding: EdgeInsets.only(
               left: Navigator.of(context).canPop() ? 0 : 16,
             ),
-            child: const Text(
+            child: Text(
               'Inventory Dashboard',
               style: TextStyle(
                 color: _kNavy,
@@ -97,7 +104,7 @@ class InventorySalesScreen extends ConsumerWidget {
                     child: Text(
                       e.toString().replaceFirst('Exception: ', ''),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      style: TextStyle(color: AppColors.muted, fontSize: 13),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -327,6 +334,7 @@ class _FinancialSummaryCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _isDarkMode(context);
     final net = data['netProfitEstimate'] is num
         ? data['netProfitEstimate'] as num
         : num.tryParse('${data['netProfitEstimate'] ?? ''}') ?? 0;
@@ -341,8 +349,8 @@ class _FinancialSummaryCards extends StatelessWidget {
         value: _money(data['purchaseCost']),
         line1: '${_count(data['purchaseCount'])} received orders',
         line2: periodLabel,
-        tintTop: const Color(0xFFFFF1E2),
-        tintBottom: const Color(0xFFFFF8F1),
+        tintTop: isDark ? const Color(0xFF36271D) : const Color(0xFFFFF1E2),
+        tintBottom: isDark ? const Color(0xFF29201B) : const Color(0xFFFFF8F1),
         accent: const Color(0xFFFF7A1A),
         icon: Icons.shopping_cart_outlined,
         trailingIcon: Icons.trending_up_rounded,
@@ -352,8 +360,8 @@ class _FinancialSummaryCards extends StatelessWidget {
         value: _money(data['stockOutSubtotal']),
         line1: '${_count(data['stockOutBillCount'])} bills · before GST',
         line2: periodLabel,
-        tintTop: const Color(0xFFECEEFF),
-        tintBottom: const Color(0xFFF5F6FF),
+        tintTop: isDark ? const Color(0xFF292741) : const Color(0xFFECEEFF),
+        tintBottom: isDark ? const Color(0xFF211F33) : const Color(0xFFF5F6FF),
         accent: const Color(0xFF5B4BE0),
         icon: Icons.storefront_rounded,
         trailingIcon: Icons.trending_up_rounded,
@@ -363,8 +371,8 @@ class _FinancialSummaryCards extends StatelessWidget {
         value: _money(data['netProfitEstimate']),
         line1: net >= 0 ? 'Earned more than spent' : 'Spent more than earned',
         line2: periodLabel,
-        tintTop: const Color(0xFFE3F7EC),
-        tintBottom: const Color(0xFFF1FBF6),
+        tintTop: isDark ? const Color(0xFF20352A) : const Color(0xFFE3F7EC),
+        tintBottom: isDark ? const Color(0xFF1B2C24) : const Color(0xFFF1FBF6),
         accent: const Color(0xFF16A864),
         icon: Icons.trending_up_rounded,
         trailingIcon: Icons.trending_up_rounded,
@@ -374,8 +382,8 @@ class _FinancialSummaryCards extends StatelessWidget {
         value: _money(data['inventoryValueAtCost']),
         line1: 'At cost',
         line2: 'Wholesale ${_money(data['inventoryValueAtB2b'])}',
-        tintTop: const Color(0xFFE6F1FF),
-        tintBottom: const Color(0xFFF3F8FF),
+        tintTop: isDark ? const Color(0xFF223147) : const Color(0xFFE6F1FF),
+        tintBottom: isDark ? const Color(0xFF1B2737) : const Color(0xFFF3F8FF),
         accent: const Color(0xFF2F7BEA),
         icon: Icons.view_in_ar_rounded,
         trailingIcon: Icons.view_in_ar_outlined,
@@ -440,7 +448,7 @@ class _FinCard extends StatelessWidget {
             card.title.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
               letterSpacing: .5,
@@ -453,7 +461,7 @@ class _FinCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               card.value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 21,
                 fontWeight: FontWeight.w800,
                 color: _kNavy,
@@ -465,14 +473,14 @@ class _FinCard extends StatelessWidget {
             card.line1,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: _kMuted),
+            style: TextStyle(fontSize: 11, color: _kMuted),
           ),
           const SizedBox(height: 2),
           Text(
             card.line2,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: _kMuted),
+            style: TextStyle(fontSize: 11, color: _kMuted),
           ),
         ],
       ),
@@ -579,13 +587,14 @@ class _QuickLinkTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _isDarkMode(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FC),
+          color: isDark ? AppColors.surface : const Color(0xFFF8F9FC),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: _kBorder),
         ),
@@ -594,8 +603,8 @@ class _QuickLinkTile extends StatelessWidget {
             Container(
               width: 38,
               height: 38,
-              decoration: const BoxDecoration(
-                color: _kOrangeSoft,
+              decoration: BoxDecoration(
+                color: isDark ? _kOrange.withValues(alpha: .16) : _kOrangeSoft,
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 20, color: _kOrange),
@@ -606,7 +615,7 @@ class _QuickLinkTile extends StatelessWidget {
                 label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: _kNavy,
@@ -643,7 +652,7 @@ class _SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: _kBorder),
         boxShadow: [
@@ -666,7 +675,7 @@ class _SectionCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 20,
                       color: _kNavy,
@@ -676,14 +685,10 @@ class _SectionCard extends StatelessWidget {
                 if (trailingText != null)
                   Text(
                     trailingText!,
-                    style: const TextStyle(fontSize: 12, color: _kMuted),
+                    style: TextStyle(fontSize: 12, color: _kMuted),
                   ),
                 if (onTap != null)
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: _kMuted,
-                    size: 26,
-                  ),
+                  Icon(Icons.chevron_right_rounded, color: _kMuted, size: 26),
               ],
             ),
           ),
@@ -716,13 +721,16 @@ class _QuickLinkGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconBackgroundColor = _isDarkMode(context)
+        ? iconColor.withValues(alpha: .16)
+        : iconBgColor;
     return InkWell(
       onTap: () => Navigator.pushNamed(context, route),
       borderRadius: BorderRadius.circular(22),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: _kBorder),
           boxShadow: [
@@ -743,22 +751,18 @@ class _QuickLinkGridCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: iconBgColor,
+                    color: iconBackgroundColor,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: iconColor, size: 22),
                 ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: _kMuted,
-                  size: 22,
-                ),
+                Icon(Icons.chevron_right_rounded, color: _kMuted, size: 22),
               ],
             ),
             const SizedBox(height: 14),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 16,
                 color: _kNavy,
@@ -769,7 +773,7 @@ class _QuickLinkGridCard extends StatelessWidget {
               subtitle,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, color: _kMuted, height: 1.3),
+              style: TextStyle(fontSize: 11, color: _kMuted, height: 1.3),
             ),
           ],
         ),
@@ -815,18 +819,16 @@ class _StockDistributionSection extends StatelessWidget {
                   items: topItems,
                   total: totalStock == 0 ? 1 : totalStock,
                   colors: _kChartColors,
+                  backgroundColor: _trackColor(context),
                 ),
               ),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Total',
-                    style: TextStyle(fontSize: 13, color: _kMuted),
-                  ),
+                  Text('Total', style: TextStyle(fontSize: 13, color: _kMuted)),
                   Text(
                     '$totalStock',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: _kNavy,
@@ -834,7 +836,7 @@ class _StockDistributionSection extends StatelessWidget {
                   ),
                   Text(
                     totalUnit,
-                    style: const TextStyle(fontSize: 11, color: _kMuted),
+                    style: TextStyle(fontSize: 11, color: _kMuted),
                   ),
                 ],
               ),
@@ -865,7 +867,7 @@ class _StockDistributionSection extends StatelessWidget {
                         '${item.name} (${item.currentStock} ${_unitLabel(item.unit)})',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                           color: _kNavy,
@@ -887,11 +889,13 @@ class _DonutChartPainter extends CustomPainter {
   final List<TopProduct> items;
   final int total;
   final List<Color> colors;
+  final Color backgroundColor;
 
   _DonutChartPainter({
     required this.items,
     required this.total,
     required this.colors,
+    required this.backgroundColor,
   });
 
   @override
@@ -910,13 +914,7 @@ class _DonutChartPainter extends CustomPainter {
       ..strokeCap = StrokeCap.butt;
 
     // Soft background ring (shows when there is no stock)
-    canvas.drawArc(
-      rect,
-      0,
-      2 * pi,
-      false,
-      paint..color = const Color(0xFFF0F3F8),
-    );
+    canvas.drawArc(rect, 0, 2 * pi, false, paint..color = backgroundColor);
 
     const gap = 0.04;
     double startAngle = -pi / 2;
@@ -935,7 +933,9 @@ class _DonutChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DonutChartPainter old) =>
-      old.total != total || old.items != items;
+      old.total != total ||
+      old.items != items ||
+      old.backgroundColor != backgroundColor;
 }
 
 // ═══════════════════════════ Business Overview Grid ═══════════════════════════
@@ -947,6 +947,7 @@ class _BusinessOverviewGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _isDarkMode(context);
     final items = <Map<String, dynamic>>[
       {
         'title': 'REVENUE',
@@ -1018,7 +1019,7 @@ class _BusinessOverviewGrid extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FC),
+            color: isDark ? AppColors.surface : const Color(0xFFF8F9FC),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: _kBorder),
           ),
@@ -1052,7 +1053,7 @@ class _BusinessOverviewGrid extends StatelessWidget {
                     item['title'] as String,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
                       color: _kMuted,
@@ -1065,7 +1066,7 @@ class _BusinessOverviewGrid extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       item['value'] as String,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: _kNavy,
@@ -1077,7 +1078,7 @@ class _BusinessOverviewGrid extends StatelessWidget {
                       item['sub'] as String,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: _kMuted,
@@ -1154,7 +1155,7 @@ class _MovementProgress extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w700,
             letterSpacing: .5,
@@ -1175,7 +1176,7 @@ class _MovementProgress extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
             value: progress.clamp(0.05, 1.0),
-            backgroundColor: const Color(0xFFF0F3F8),
+            backgroundColor: _trackColor(context),
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 8,
           ),
@@ -1222,7 +1223,7 @@ class _TopProductsList extends StatelessWidget {
                       product.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                         color: _kNavy,
@@ -1234,7 +1235,7 @@ class _TopProductsList extends StatelessWidget {
                     '$qty $unit',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: _kMuted,
@@ -1247,7 +1248,7 @@ class _TopProductsList extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
                 child: LinearProgressIndicator(
                   value: fraction,
-                  backgroundColor: const Color(0xFFF0F3F8),
+                  backgroundColor: _trackColor(context),
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                   minHeight: 6,
                 ),

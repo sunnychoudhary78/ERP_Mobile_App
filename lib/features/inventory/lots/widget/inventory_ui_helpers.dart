@@ -1,3 +1,4 @@
+import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -103,7 +104,7 @@ mixin InventoryUiHelpers<T extends ConsumerStatefulWidget>
               child: Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.black54),
+                style: TextStyle(color: AppColors.muted),
               ),
             ),
             if (retry)
@@ -218,7 +219,7 @@ mixin InventoryUiHelpers<T extends ConsumerStatefulWidget>
           subtitle,
           style: Theme.of(
             context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.black54),
+          ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
         ),
       ],
     ),
@@ -312,7 +313,7 @@ mixin InventoryUiHelpers<T extends ConsumerStatefulWidget>
 
   Widget hintText(String message) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 12),
-    child: Text(message, style: const TextStyle(color: Colors.black54)),
+    child: Text(message, style: TextStyle(color: AppColors.muted)),
   );
 
 

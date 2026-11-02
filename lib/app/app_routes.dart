@@ -21,6 +21,7 @@ import 'package:erp_app/features/inventory/lots/presentation/inventory_advanced_
 import 'package:erp_app/features/inventory/lots/presentation/inventory_products_screen.dart';
 import 'package:erp_app/features/inventory/bills/presentations/inventory_processed_fg_screen.dart';
 import 'package:erp_app/features/inventory/lots/presentation/inventory_sellable_screen.dart';
+import 'package:erp_app/features/profile/presentations/screen/appearance_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/change_password_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/my_team_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
@@ -51,6 +52,7 @@ import '../features/crm/quotes/presentation/screens/quotes_list_screen.dart';
 import '../features/crm/visits/presentation/screens/visit_check_in_screen.dart';
 import '../features/crm/visits/presentation/screens/visit_tracking_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
+import '../core/theme/theme_controller.dart';
 
 import '../features/leave/presentation/screens/leave_apply_screen.dart';
 import '../features/leave/presentation/screens/leave_balance_screen.dart';
@@ -69,7 +71,14 @@ Widget _salesGate(bool Function(AuthState) entitlement, Widget child) {
 }
 
 class AppRoutes {
-  static Map<String, WidgetBuilder> routes = {
+  /// Wraps every route in a [ThemeRebuilder] so the active screen picks up
+  /// palette / brightness changes without an app restart.
+  static final Map<String, WidgetBuilder> routes = _rawRoutes.map(
+    (path, builder) =>
+        MapEntry(path, (context) => ThemeRebuilder(childBuilder: builder)),
+  );
+
+  static final Map<String, WidgetBuilder> _rawRoutes = {
     '/login': (_) => const LoginScreen(),
     '/home': (_) => const HomeScreen(),
     '/subscription-expired': (_) => const SubscriptionExpiredScreen(),
@@ -205,5 +214,6 @@ class AppRoutes {
     '/profile': (_) => const ProfileScreen(),
     '/change-password': (_) => const ChangePasswordScreen(),
     '/my-team': (_) => const MyTeamScreen(),
+    '/appearance': (_) => const AppearanceScreen(),
   };
 }

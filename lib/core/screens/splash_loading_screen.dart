@@ -9,7 +9,7 @@ class SplashLoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.card,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

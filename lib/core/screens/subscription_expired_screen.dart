@@ -16,7 +16,7 @@ class SubscriptionExpiredScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_outline, size: 56, color: AppColors.danger),
+              Icon(Icons.lock_outline, size: 56, color: AppColors.danger),
               const SizedBox(height: 20),
               Text(
                 'Subscription expired',

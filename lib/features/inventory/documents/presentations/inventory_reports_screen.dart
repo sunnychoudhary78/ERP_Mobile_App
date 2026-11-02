@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/inventory/approval/data/inventory_ledger_screen.dart';
 import 'package:erp_app/features/inventory/stocklookup/presentation/screens/inventory_stock_movements_screen.dart';
 import 'package:erp_app/features/inventory/purchase/recives/presentation/purchase_received_screen.dart';
@@ -282,9 +283,9 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       height: 134,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,7 +294,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
+            style: TextStyle(fontSize: 12, color: AppColors.muted),
           ),
           const SizedBox(height: 4),
           FittedBox(
@@ -302,10 +303,10 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
             child: Text(
               value,
               maxLines: 1,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Colors.black,
+                color: AppColors.text,
               ),
             ),
           ),
@@ -314,7 +315,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
             subtitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: Colors.black54),
+            style: TextStyle(fontSize: 11, color: AppColors.muted),
           ),
           const Spacer(),
           SizedBox(
@@ -360,12 +361,12 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
       clipBehavior: Clip.antiAlias,
 
       // White background for every card.
-      color: Colors.white,
+      color: AppColors.card,
 
       // Neutral border for every card.
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Colors.black12),
+        side: BorderSide(color: AppColors.border),
       ),
 
       child: Padding(
@@ -374,7 +375,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.black.withOpacity(.05),
+              backgroundColor: AppColors.text.withOpacity(.05),
               child: Icon(icon, color: emphasize ? _lowRed : accent, size: 18),
             ),
             const SizedBox(width: 12),
@@ -394,7 +395,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black,
+                            color: AppColors.text,
                           ),
                         ),
                       ),
@@ -432,9 +433,9 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Colors.black54,
+                        color: AppColors.muted,
                       ),
                     ),
                   ],
@@ -449,7 +450,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
-                color: Colors.black,
+                color: AppColors.text,
               ),
             ),
           ],
@@ -885,7 +886,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
             detail,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: Colors.black54),
+            style: TextStyle(fontSize: 11, color: AppColors.muted),
           ),
         ],
       ),
@@ -937,7 +938,7 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
             const SizedBox(height: 4),
             Text(
               sub,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(fontSize: 12, color: AppColors.muted),
             ),
           ],
         ),
@@ -1179,9 +1180,9 @@ class _InventoryReportsScreenState extends ConsumerState<InventoryReportsScreen>
         children: [
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: Colors.black54,
+              color: AppColors.muted,
               fontWeight: FontWeight.w600,
             ),
           ),

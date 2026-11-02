@@ -96,7 +96,7 @@ class _ProductCategoriesScreenState
                         icon: Icon(Icons.clear, color: AppColors.muted),
                       ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.card,
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
                 border: OutlineInputBorder(
@@ -282,7 +282,7 @@ class _CategoryCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
         boxShadow: [
@@ -476,8 +476,8 @@ class _CategoryFormState extends State<_CategoryForm> {
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboard),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: AppColors.card,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Form(
@@ -688,7 +688,7 @@ class _PickerField extends StatelessWidget {
 
     final selected = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.card,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

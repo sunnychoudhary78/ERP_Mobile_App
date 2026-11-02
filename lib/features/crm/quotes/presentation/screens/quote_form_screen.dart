@@ -295,7 +295,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.maybePop(context),
         ),
         title: Text(_isEditMode ? 'Edit Quotation' : 'Create Quotation'),
@@ -442,7 +442,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
               const SizedBox(height: 12),
               Text(
                 _message!,
-                style: const TextStyle(color: AppColors.danger),
+                style: TextStyle(color: AppColors.danger),
               ),
             ],
           ],
@@ -463,12 +463,12 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                       _submitting ? null : () => Navigator.maybePop(context),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: AppColors.border),
+                    side: BorderSide(color: AppColors.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Cancel',
                     style: TextStyle(
                       color: AppColors.text,
@@ -536,7 +536,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                     ],
                     RichText(
                       text: TextSpan(
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.text,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -544,7 +544,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                         children: [
                           TextSpan(text: title),
                           if (titleRequired)
-                            const TextSpan(
+                            TextSpan(
                               text: ' *',
                               style: TextStyle(color: AppColors.danger),
                             ),
@@ -568,8 +568,8 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
   Widget _addButton() {
     return ElevatedButton.icon(
       onPressed: _addLineItem,
-      icon: const Icon(Icons.add, size: 16, color: AppColors.primaryDark),
-      label: const Text(
+      icon: Icon(Icons.add, size: 16, color: AppColors.primaryDark),
+      label: Text(
         'Add product',
         style: TextStyle(
           color: AppColors.primaryDark,
@@ -594,7 +594,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
       padding: const EdgeInsets.only(bottom: 6, top: 10),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12.5,
           fontWeight: FontWeight.w600,
           color: AppColors.muted,
@@ -621,10 +621,10 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
       validator: validator,
       onChanged: onChanged,
       enabled: enabled,
-      style: const TextStyle(fontSize: 14, color: AppColors.text),
+      style: TextStyle(fontSize: 14, color: AppColors.text),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.muted, fontSize: 13.5),
+        hintStyle: TextStyle(color: AppColors.muted, fontSize: 13.5),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -632,19 +632,19 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
         fillColor: enabled ? AppColors.card : AppColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.danger),
+          borderSide: BorderSide(color: AppColors.danger),
         ),
       ),
     );
@@ -659,8 +659,8 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
     return DropdownButtonFormField<String>(
       value: value,
       isExpanded: true,
-      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.muted),
-      style: const TextStyle(fontSize: 14, color: AppColors.text),
+      icon: Icon(Icons.keyboard_arrow_down, color: AppColors.muted),
+      style: TextStyle(fontSize: 14, color: AppColors.text),
       decoration: InputDecoration(
         hintText: hint,
         isDense: true,
@@ -670,15 +670,15 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
         fillColor: AppColors.card,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       items: items
@@ -699,8 +699,8 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
     return DropdownButtonFormField<String>(
       value: options.containsKey(value) ? value : null,
       isExpanded: true,
-      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.muted),
-      style: const TextStyle(fontSize: 14, color: AppColors.text),
+      icon: Icon(Icons.keyboard_arrow_down, color: AppColors.muted),
+      style: TextStyle(fontSize: 14, color: AppColors.text),
       decoration: InputDecoration(
         hintText: hint,
         isDense: true,
@@ -710,15 +710,15 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
         fillColor: AppColors.card,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       items: options.entries
@@ -758,7 +758,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Create quotation',
                   style: TextStyle(
                     fontSize: 14.5,
@@ -769,7 +769,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                 const SizedBox(height: 2),
                 Text(
                   name,
-                  style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
+                  style: TextStyle(fontSize: 12.5, color: AppColors.muted),
                 ),
               ],
             ),
@@ -823,7 +823,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Row(
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'Could not load products',
                                 style: TextStyle(color: AppColors.danger, fontSize: 13),
@@ -881,7 +881,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     RichText(
-                      text: const TextSpan(
+                      text: TextSpan(
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
@@ -968,7 +968,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     RichText(
-                      text: const TextSpan(
+                      text: TextSpan(
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
@@ -1001,7 +1001,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     RichText(
-                      text: const TextSpan(
+                      text: TextSpan(
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
@@ -1047,7 +1047,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
                       ),
                       child: Text(
                         '₹${line.amount.toStringAsFixed(0)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.success,
                           fontWeight: FontWeight.bold,
                           fontSize: 13.5,
@@ -1108,7 +1108,7 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
             'GST (${_gstRate.text.trim().isEmpty ? '0' : _gstRate.text.trim()}%)',
             _gstAmount,
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Divider(height: 1, color: AppColors.border),
           ),
@@ -1120,19 +1120,19 @@ class _QuoteFormScreenState extends ConsumerState<QuoteFormScreen> {
 
   Widget _summaryRow(String label, double value, {bool emphasize = false}) {
     final style = emphasize
-        ? const TextStyle(
+        ? TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppColors.text,
           )
-        : const TextStyle(fontSize: 13.5, color: AppColors.muted);
+        : TextStyle(fontSize: 13.5, color: AppColors.muted);
     final valueStyle = emphasize
-        ? const TextStyle(
+        ? TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppColors.success,
           )
-        : const TextStyle(fontSize: 13.5, color: AppColors.text);
+        : TextStyle(fontSize: 13.5, color: AppColors.text);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

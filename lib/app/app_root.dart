@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/providers/splash_provider.dart';
 import '../core/screens/splash_loading_screen.dart';
 import '../core/screens/subscription_expired_screen.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
@@ -16,15 +17,19 @@ class AppRoot extends ConsumerStatefulWidget {
 
 class _AppRootState extends ConsumerState<AppRoot> {
   bool _autoLoginAttempted = false;
-  bool _splashReviewComplete = false;
 
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(const Duration(seconds: 5), () {
-      if (!mounted) return;
-      setState(() => _splashReviewComplete = true);
-    });
+    
+    // If not already complete, start the timer.
+    final isComplete = ref.read(splashCompleteProvider);
+    if (!isComplete) {
+      Future<void>.delayed(const Duration(seconds: 5), () {
+        if (!mounted) return;
+        ref.read(splashCompleteProvider.notifier).state = true;
+      });
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_autoLoginAttempted) return;
@@ -40,8 +45,9 @@ class _AppRootState extends ConsumerState<AppRoot> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final splashComplete = ref.watch(splashCompleteProvider);
 
-    if (authState.isInitializing || !_splashReviewComplete) {
+    if (authState.isInitializing || !splashComplete) {
       return const SplashLoadingScreen();
     }
 

@@ -48,7 +48,7 @@ class MyTeamScreen extends ConsumerWidget {
         ),
         data: (members) {
           if (members.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
@@ -101,7 +101,7 @@ class _TeamTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
@@ -112,7 +112,7 @@ class _TeamTile extends StatelessWidget {
             backgroundColor: AppColors.primary.withValues(alpha: 0.12),
             child: Text(
               _initials,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
@@ -126,7 +126,7 @@ class _TeamTile extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.text,
@@ -138,7 +138,7 @@ class _TeamTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     designation!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       color: AppColors.muted,
                     ),
@@ -170,7 +170,7 @@ class _ErrorBody extends StatelessWidget {
             Text(
               message.isEmpty ? 'Unable to load your team' : message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted),
+              style: TextStyle(color: AppColors.muted),
             ),
             const SizedBox(height: 16),
             OutlinedButton(onPressed: onRetry, child: const Text('Retry')),

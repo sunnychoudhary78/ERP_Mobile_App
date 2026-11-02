@@ -1,3 +1,4 @@
+import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 // ───────── generic parsing helpers ─────────
@@ -207,7 +208,7 @@ Color statusColor(String status) {
       return const Color(0xFFB91C1C);
     case 'CANCELLED':
     case 'VOID':
-      return Colors.grey;
+      return AppColors.muted;
     default:
       return const Color(0xFFB45309);
   }

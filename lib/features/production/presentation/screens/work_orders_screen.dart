@@ -50,7 +50,7 @@ class _WorkOrdersScreenState extends ConsumerState<WorkOrdersScreen> {
             fontSize: 20,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.card,
         foregroundColor: AppColors.text,
         elevation: 0,
         scrolledUnderElevation: 0.5,
@@ -60,7 +60,7 @@ class _WorkOrdersScreenState extends ConsumerState<WorkOrdersScreen> {
         children: [
           // Header / Search Bar Container
           Container(
-            color: Colors.white,
+            color: AppColors.card,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: TextField(
               controller: _searchController,
@@ -226,7 +226,7 @@ class _WorkOrderCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(

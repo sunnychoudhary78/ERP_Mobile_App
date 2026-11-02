@@ -196,6 +196,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           isLast: false,
                         ),
                       _ActionTile(
+                        icon: Icons.palette_outlined,
+                        label: 'Appearance',
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/appearance'),
+                        isLast: false,
+                      ),
+                      _ActionTile(
                         icon: Icons.lock_outline_rounded,
                         label: 'Change password',
                         onTap: () =>
@@ -307,8 +314,8 @@ class _ProfileHeader extends StatelessWidget {
                   bottom: 0,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: AppColors.card,
                       shape: BoxShape.circle,
                     ),
                     child: isUploading
@@ -317,7 +324,7 @@ class _ProfileHeader extends StatelessWidget {
                             height: 12,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.camera_alt_rounded,
                             size: 14,
                             color: AppColors.primaryDark,
@@ -384,7 +391,7 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -487,7 +494,7 @@ class _ActionTile extends StatelessWidget {
                     ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
               color: AppColors.muted,
               size: 20,

@@ -111,7 +111,7 @@ class _BomScreenState extends ConsumerState<BomScreen> {
                         icon: const Icon(Icons.clear),
                       ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.card,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -298,7 +298,7 @@ class _BomCard extends StatelessWidget {
     return RepaintBoundary(
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
           boxShadow: _cardShadow,
@@ -538,8 +538,8 @@ class _BomFormState extends ConsumerState<_BomForm> {
         // viewInsets changes.
         maxHeight: MediaQuery.sizeOf(context).height * 0.9,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: AppColors.card,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(

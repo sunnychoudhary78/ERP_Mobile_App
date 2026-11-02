@@ -161,7 +161,7 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
     const greetingSubtext = 'Stay consistent, keep going!';
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.card,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -322,7 +322,7 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                                     width: 70,
                                     height: 60,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: AppColors.card,
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
@@ -511,7 +511,7 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                                     width: 24,
                                     height: 24,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: AppColors.card,
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
@@ -540,7 +540,7 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.card,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: const Color(0xFFF1F5F9)),
                     ),
@@ -758,7 +758,7 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                                             height: 94,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: Colors.white,
+                                              color: AppColors.card,
                                               boxShadow: [
                                                 BoxShadow(
                                                   color: const Color(
@@ -944,7 +944,7 @@ class _PunchScreenState extends ConsumerState<PunchScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.card,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: const Color(0xFFF1F5F9)),
                     ),
@@ -1075,7 +1075,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFF1F5F9)),
       ),

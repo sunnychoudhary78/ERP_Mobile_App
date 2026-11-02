@@ -138,7 +138,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Leads List',
           style: TextStyle(
             fontWeight: FontWeight.w800,
@@ -187,7 +187,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
                     onSelected: (f) => setState(() => _filter = f),
                   ),
                 ),
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
                     child: Text(
@@ -202,7 +202,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
                   ),
                 ),
                 if (filtered.isEmpty)
-                  const SliverToBoxAdapter(
+                  SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: Center(
@@ -278,14 +278,14 @@ class _SearchBar extends StatelessWidget {
         child: TextField(
           controller: controller,
           onChanged: onChanged,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Search leads',
             hintStyle: TextStyle(color: AppColors.muted),
             prefixIcon: Icon(Icons.search, color: AppColors.muted),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: 14),
           ),
-          style: const TextStyle(color: AppColors.text),
+          style: TextStyle(color: AppColors.text),
         ),
       ),
     );
@@ -406,7 +406,7 @@ class _LeadCard extends StatelessWidget {
                                 color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.person_outline,
                                 color: AppColors.muted,
                                 size: 20,
@@ -419,7 +419,7 @@ class _LeadCard extends StatelessWidget {
                                 children: [
                                   Text(
                                     title,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 16,
                                       color: AppColors.text,
@@ -428,7 +428,7 @@ class _LeadCard extends StatelessWidget {
                                   if (subtitle.isNotEmpty)
                                     Text(
                                       subtitle,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 13,
                                         color: AppColors.muted,
                                       ),
@@ -436,7 +436,7 @@ class _LeadCard extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const Icon(
+                            Icon(
                               Icons.north_east,
                               size: 18,
                               color: AppColors.muted,
@@ -472,7 +472,7 @@ class _LeadCard extends StatelessWidget {
                                 child: Text(
                                   contact,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12.5,
                                     color: AppColors.muted,
                                   ),
@@ -493,7 +493,7 @@ class _LeadCard extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.access_time,
                                   size: 14,
                                   color: AppColors.muted,
@@ -501,7 +501,7 @@ class _LeadCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   timeAgo ?? '—',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12.5,
                                     color: AppColors.muted,
                                   ),
@@ -511,7 +511,7 @@ class _LeadCard extends StatelessWidget {
                             if (dealValue != null)
                               Text(
                                 dealValue!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 16,
                                   color: AppColors.text,

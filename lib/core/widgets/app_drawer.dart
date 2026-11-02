@@ -51,7 +51,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.card,
       elevation: 0,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -426,8 +426,8 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -450,7 +450,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                   color: AppColors.danger,
                 ),
               ),
-              title: const Text(
+              title: Text(
                 'Logout',
                 style: TextStyle(
                   fontSize: 14,

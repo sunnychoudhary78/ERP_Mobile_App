@@ -36,7 +36,7 @@ class _VendorsScreenState extends ConsumerState<VendorsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.card,
         surfaceTintColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -91,7 +91,7 @@ class _VendorsScreenState extends ConsumerState<VendorsScreen> {
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.card,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFE4E7EB)),
                 boxShadow: [
@@ -569,7 +569,7 @@ class _VendorCard extends StatelessWidget {
         : vendor.name.trim()[0].toUpperCase();
 
     return Material(
-      color: Colors.white,
+      color: AppColors.card,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
@@ -1094,7 +1094,7 @@ class _VendorFormState extends State<_VendorForm> {
             minHeight: 20,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: AppColors.card,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 14,
             vertical: 15,

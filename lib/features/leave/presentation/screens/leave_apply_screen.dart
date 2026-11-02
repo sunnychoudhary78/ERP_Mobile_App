@@ -67,7 +67,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               onSurface: AppColors.text,
@@ -96,7 +96,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
   void _handleSubmit() {
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please select Start Date and End Date.'),
           backgroundColor: AppColors.danger,
         ),
@@ -106,7 +106,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
 
     if (_selectedLeaveType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please select a Leave Type.'),
           backgroundColor: AppColors.danger,
         ),
@@ -161,10 +161,10 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.maybePop(context),
         ),
-        title: const Text(
+        title: Text(
           'Apply for Leave',
           style: TextStyle(
             color: AppColors.primary,
@@ -185,7 +185,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
               loading: () => Container(
                 padding: const EdgeInsets.all(16),
                 decoration: _cardBoxDecoration(),
-                child: const Row(
+                child: Row(
                   children: [
                     SizedBox(
                       width: 16,
@@ -202,7 +202,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
               ),
               error: (e, _) => Text(
                 'Error loading balances: $e',
-                style: const TextStyle(color: AppColors.danger),
+                style: TextStyle(color: AppColors.danger),
               ),
               data: (list) {
                 if (list.isNotEmpty && _selectedLeaveType == null) {
@@ -212,7 +212,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                   value: _selectedLeaveType,
                   decoration: _inputDecoration(),
                   dropdownColor: AppColors.card,
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.keyboard_arrow_down,
                     color: AppColors.text,
                   ),
@@ -223,7 +223,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                       value: item,
                       child: Text(
                         '$name (Balance: $balance)',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.text,
                           fontSize: 14,
                         ),
@@ -263,7 +263,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                                     : AppColors.muted,
                                 fontSize: 14,
                               ),
-                              suffixIcon: const Icon(
+                              suffixIcon: Icon(
                                 Icons.calendar_month_outlined,
                                 color: AppColors.muted,
                                 size: 20,
@@ -296,7 +296,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                                     : AppColors.muted,
                                 fontSize: 14,
                               ),
-                              suffixIcon: const Icon(
+                              suffixIcon: Icon(
                                 Icons.calendar_month_outlined,
                                 color: AppColors.muted,
                                 size: 20,
@@ -318,9 +318,9 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
               decoration: _cardBoxDecoration(),
               child: Row(
                 children: [
-                  const Icon(Icons.wb_sunny_outlined, color: AppColors.primary),
+                  Icon(Icons.wb_sunny_outlined, color: AppColors.primary),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'IS HALF DAY?',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -348,7 +348,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
             TextFormField(
               controller: _reasonController,
               maxLines: 4,
-              style: const TextStyle(color: AppColors.text),
+              style: TextStyle(color: AppColors.text),
               decoration: _inputDecoration(
                 hintText: 'Enter detailed reason for leave request...',
               ),
@@ -372,7 +372,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
@@ -391,7 +391,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                           : 'Tap to upload',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                         color: AppColors.primary,
@@ -402,7 +402,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                       _selectedDocument != null
                           ? 'Tap to change file'
                           : 'PDF, JPG, PNG (Max 5MB)',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppColors.muted,
                       ),
@@ -510,7 +510,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: AppColors.muted,
@@ -536,22 +536,22 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
     return InputDecoration(
       hintText: hintText,
       hintStyle:
-          hintStyle ?? const TextStyle(color: AppColors.muted, fontSize: 14),
+          hintStyle ?? TextStyle(color: AppColors.muted, fontSize: 14),
       filled: true,
       fillColor: AppColors.card,
       suffixIcon: suffixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: AppColors.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        borderSide: BorderSide(color: AppColors.primary, width: 1.5),
       ),
     );
   }

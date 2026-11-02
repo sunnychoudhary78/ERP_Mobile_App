@@ -161,8 +161,8 @@ class AppSheetFrame extends StatelessWidget {
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboard),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: AppColors.card,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -229,7 +229,7 @@ class AppSheetFrame extends StatelessWidget {
               Container(
                 padding: EdgeInsets.fromLTRB(20, 12, 20, 14 + bottomSafe),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.card,
                   border: Border(top: BorderSide(color: AppColors.border)),
                 ),
                 child: footer,
@@ -326,8 +326,8 @@ class _PickerSheetState<T> extends State<_PickerSheet<T>> {
       padding: EdgeInsets.only(bottom: keyboard),
       child: Container(
         constraints: BoxConstraints(maxHeight: media.size.height * 0.72),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: AppColors.card,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(

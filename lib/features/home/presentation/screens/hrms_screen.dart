@@ -27,27 +27,27 @@ class HrmsScreen extends ConsumerWidget {
     return PermissionGate(
       anyOf: AppPermissions.hrmsDashboard,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF4F6F9),
+        backgroundColor: AppColors.surface,
         appBar: AppBar(
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: Colors.black87,
+              color: AppColors.text,
               size: 20,
             ),
             onPressed: () => Navigator.maybePop(context),
           ),
-          title: const Text(
+          title: Text(
             'HRMS Dashboard',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 20,
-              color: Color(0xFF1E293B),
+              color: AppColors.text,
               letterSpacing: -0.3,
             ),
           ),
           centerTitle: false,
-          backgroundColor: const Color(0xFFF4F6F9),
+          backgroundColor: AppColors.surface,
           elevation: 0,
         ),
         body: RefreshIndicator(
@@ -99,7 +99,7 @@ class _ErrorBody extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 80),
-        const Icon(
+        Icon(
           Icons.error_outline_rounded,
           size: 48,
           color: AppColors.muted,
@@ -114,7 +114,7 @@ class _ErrorBody extends StatelessWidget {
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.muted, fontSize: 13),
+          style: TextStyle(color: AppColors.muted, fontSize: 13),
         ),
         const SizedBox(height: 16),
         Center(
@@ -159,12 +159,12 @@ class _DashboardBody extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'QUICK ACTIONS',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF64748B),
+                  color: AppColors.muted,
                   letterSpacing: 1.1,
                 ),
               ),
@@ -724,13 +724,13 @@ class _DashboardBody extends ConsumerWidget {
                                   ],
                                 ),
                               ),
-                              const Text(
+                              Text(
                                 'Leave\nBalance',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF334155),
+                                  color: AppColors.text,
                                 ),
                               ),
                             ],
@@ -767,12 +767,12 @@ class _DashboardBody extends ConsumerWidget {
             ],
 
             if (canLeave) ...[
-              const Text(
+              Text(
                 'MY LEAVE',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF64748B),
+                  color: AppColors.muted,
                   letterSpacing: 1.1,
                 ),
               ),
@@ -783,7 +783,7 @@ class _DashboardBody extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
+                        color: const Color(0xFFD97706).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
@@ -799,18 +799,18 @@ class _DashboardBody extends ConsumerWidget {
                         children: [
                           Text(
                             '${model.pendingLeavesCount} Pending Request${model.pendingLeavesCount == 1 ? '' : 's'}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E293B),
+                              color: AppColors.text,
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
+                          Text(
                             'Awaiting manager approval',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Color(0xFF64748B),
+                              color: AppColors.muted,
                             ),
                           ),
                         ],
@@ -824,7 +824,7 @@ class _DashboardBody extends ConsumerWidget {
                           horizontal: 12,
                           vertical: 6,
                         ),
-                        backgroundColor: const Color(0xFFEFF6FF),
+                        backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -966,17 +966,17 @@ class _DashboardBody extends ConsumerWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            color: AppColors.text,
             letterSpacing: -0.2,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           subtitle,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          style: TextStyle(fontSize: 12, color: AppColors.muted),
         ),
       ],
     );
@@ -1000,16 +1000,16 @@ class _DashboardBody extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1053,27 +1053,27 @@ class _DashboardBody extends ConsumerWidget {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0F172A),
+              color: AppColors.text,
               letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
+              color: AppColors.text.withOpacity(0.7),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+            style: TextStyle(fontSize: 10, color: AppColors.muted),
           ),
         ],
       ),
@@ -1092,12 +1092,12 @@ class _DashboardBody extends ConsumerWidget {
       width: 115,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.02),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -1132,10 +1132,10 @@ class _DashboardBody extends ConsumerWidget {
                 const SizedBox(height: 10),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    color: AppColors.text,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1143,9 +1143,9 @@ class _DashboardBody extends ConsumerWidget {
                 const SizedBox(height: 1),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: Color(0xFF64748B),
+                    color: AppColors.muted,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1314,7 +1314,7 @@ class _DashboardBody extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [

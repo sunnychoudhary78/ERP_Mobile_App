@@ -54,7 +54,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         actions: [
           if (_isSelectionMode) ...[
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+              icon: Icon(Icons.delete_outline, color: AppColors.danger),
               tooltip: 'Delete selected',
               onPressed: () {
                 notifier.deleteMultipleNotifications(_selectedIds.toList());
@@ -85,7 +85,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ],
       ),
       body: asyncNotifications.when(
-        loading: () => const Center(
+        loading: () => Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
         error: (e, _) => Center(
@@ -94,12 +94,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+                Icon(Icons.error_outline, size: 48, color: AppColors.danger),
                 const SizedBox(height: 12),
                 Text(
                   e.toString().replaceFirst('Exception: ', ''),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.muted),
+                  style: TextStyle(color: AppColors.muted),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
@@ -120,7 +120,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   Icon(Icons.notifications_off_outlined,
                       size: 64, color: AppColors.muted.withOpacity(0.5)),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'No notifications yet',
                     style: TextStyle(
                       fontSize: 16,
@@ -221,7 +221,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           item.body,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.muted,
                             fontSize: 13,
                           ),
@@ -231,7 +231,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           ? Container(
                               width: 8,
                               height: 8,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 color: AppColors.accent,
                                 shape: BoxShape.circle,
                               ),

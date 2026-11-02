@@ -38,13 +38,13 @@ class CustomerDetailScreen extends ConsumerWidget {
         title: const Text('Customer Profile'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.text),
+            icon: Icon(Icons.edit_outlined, color: AppColors.text),
             onPressed: () {
               // Edit customer action
             },
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert_outlined, color: AppColors.text),
+            icon: Icon(Icons.more_vert_outlined, color: AppColors.text),
             onPressed: () {},
           ),
           const SizedBox(width: 8),
@@ -170,13 +170,13 @@ class CustomerDetailScreen extends ConsumerWidget {
                         label: 'Phone Number',
                         value: customer.phone ?? '—',
                       ),
-                      const Divider(height: 1, color: AppColors.border),
+                      Divider(height: 1, color: AppColors.border),
                       _DetailTile(
                         icon: Icons.email_outlined,
                         label: 'Email Address',
                         value: customer.email ?? '—',
                       ),
-                      const Divider(height: 1, color: AppColors.border),
+                      Divider(height: 1, color: AppColors.border),
                       _DetailTile(
                         icon: Icons.business_outlined,
                         label: 'Address',
@@ -211,7 +211,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.merge_type_outlined,
                           color: AppColors.primary,
                         ),
@@ -238,7 +238,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.border),
+                      Icon(Icons.chevron_right, color: AppColors.border),
                     ],
                   ),
                 ),

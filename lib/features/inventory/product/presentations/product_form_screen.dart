@@ -124,7 +124,7 @@ InputDecoration _decoration({
     prefixIcon: prefixIcon,
     suffixIcon: suffixIcon,
     filled: true,
-    fillColor: Colors.white,
+    fillColor: AppColors.card,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
     border: _outline(AppColors.border),
     enabledBorder: _outline(AppColors.border),
@@ -322,7 +322,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   Future<void> _chooseImageSource() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
@@ -455,7 +455,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       context: context,
       isScrollControlled: options.length > _UnitPickerSheet.searchThreshold,
       useSafeArea: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
@@ -657,7 +657,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         foregroundColor: AppColors.text,
         titleSpacing: 0,
@@ -1001,7 +1001,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         border: Border(top: BorderSide(color: AppColors.border)),
         boxShadow: [
           BoxShadow(
@@ -1322,7 +1322,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(_radiusCard),
         border: Border.all(color: AppColors.border),
         boxShadow: [
@@ -1424,7 +1424,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(_radiusCard),
         border: Border.all(color: AppColors.border),
         boxShadow: [

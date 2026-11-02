@@ -408,7 +408,7 @@ class _SearchBar extends StatelessWidget {
                   },
                 ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: AppColors.card,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           border: OutlineInputBorder(
@@ -456,7 +456,7 @@ class _StatusTabs extends ConsumerWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.primary : Colors.white,
+                  color: selected ? AppColors.primary : AppColors.card,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: selected
@@ -493,7 +493,7 @@ class _ProductCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(

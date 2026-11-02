@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,13 +14,13 @@ final trackingDashboardProvider = Provider<TrackingDashboardData>((ref) {
       LegendEntryData('Out for Delivery', '12', TrackingDashboardScreen.green),
       LegendEntryData('Delayed', '5', TrackingDashboardScreen.red),
     ],
-    trackingStats: const [
+    trackingStats: [
       TrackingStatData(
         'Total Shipments',
         '109',
         Icons.inventory_2_outlined,
         TrackingDashboardScreen.purple,
-        Color(0xFFECE9FF),
+        TrackingDashboardScreen.purple.withOpacity(0.12),
         TrackingDashboardScreen.purple,
         [0.25, 0.20, 0.32, 0.20, 0.40, 0.26],
       ),
@@ -28,7 +29,7 @@ final trackingDashboardProvider = Provider<TrackingDashboardData>((ref) {
         '24',
         Icons.local_shipping_outlined,
         TrackingDashboardScreen.purple,
-        Color(0xFFECE9FF),
+        TrackingDashboardScreen.purple.withOpacity(0.12),
         TrackingDashboardScreen.purple,
         [0.20, 0.18, 0.38, 0.20, 0.42, 0.34],
       ),
@@ -37,7 +38,7 @@ final trackingDashboardProvider = Provider<TrackingDashboardData>((ref) {
         '68',
         Icons.check_circle_outline_rounded,
         TrackingDashboardScreen.teal,
-        Color(0xFFE3F6F5),
+        TrackingDashboardScreen.teal.withOpacity(0.12),
         TrackingDashboardScreen.teal,
         [0.22, 0.20, 0.45, 0.18, 0.48, 0.30],
       ),
@@ -46,7 +47,7 @@ final trackingDashboardProvider = Provider<TrackingDashboardData>((ref) {
         '12',
         Icons.access_time_rounded,
         TrackingDashboardScreen.orange,
-        Color(0xFFFFF1E0),
+        TrackingDashboardScreen.orange.withOpacity(0.12),
         TrackingDashboardScreen.orange,
         [0.30, 0.20, 0.16, 0.42, 0.28, 0.48],
       ),
@@ -55,7 +56,7 @@ final trackingDashboardProvider = Provider<TrackingDashboardData>((ref) {
         '5',
         Icons.warning_amber_rounded,
         TrackingDashboardScreen.red,
-        Color(0xFFFFE8EB),
+        TrackingDashboardScreen.red.withOpacity(0.12),
         TrackingDashboardScreen.red,
         [0.20, 0.12, 0.42, 0.50, 0.28, 0.45],
       ),
@@ -64,7 +65,7 @@ final trackingDashboardProvider = Provider<TrackingDashboardData>((ref) {
         '3',
         Icons.keyboard_return_rounded,
         TrackingDashboardScreen.blue,
-        Color(0xFFE7F0FF),
+        TrackingDashboardScreen.blue.withOpacity(0.12),
         TrackingDashboardScreen.blue,
         [0.18, 0.15, 0.40, 0.22, 0.35, 0.25],
       ),
@@ -170,9 +171,9 @@ class TrackingDashboardScreen extends ConsumerWidget {
 
   // ================= COLORS =================
 
-  static const Color backgroundColor = Color(0xFFF7F8FC);
-  static const Color textPrimary = Color(0xFF263238);
-  static const Color textSecondary = Color(0xFF7B8490);
+  static Color get backgroundColor => AppColors.surface;
+  static Color get textPrimary => AppColors.text;
+  static Color get textSecondary => AppColors.muted;
 
   static const Color purple = Color(0xFF5B4DB7);
   static const Color blue = Color(0xFF3867C8);
@@ -233,8 +234,8 @@ class TrackingDashboardScreen extends ConsumerWidget {
         InkWell(
           borderRadius: BorderRadius.circular(30),
           onTap: () => Navigator.pop(context),
-          child: const Padding(
-            padding: EdgeInsets.symmetric( vertical: 18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric( vertical: 18),
             child: Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 18,
@@ -245,7 +246,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
         const SizedBox(width: 18),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: textPrimary,
@@ -349,7 +350,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
             children: [
               _sectionTitle('Delivery Performance'),
               const Spacer(),
-              const Text(
+              Text(
                 'Last 30 days',
                 style: TextStyle(fontSize: 14, color: textSecondary),
               ),
@@ -415,7 +416,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
           children: [
             Text(
               count,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: textPrimary,
@@ -424,7 +425,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(fontSize: 16, color: textPrimary),
+              style: TextStyle(fontSize: 16, color: textPrimary),
             ),
           ],
         ),
@@ -495,7 +496,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
                               Expanded(
                                 child: Text(
                                   status.title,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 15,
                                     color: textSecondary,
                                   ),
@@ -503,7 +504,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
                               ),
                               Text(
                                 '${status.value}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: textPrimary,
@@ -525,7 +526,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
                 flex: 3,
                 child: Column(
                   children: [
-                    const Text(
+                    Text(
                       'Delivery Success Rate',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 14, color: textSecondary),
@@ -541,7 +542,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
                           progress: 0.94,
                           color: teal,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             '94%',
                             style: TextStyle(
@@ -662,7 +663,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
             children: [
               Text(
                 trackingId,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: textPrimary,
@@ -673,7 +674,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
 
               Text(
                 route,
-                style: const TextStyle(fontSize: 14, color: textSecondary),
+                style: TextStyle(fontSize: 14, color: textSecondary),
                 overflow: TextOverflow.ellipsis,
               ),
 
@@ -681,7 +682,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
 
               Text(
                 time,
-                style: const TextStyle(fontSize: 13, color: textSecondary),
+                style: TextStyle(fontSize: 13, color: textSecondary),
               ),
             ],
           ),
@@ -720,7 +721,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios_rounded,
               size: 16,
               color: textSecondary,
@@ -736,7 +737,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
   Widget _sectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w700,
         color: textPrimary,
@@ -752,7 +753,7 @@ class TrackingDashboardScreen extends ConsumerWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: const Color(0xFFE7E9EF)),
         boxShadow: [
@@ -796,7 +797,7 @@ class _LegendItem extends StatelessWidget {
         Expanded(
           child: Text(
             '$title ($value)',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: TrackingDashboardScreen.textPrimary,
               fontWeight: FontWeight.w500,
@@ -836,7 +837,7 @@ class _TrackingStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE3E6EB)),
       ),
@@ -858,7 +859,7 @@ class _TrackingStatCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     color: TrackingDashboardScreen.textSecondary,
                   ),
@@ -871,7 +872,7 @@ class _TrackingStatCard extends StatelessWidget {
 
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: TrackingDashboardScreen.textPrimary,

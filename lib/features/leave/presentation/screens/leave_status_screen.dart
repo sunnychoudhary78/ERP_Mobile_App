@@ -40,10 +40,10 @@ class _LeaveStatusScreenState extends ConsumerState<LeaveStatusScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.maybePop(context),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -51,12 +51,12 @@ class _LeaveStatusScreenState extends ConsumerState<LeaveStatusScreen>
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: AppColors.text,
               ),
             ),
             Text(
               'Track and manage your leave requests',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: AppColors.muted),
             ),
           ],
         ),
@@ -169,12 +169,12 @@ class _LeaveStatusScreenState extends ConsumerState<LeaveStatusScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Leave Requests',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: AppColors.text,
                       ),
                     ),
                     DropdownButton<String>(
@@ -202,12 +202,12 @@ class _LeaveStatusScreenState extends ConsumerState<LeaveStatusScreen>
 
                 // Request List Cards
                 if (filteredRequests.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(
                       child: Text(
                         'No leave requests found',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.muted),
                       ),
                     ),
                   )
@@ -254,7 +254,7 @@ class _MetricsOverviewCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -314,10 +314,10 @@ class _MetricsOverviewCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             '$count',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: AppColors.text,
             ),
           ),
           const SizedBox(height: 2),
@@ -357,7 +357,7 @@ class _LeaveRequestCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -400,10 +400,10 @@ class _LeaveRequestCard extends StatelessWidget {
                       children: [
                         Text(
                           leaveType,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: AppColors.text,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -487,9 +487,9 @@ class _LeaveRequestCard extends StatelessWidget {
                   ),
                   child: RichText(
                     text: TextSpan(
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: Colors.black87,
+                        color: AppColors.text,
                       ),
                       children: [
                         const TextSpan(
@@ -548,7 +548,7 @@ class _LeaveRequestCard extends StatelessWidget {
         return _StatusStyle(
           label: status,
           bgColor: const Color(0xFFF0F2F5),
-          textColor: Colors.black54,
+          textColor: AppColors.muted,
         );
     }
   }

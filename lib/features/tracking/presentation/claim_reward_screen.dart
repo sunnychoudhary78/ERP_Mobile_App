@@ -38,7 +38,7 @@ class ClaimRewardScreen extends StatelessWidget {
 
                   const SizedBox(height: 22),
 
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: Row(
                       children: [
@@ -68,7 +68,7 @@ class ClaimRewardScreen extends StatelessWidget {
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.55,
-                    children: const [
+                    children: [
                       _RewardCard(
                         icon: Icons.payments_rounded,
                         iconColor: AppColors.success,
@@ -183,7 +183,7 @@ class _RewardHero extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        const Text(
+        Text(
           'Great! You Earned a Reward',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -195,7 +195,7 @@ class _RewardHero extends StatelessWidget {
 
         const SizedBox(height: 8),
 
-        const Text(
+        Text(
           'Complete more deliveries and earn\nexciting rewards.',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -232,7 +232,7 @@ class _PointsCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -351,7 +351,7 @@ class _RewardCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
                       color: AppColors.text,
@@ -362,7 +362,7 @@ class _RewardCard extends StatelessWidget {
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
                       color: AppColors.muted,
                     ),
@@ -370,7 +370,7 @@ class _RewardCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
               color: AppColors.muted,
               size: 20,
@@ -484,7 +484,7 @@ class _BottomClaimButton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(

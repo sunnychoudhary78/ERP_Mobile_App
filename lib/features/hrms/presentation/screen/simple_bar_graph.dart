@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_theme.dart';
+
 /// A single bar in [SimpleBarChart].
 class ChartBar {
   final String label;
@@ -56,7 +58,7 @@ class SimpleBarChart extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     b.label,
-                    style: const TextStyle(fontSize: 9.5, color: Colors.grey),
+                    style: TextStyle(fontSize: 9.5, color: AppColors.muted),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -281,7 +283,7 @@ class DepartmentAttendanceChart extends StatelessWidget {
               child: Text(
                 b.label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 10.5, color: Colors.grey),
+                style: TextStyle(fontSize: 10.5, color: AppColors.muted),
                 overflow: TextOverflow.ellipsis,
               ),
             );
@@ -290,12 +292,12 @@ class DepartmentAttendanceChart extends StatelessWidget {
         const SizedBox(height: 10),
         const Divider(height: 1),
         const SizedBox(height: 6),
-        const Row(
+        Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('0%', style: TextStyle(fontSize: 10, color: Colors.grey)),
-            Text('50%', style: TextStyle(fontSize: 10, color: Colors.grey)),
-            Text('100%', style: TextStyle(fontSize: 10, color: Colors.grey)),
+            Text('0%', style: TextStyle(fontSize: 10, color: AppColors.muted)),
+            Text('50%', style: TextStyle(fontSize: 10, color: AppColors.muted)),
+            Text('100%', style: TextStyle(fontSize: 10, color: AppColors.muted)),
           ],
         ),
       ],

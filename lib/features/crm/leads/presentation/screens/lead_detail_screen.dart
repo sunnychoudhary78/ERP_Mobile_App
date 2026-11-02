@@ -170,14 +170,14 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
     return RichText(
       text: TextSpan(
         text: text,
-        style: const TextStyle(
+        style: TextStyle(
           color: AppColors.text,
           fontWeight: FontWeight.w600,
           fontSize: 14,
         ),
         children: [
           if (required)
-            const TextSpan(
+            TextSpan(
               text: ' *',
               style: TextStyle(color: AppColors.danger),
             ),
@@ -189,7 +189,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
   Widget _sectionCaption(String text) {
     return Text(
       text.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         color: AppColors.muted,
         fontWeight: FontWeight.w700,
         fontSize: 12,
@@ -207,15 +207,15 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: AppColors.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        borderSide: BorderSide(color: AppColors.primary, width: 1.5),
       ),
     );
   }
@@ -283,7 +283,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
                 InkWell(
                   onTap: () => _removeLine(index),
                   borderRadius: BorderRadius.circular(6),
-                  child: const Padding(
+                  child: Padding(
                     padding: EdgeInsets.all(6),
                     child: Icon(
                       Icons.delete_outline,
@@ -328,7 +328,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
             alignment: Alignment.centerRight,
             child: Text(
               _formatInr(line.total),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 color: AppColors.text,
               ),
@@ -355,8 +355,8 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
         ),
         child: Container(
           height: MediaQuery.of(context).size.height * 0.92,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: AppColors.card,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
@@ -383,7 +383,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Create sales order',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -393,7 +393,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
                           ),
                           Text(
                             widget.leadName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.muted,
                               fontSize: 13,
                             ),
@@ -438,7 +438,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
                               const SizedBox(height: 6),
                               Text(
                                 summaryLine,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.text,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -469,7 +469,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
                               icon: const Icon(Icons.add, size: 16),
                               label: const Text('Add line'),
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: AppColors.border),
+                                side: BorderSide(color: AppColors.border),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -495,7 +495,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
                           alignment: Alignment.centerRight,
                           child: Text(
                             'Lines total: ${_formatInr(_linesTotal)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.success,
                               fontWeight: FontWeight.bold,
                             ),
@@ -521,7 +521,7 @@ class _CreateSalesOrderSheetState extends State<_CreateSalesOrderSheet> {
               // ---------- Sticky bottom button ----------
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(top: BorderSide(color: AppColors.border)),
                 ),
                 child: SizedBox(
@@ -970,7 +970,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                                     m.name.isNotEmpty
                                         ? m.name[0].toUpperCase()
                                         : '?',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -1293,14 +1293,14 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         elevation: 0,
         backgroundColor: AppColors.card,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new,
             size: 20,
             color: AppColors.text,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Lead Details',
           style: TextStyle(
             fontSize: 18,
@@ -1394,7 +1394,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 leadId == null
                     ? 'Pass leadId via Navigator arguments.'
                     : 'Lead not found: $leadId',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   color: AppColors.text,
                   fontWeight: FontWeight.w600,
@@ -1476,7 +1476,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.apartment_rounded,
               size: 28,
               color: AppColors.primary,
@@ -1489,7 +1489,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppColors.text,
@@ -1500,7 +1500,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 const SizedBox(height: 2),
                 Text(
                   leadId,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.muted,
                     fontWeight: FontWeight.w500,
@@ -1582,7 +1582,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w700,
         color: AppColors.muted,
@@ -1711,7 +1711,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
         (lead.timeline as List?)?.toList() ?? const [];
 
     if (rawTimeline.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 40),
         child: Center(
           child: Text(
@@ -1778,7 +1778,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                         children: [
                           Text(
                             text.isNotEmpty ? text : 'Activity',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: AppColors.text,
@@ -1787,7 +1787,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                           const SizedBox(height: 4),
                           Text(
                             at,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               color: AppColors.muted,
                               fontWeight: FontWeight.w500,
@@ -1806,7 +1806,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                               ),
                               child: Text(
                                 type,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.muted,
@@ -1867,7 +1867,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'SNAPSHOT',
             style: TextStyle(
               fontSize: 11,
@@ -1926,7 +1926,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'CONTACT',
             style: TextStyle(
               fontSize: 11,
@@ -1940,11 +1940,11 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             'Owner',
             lead.ownerName.isNotEmpty ? lead.ownerName : 'Unassigned',
           ),
-          const Divider(height: 24, color: AppColors.surface, thickness: 1.5),
+          Divider(height: 24, color: AppColors.surface, thickness: 1.5),
           _buildDetailRow('Phone', lead.phone.isNotEmpty ? lead.phone : 'N/A'),
-          const Divider(height: 24, color: AppColors.surface, thickness: 1.5),
+          Divider(height: 24, color: AppColors.surface, thickness: 1.5),
           _buildDetailRow('Email', lead.email.isNotEmpty ? lead.email : 'N/A'),
-          const Divider(height: 24, color: AppColors.surface, thickness: 1.5),
+          Divider(height: 24, color: AppColors.surface, thickness: 1.5),
           _buildDetailRow(
             'Address',
             lead.address?.isNotEmpty == true ? lead.address : 'N/A',
@@ -2015,7 +2015,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'DETAILS',
             style: TextStyle(
               fontSize: 11,
@@ -2028,7 +2028,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           for (int i = 0; i < rows.length; i++) ...[
             _buildDetailRow(rows[i].key, rows[i].value),
             if (i != rows.length - 1)
-              const Divider(
+              Divider(
                 height: 24,
                 color: AppColors.surface,
                 thickness: 1.5,
@@ -2045,7 +2045,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             color: AppColors.muted,
             fontWeight: FontWeight.w500,
@@ -2056,7 +2056,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: AppColors.text,
               fontWeight: FontWeight.w600,
@@ -2113,7 +2113,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2127,7 +2127,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                       arguments: leadId,
                     );
                   },
-            child: const Text(
+            child: Text(
               'Start follow-up',
               style: TextStyle(
                 color: AppColors.text,
@@ -2146,13 +2146,13 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
             onPressed: _actionBusy ? null : () => _openFollowUp(leadId, lead),
-            child: const Text(
+            child: Text(
               'Log follow-up',
               style: TextStyle(
                 color: AppColors.text,
@@ -2181,7 +2181,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: AppColors.border),
+                side: BorderSide(color: AppColors.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2195,7 +2195,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                         arguments: lead.customerId,
                       );
                     },
-              child: const Text(
+              child: Text(
                 'View linked customer',
                 style: TextStyle(
                   color: AppColors.text,
@@ -2211,7 +2211,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: AppColors.border),
+                side: BorderSide(color: AppColors.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2219,7 +2219,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               onPressed: _actionBusy
                   ? null
                   : () => _convertCustomer(leadId, lead),
-              child: const Text(
+              child: Text(
                 'Auto-create / match',
                 style: TextStyle(
                   color: AppColors.text,
@@ -2235,7 +2235,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: AppColors.primary),
+                side: BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2243,7 +2243,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
               onPressed: _actionBusy
                   ? null
                   : () => _linkExistingCustomer(leadId, lead),
-              child: const Text(
+              child: Text(
                 'Link existing',
                 style: TextStyle(
                   color: AppColors.primary,
@@ -2271,7 +2271,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2283,7 +2283,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                     '/crm/quotes/form',
                     arguments: leadId,
                   ),
-            child: const Text(
+            child: Text(
               'Create quotation',
               style: TextStyle(
                 color: AppColors.text,
@@ -2335,7 +2335,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2359,7 +2359,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                       arguments: quote,
                     );
                   },
-            child: const Text(
+            child: Text(
               'Edit quotation',
               style: TextStyle(
                 color: AppColors.text,
@@ -2377,7 +2377,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2385,7 +2385,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             onPressed: _actionBusy
                 ? null
                 : () => _snack('Email quote to client'),
-            child: const Text(
+            child: Text(
               'Email quote',
               style: TextStyle(
                 color: AppColors.text,
@@ -2411,7 +2411,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2428,7 +2428,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                       if (mounted) setState(() => _actionBusy = false);
                     }
                   },
-            child: const Text(
+            child: Text(
               'Download quote',
               style: TextStyle(
                 color: AppColors.text,
@@ -2507,7 +2507,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2524,7 +2524,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                       if (mounted) setState(() => _actionBusy = false);
                     }
                   },
-            child: const Text(
+            child: Text(
               'View bill',
               style: TextStyle(
                 color: AppColors.text,
@@ -2545,7 +2545,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2562,7 +2562,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                       if (mounted) setState(() => _actionBusy = false);
                     }
                   },
-            child: const Text(
+            child: Text(
               'Download bill (PDF)',
               style: TextStyle(
                 color: AppColors.text,
@@ -2588,7 +2588,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2596,7 +2596,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
             onPressed: _actionBusy
                 ? null
                 : () => _snack('Email bill to client'),
-            child: const Text(
+            child: Text(
               'Email bill',
               style: TextStyle(
                 color: AppColors.text,
@@ -2616,7 +2616,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -2628,7 +2628,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                       : _createSalesOrder(leadId, lead),
             child: Text(
               hasSalesOrder ? 'View sales order' : 'Create sales order',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.text,
                 fontWeight: FontWeight.w600,
               ),
@@ -2671,7 +2671,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
 
     // If no actions available, show a message
     if (buttonRows.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
         child: Center(
           child: Text(

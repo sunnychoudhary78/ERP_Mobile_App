@@ -29,7 +29,7 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
   }
 
   Color _getAvatarBgColor(int index) {
-    const colors = [
+    final colors = [
       AppColors.primaryDark,
       Color(0xFFE5E8EB),
       Color(0xFF5C1D06),
@@ -39,7 +39,7 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
   }
 
   Color _getAvatarTextColor(int index) {
-    const colors = [
+    final colors = [
       Colors.white,
       AppColors.text,
       Colors.white,
@@ -129,8 +129,8 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
                               setState(() => _searchQuery = val),
                           decoration: InputDecoration(
                             hintText: 'Search customers...',
-                            hintStyle: const TextStyle(color: AppColors.muted),
-                            prefixIcon: const Icon(
+                            hintStyle: TextStyle(color: AppColors.muted),
+                            prefixIcon: Icon(
                               Icons.search,
                               color: AppColors.muted,
                             ),
@@ -262,7 +262,7 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Icon(
+                                  Icon(
                                     Icons.chevron_right,
                                     color: AppColors.border,
                                   ),

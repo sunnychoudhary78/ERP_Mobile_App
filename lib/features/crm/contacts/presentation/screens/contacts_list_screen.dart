@@ -136,11 +136,11 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                     onChanged: (val) => setState(() => _searchQuery = val),
                     decoration: InputDecoration(
                       hintText: 'Find by name, company, phone or email...',
-                      hintStyle: const TextStyle(
+                      hintStyle: TextStyle(
                         color: AppColors.muted,
                         fontSize: 14,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search,
                         color: AppColors.muted,
                       ),
@@ -166,7 +166,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                         ),
                         child: Text(
                           'Total: ${filteredContacts.length}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary,
@@ -191,7 +191,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                               color: Colors.grey.shade400,
                             ),
                             const SizedBox(height: 12),
-                            const Text(
+                            Text(
                               'No contacts found.',
                               style: TextStyle(
                                 color: AppColors.muted,
@@ -286,7 +286,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                       children: [
                         Text(
                           contact.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppColors.text,
@@ -295,7 +295,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                         const SizedBox(height: 2),
                         Text(
                           contact.account.isNotEmpty ? contact.account : 'N/A',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.muted,
                           ),
@@ -335,7 +335,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
               if (phoneText.isNotEmpty) ...[
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.phone_outlined,
                       size: 15,
                       color: AppColors.muted,
@@ -344,7 +344,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                     Expanded(
                       child: Text(
                         phoneText,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.text,
@@ -359,7 +359,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
               if (emailText.isNotEmpty) ...[
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.email_outlined,
                       size: 15,
                       color: AppColors.muted,
@@ -368,7 +368,7 @@ class _ContactsListScreenState extends ConsumerState<ContactsListScreen> {
                     Expanded(
                       child: Text(
                         emailText,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.text,

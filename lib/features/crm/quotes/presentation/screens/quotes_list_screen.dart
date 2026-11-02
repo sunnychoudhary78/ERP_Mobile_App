@@ -98,7 +98,7 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () => Navigator.maybePop(context),
         ),
         title: Text(
@@ -163,8 +163,8 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
                         onChanged: (val) => setState(() => _searchQuery = val),
                         decoration: InputDecoration(
                           hintText: 'Search quotes...',
-                          hintStyle: const TextStyle(color: AppColors.muted),
-                          prefixIcon: const Icon(Icons.search, color: AppColors.muted),
+                          hintStyle: TextStyle(color: AppColors.muted),
+                          prefixIcon: Icon(Icons.search, color: AppColors.muted),
                           contentPadding: EdgeInsets.zero,
                           fillColor: AppColors.card,
                         ),
@@ -280,7 +280,7 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
                                 // Top Row: Icon + Title + Status Badge
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.article_outlined,
                                       size: 22,
                                       color: AppColors.primaryDark,
@@ -322,7 +322,7 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
                                   padding: const EdgeInsets.only(left: 32.0),
                                   child: Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.business_outlined,
                                         size: 14,
                                         color: AppColors.muted,
@@ -339,7 +339,7 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                const Divider(color: AppColors.surface, height: 1),
+                                Divider(color: AppColors.surface, height: 1),
                                 const SizedBox(height: 14),
 
                                 // Bottom Section: Expiry Date & Amount Summary
@@ -354,7 +354,7 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
                                       children: [
                                         Row(
                                           children: [
-                                            const Icon(
+                                            Icon(
                                               Icons.calendar_today_outlined,
                                               size: 14,
                                               color: AppColors.muted,
@@ -365,7 +365,7 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
                                                 style: textTheme.bodySmall?.copyWith(
                                                   color: AppColors.text,
                                                 ),
-                                                children: const [
+                                                children: [
                                                   TextSpan(
                                                     text: 'Valid until: ',
                                                     style: TextStyle(color: AppColors.muted),
@@ -388,7 +388,7 @@ class _QuotesListScreenState extends ConsumerState<QuotesListScreen> {
                                       children: [
                                         Row(
                                           children: [
-                                            const Icon(
+                                            Icon(
                                               Icons.inventory_2_outlined,
                                               size: 14,
                                               color: AppColors.muted,

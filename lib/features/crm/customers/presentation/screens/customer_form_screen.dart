@@ -204,7 +204,7 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: AppColors.muted),
+            hintStyle: TextStyle(color: AppColors.muted),
             prefixIcon: Icon(icon, color: AppColors.muted),
             filled: true,
             fillColor: AppColors.card,
@@ -222,7 +222,7 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+              borderSide: BorderSide(color: AppColors.primary, width: 1.4),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

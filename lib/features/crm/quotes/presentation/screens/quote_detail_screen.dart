@@ -1,3 +1,4 @@
+import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/crm/quotes/presentation/screens/quote_pdf_details.dart';
 import 'package:erp_app/features/crm/shared/data/models/sales_quote_model.dart';
 import 'package:file_saver/file_saver.dart';
@@ -189,7 +190,7 @@ class QuoteDetailScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E8EB)),
       ),
@@ -273,7 +274,7 @@ class QuoteDetailScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E8EB)),
       ),
@@ -365,7 +366,7 @@ class QuoteDetailScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E8EB)),
       ),

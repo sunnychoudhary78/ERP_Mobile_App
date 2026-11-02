@@ -162,19 +162,19 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
     return PermissionGate(
       anyOf: AppPermissions.crmModule,
       child: Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.text),
+          icon: Icon(Icons.arrow_back, color: AppColors.text),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: const [
+          children: [
             Text(
               'CRM',
               style: TextStyle(
@@ -212,7 +212,7 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'KEY STATS',
                   style: TextStyle(
                     fontSize: 14,
@@ -224,7 +224,7 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
                 DropdownButton<String>(
                   underline: const SizedBox(),
                   value: _selectedPeriod,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: AppColors.muted,
                     fontWeight: FontWeight.w600,
@@ -254,7 +254,7 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
             const SizedBox(height: 24),
 
             // Dynamic Pipeline Overview
-            const Text(
+            Text(
               'PIPELINE OVERVIEW',
               style: TextStyle(
                 fontSize: 14,
@@ -297,7 +297,7 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: AppColors.muted,
@@ -310,7 +310,7 @@ class _CrmSalesScreenState extends ConsumerState<CrmSalesScreen> {
             children: [
               Text(
                 actionText,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
@@ -341,7 +341,7 @@ class _QuickActionsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 110,
+      height: 125,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: actions.length,
@@ -355,7 +355,7 @@ class _QuickActionsGrid extends StatelessWidget {
               width: 110,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.card,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.border),
               ),
@@ -365,7 +365,7 @@ class _QuickActionsGrid extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: item.backgroundColor,
+                      color: item.iconColor.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(item.icon, color: item.iconColor, size: 20),
@@ -373,7 +373,7 @@ class _QuickActionsGrid extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     item.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: AppColors.text,
@@ -385,7 +385,7 @@ class _QuickActionsGrid extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     item.subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color: AppColors.muted,
                     ),
@@ -437,11 +437,11 @@ class _KeyStatsGrid extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             'Failed to load stats data',
             style: TextStyle(color: AppColors.danger, fontSize: 12),
@@ -516,7 +516,7 @@ class _StatCardLoadingSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -527,7 +527,7 @@ class _StatCardLoadingSkeleton extends StatelessWidget {
             width: 70,
             height: 10,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -536,7 +536,7 @@ class _StatCardLoadingSkeleton extends StatelessWidget {
             width: 40,
             height: 18,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -545,7 +545,7 @@ class _StatCardLoadingSkeleton extends StatelessWidget {
             width: 60,
             height: 8,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -587,7 +587,7 @@ class _StatSparklineCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -596,12 +596,12 @@ class _StatSparklineCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 14, color: AppColors.muted),
+            style: TextStyle(fontSize: 14, color: AppColors.muted),
           ),
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.text,
@@ -612,7 +612,7 @@ class _StatSparklineCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             subText,
-            style: const TextStyle(fontSize: 13, color: AppColors.muted),
+            style: TextStyle(fontSize: 13, color: AppColors.muted),
           ),
           const Spacer(),
           SizedBox(
@@ -673,7 +673,7 @@ class _PipelineOverviewCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -682,13 +682,13 @@ class _PipelineOverviewCard extends StatelessWidget {
           padding: EdgeInsets.all(20.0),
           child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
-        error: (_, __) => const Text(
+        error: (_, __) => Text(
           'Error loading pipeline data',
           style: TextStyle(color: AppColors.danger),
         ),
         data: (stages) {
           if (stages.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No pipeline data available',
                 style: TextStyle(color: AppColors.muted, fontSize: 14),
@@ -770,7 +770,7 @@ class _PipelineOverviewCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 stages[i].label,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   color: AppColors.muted,
                                 ),
@@ -779,7 +779,7 @@ class _PipelineOverviewCard extends StatelessWidget {
                             ),
                             Text(
                               '${stages[i].count}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.text,
@@ -801,7 +801,7 @@ class _PipelineOverviewCard extends StatelessWidget {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Conversion Rate',
                     style: TextStyle(fontSize: 12, color: AppColors.muted),
                   ),
@@ -974,7 +974,7 @@ class _TodayActivitiesCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -983,13 +983,13 @@ class _TodayActivitiesCard extends StatelessWidget {
           padding: EdgeInsets.all(16.0),
           child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
-        error: (_, __) => const Text(
+        error: (_, __) => Text(
           'Error loading activities',
           style: TextStyle(color: AppColors.danger),
         ),
         data: (leads) {
           if (leads.isEmpty) {
-            return const Padding(
+            return Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Center(
                 child: Text(
@@ -1072,7 +1072,7 @@ class _DynamicActivityRow extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             status.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               color: AppColors.muted,
               fontWeight: FontWeight.bold,
@@ -1082,7 +1082,7 @@ class _DynamicActivityRow extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: AppColors.text,
@@ -1107,7 +1107,7 @@ class _DynamicActivityRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.chevron_right, size: 16, color: AppColors.muted),
+          Icon(Icons.chevron_right, size: 16, color: AppColors.muted),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:erp_app/core/permissions/app_permissions.dart';
+import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:erp_app/features/inventory/shared/presentation/providers/inventory_providers.dart';
 import 'package:file_picker/file_picker.dart';
@@ -458,7 +459,7 @@ class _InventoryDocumentsScreenState
                   Text(
                     lotName,
                     style: TextStyle(
-                      color: lotId == null ? Colors.black54 : scheme.primary,
+                      color: lotId == null ? AppColors.muted : scheme.primary,
                       fontWeight: lotId == null
                           ? FontWeight.w500
                           : FontWeight.w700,
@@ -534,7 +535,7 @@ class _InventoryDocumentsScreenState
         children: [
           SizedBox(
             width: 96,
-            child: Text(label, style: const TextStyle(color: Colors.black54)),
+            child: Text(label, style: TextStyle(color: AppColors.muted)),
           ),
           Expanded(
             child: Text(

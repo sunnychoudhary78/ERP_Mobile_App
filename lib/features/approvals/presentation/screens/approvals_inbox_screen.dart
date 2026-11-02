@@ -163,7 +163,7 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.card,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
@@ -268,12 +268,12 @@ class _ApprovalsInboxScreenState extends ConsumerState<ApprovalsInboxScreen>
 
               // Dynamic Approval Cards
               if (visibleItems.isEmpty)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 32.0),
                   child: Center(
                     child: Text(
                       'No approvals found',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppColors.muted),
                     ),
                   ),
                 )
@@ -372,7 +372,7 @@ class ApprovalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
@@ -403,8 +403,8 @@ class ApprovalCard extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 26,
-                            backgroundColor: Colors.grey.shade200,
-                            child: const Icon(Icons.person, color: Colors.grey),
+                            backgroundColor: AppColors.surface,
+                            child: Icon(Icons.person, color: AppColors.muted),
                           ),
                           const SizedBox(width: 12),
                           Expanded(

@@ -144,7 +144,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+              leading: Icon(Icons.camera_alt, color: AppColors.primary),
               title: const Text('Take Photo'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -152,7 +152,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.photo_library,
                 color: AppColors.primary,
               ),
@@ -173,7 +173,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
     final clientName = _clientController.text.trim();
     if (clientName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please enter a client or site name'),
           backgroundColor: AppColors.danger,
         ),
@@ -305,7 +305,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                 color: AppColors.card,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppColors.border),
+                  side: BorderSide(color: AppColors.border),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -323,7 +323,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                                   color: AppColors.text,
                                 ),
                           ),
-                          const Row(
+                          Row(
                             children: [
                               Icon(
                                 Icons.info_outline,
@@ -342,11 +342,11 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                           ),
                         ],
                       ),
-                      const Divider(height: 24, color: AppColors.border),
+                      Divider(height: 24, color: AppColors.border),
 
                       // Manual Client Input (Text Field)
                       RichText(
-                        text: const TextSpan(
+                        text: TextSpan(
                           text: 'Client / site ',
                           style: TextStyle(
                             color: AppColors.text,
@@ -371,7 +371,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                       const SizedBox(height: 16),
 
                       // Location Input
-                      const Text(
+                      Text(
                         'Location',
                         style: TextStyle(
                           color: AppColors.text,
@@ -385,7 +385,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                           Expanded(
                             child: TextField(
                               controller: _locationController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 prefixIcon: Icon(
                                   Icons.location_on_outlined,
                                   color: AppColors.muted,
@@ -413,7 +413,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Icon(
+                                  : Icon(
                                       Icons.my_location,
                                       color: AppColors.primary,
                                     ),
@@ -424,7 +424,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                       const SizedBox(height: 16),
 
                       // Notes Input
-                      const Text(
+                      Text(
                         'Notes',
                         style: TextStyle(
                           color: AppColors.text,
@@ -458,7 +458,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.camera_alt_outlined,
                                 color: AppColors.primary,
                               ),
@@ -468,7 +468,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                                   _selectedPhoto != null
                                       ? 'Photo Attached: ${_selectedPhoto!.path.split('/').last}'
                                       : 'Attach Photo / Proof of Visit',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppColors.text,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
@@ -478,7 +478,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                               ),
                               if (_selectedPhoto != null)
                                 IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.close,
                                     size: 18,
                                     color: AppColors.danger,
@@ -523,7 +523,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                         const SizedBox(height: 12),
                         Text(
                           _message!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.success,
                             fontWeight: FontWeight.w600,
                           ),
@@ -542,7 +542,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                 color: AppColors.card,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppColors.border),
+                  side: BorderSide(color: AppColors.border),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -566,7 +566,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                             ...visits.map(
                               (v) => Column(
                                 children: [
-                                  const Divider(color: AppColors.border),
+                                  Divider(color: AppColors.border),
                                   ListTile(
                                     contentPadding: EdgeInsets.zero,
                                     title: Text(
@@ -577,7 +577,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                                     ),
                                     subtitle: Text(
                                       '${v.at ?? '—'} · ${v.location}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: AppColors.muted,
                                       ),
                                     ),
@@ -645,7 +645,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                         const SizedBox(height: 6),
                         Text(
                           stat['value'].toString(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: AppColors.text,
