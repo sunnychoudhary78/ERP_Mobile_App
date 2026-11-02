@@ -32,6 +32,33 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
   File? _selectedPhoto;
   final ImagePicker _picker = ImagePicker();
 
+  // Set when opened from a lead ("Log visit") so the check-in is attached to
+  // that lead (doc 03: "Log visit from lead carries leadId").
+  String? _leadId;
+  bool _prefilledFromLead = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_prefilledFromLead) return;
+    _prefilledFromLead = true;
+
+    final args = ModalRoute.of(context)?.settings.arguments;
+    String? leadId;
+    String? clientName;
+    if (args is String && args.isNotEmpty) {
+      leadId = args;
+    } else if (args is Map) {
+      leadId = args['leadId']?.toString();
+      clientName = args['clientName']?.toString();
+    }
+
+    if (leadId != null && leadId.isNotEmpty) _leadId = leadId;
+    if (clientName != null && clientName.isNotEmpty) {
+      _clientController.text = clientName;
+    }
+  }
+
   @override
   void dispose() {
     _clientController.dispose();
@@ -189,6 +216,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
     try {
       final payload = {
         'clientName': clientName,
+        if (_leadId != null) 'leadId': _leadId,
         'location': _locationController.text.trim(),
         'notes': _notesController.text.trim(),
         'visitType': 'Field',
@@ -343,6 +371,30 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
                         ],
                       ),
                       Divider(height: 24, color: AppColors.border),
+
+                      if (_leadId != null) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.link,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Linked to lead $_leadId',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                      ],
 
                       // Manual Client Input (Text Field)
                       RichText(

@@ -1,4 +1,6 @@
+import 'package:erp_app/core/permissions/sales_entitlement.dart';
 import 'package:erp_app/core/theme/app_theme.dart';
+import 'package:erp_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:erp_app/features/crm/activities/presentation/screens/follow_up_screen.dart';
 import 'package:erp_app/features/crm/shared/presentation/widgets/quote_pdf_helper.dart';
 import 'package:flutter/material.dart';
@@ -2166,6 +2168,49 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
 
     if (row1Buttons.isNotEmpty) {
       buttonRows.add(Row(children: row1Buttons));
+      buttonRows.add(const SizedBox(height: 12));
+    }
+
+    // ============ Row 1a: Log visit (attaches the visit to this lead) ============
+    if (ref.watch(authProvider).canVisit) {
+      buttonRows.add(
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(color: AppColors.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: Icon(
+              Icons.add_location_alt_outlined,
+              size: 18,
+              color: AppColors.text,
+            ),
+            label: Text(
+              'Log visit',
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onPressed: _actionBusy
+                ? null
+                : () {
+                    Navigator.pushNamed(
+                      context,
+                      '/crm/visits',
+                      arguments: {
+                        'leadId': lead.id,
+                        'clientName': _leadDisplayName(lead),
+                      },
+                    );
+                  },
+          ),
+        ),
+      );
       buttonRows.add(const SizedBox(height: 12));
     }
 

@@ -387,8 +387,8 @@ class HomeScreen extends ConsumerWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1B4F72), Color(0xFF154360)],
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.primaryDark],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -400,10 +400,10 @@ class HomeScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Welcome back,',
                               style: TextStyle(
-                                color: Colors.white70,
+                                color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 15,
                               ),
                             ),
