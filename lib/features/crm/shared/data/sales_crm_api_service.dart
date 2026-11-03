@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -24,6 +25,18 @@ class SalesCrmApiService {
     if (response is Map<String, dynamic>) return response;
     if (response is Map) return Map<String, dynamic>.from(response);
     return {'data': response};
+  }
+
+  /// Unwraps the `data` envelope and pulls `key` out of it (falling back to
+  /// the top level). Used by the Smart Visit endpoints whose payloads live
+  /// under `data.visit` / `data.remark`.
+  Map<String, dynamic> _extract(dynamic response, String key) {
+    final map = _asMap(response);
+    final data = map['data'] is Map
+        ? Map<String, dynamic>.from(map['data'] as Map)
+        : map;
+    final value = data[key] ?? map[key];
+    return value is Map ? Map<String, dynamic>.from(value) : data;
   }
 
   Future<SalesWorkspace> getWorkspace() async {
@@ -294,12 +307,105 @@ class SalesCrmApiService {
     return SalesLead.fromJson(Map<String, dynamic>.from(lead as Map));
   }
 
-  Future<SalesVisit> checkInVisit(Map<String, dynamic> payload) async {
-    final response = await api.post(ApiEndpoints.salesVisits, payload);
+  // ───────── Smart Visit Management (doc 02) ─────────
+
+  /// Uploads a visit photo — `POST /api/upload`, multipart field `file`.
+  /// Returns the server-relative path (`filePath`) to put in `photoUrl`.
+  Future<String> uploadVisitPhoto(File file) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        file.path,
+        filename: file.path.split(Platform.pathSeparator).last,
+      ),
+    });
+    final response = await api.postMultipart(ApiEndpoints.upload, formData);
     final map = _asMap(response);
-    final visit = map['visit'] is Map ? map['visit'] : map;
-    return SalesVisit.fromJson(Map<String, dynamic>.from(visit as Map));
+    final data = map['data'] is Map
+        ? Map<String, dynamic>.from(map['data'] as Map)
+        : map;
+    final filePath =
+        (data['filePath'] ?? map['filePath'])?.toString() ?? '';
+    if (filePath.isEmpty) {
+      throw Exception('Upload failed: no filePath returned');
+    }
+    return filePath;
   }
+
+  /// Creates a visit — `POST /api/sales/visits` (JSON, `photoUrl`).
+  Future<SalesVisit> createVisit(Map<String, dynamic> payload) async {
+    final response = await api.post(ApiEndpoints.salesVisits, payload);
+    debugPrint('=== CREATE VISIT RESPONSE ===');
+    debugPrint(response.toString());
+    final visit = _extract(response, 'visit');
+    return SalesVisit.fromJson(visit);
+  }
+
+  /// List visits — `GET /api/sales/visits` (newest first).
+  Future<List<SalesVisit>> fetchVisits({
+    DateTime? from,
+    DateTime? to,
+    String? userId,
+    int limit = 200,
+  }) async {
+    final response = await api.get(
+      ApiEndpoints.salesVisits,
+      queryParams: {
+        if (from != null) 'from': from.toUtc().toIso8601String(),
+        if (to != null) 'to': to.toUtc().toIso8601String(),
+        if (userId != null && userId.isNotEmpty) 'userId': userId,
+        'limit': limit,
+      },
+    );
+    final map = _asMap(response);
+    final data = map['data'] is Map
+        ? Map<String, dynamic>.from(map['data'] as Map)
+        : map;
+    final raw = data['visits'] ?? map['visits'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((e) => SalesVisit.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  /// Visit detail (includes the remark thread) — `GET /api/sales/visits/:id`.
+  Future<SalesVisitDetail> fetchVisitDetail(String id) async {
+    final response = await api.get(ApiEndpoints.salesVisitById(id));
+    debugPrint('=== VISIT DETAIL RESPONSE ===');
+    debugPrint(response.toString());
+    final map = _asMap(response);
+    final data = map['data'] is Map
+        ? Map<String, dynamic>.from(map['data'] as Map)
+        : map;
+    final visit = SalesVisit.fromJson(_extract(response, 'visit'));
+    final rawRemarks = data['remarks'] ?? map['remarks'];
+    final remarks = rawRemarks is List
+        ? rawRemarks
+            .whereType<Map>()
+            .map((e) => SalesVisitRemark.fromJson(Map<String, dynamic>.from(e)))
+            .toList()
+        : <SalesVisitRemark>[];
+    return SalesVisitDetail(visit: visit, remarks: remarks);
+  }
+
+  /// Adds a remark — `POST /api/sales/visits/:id/remarks`.
+  Future<SalesVisitRemark> addVisitRemark(String id, String remark) async {
+    final response = await api.post(ApiEndpoints.salesVisitRemarks(id), {
+      'remark': remark,
+    });
+    final map = _asMap(response);
+    final data = map['data'] is Map
+        ? Map<String, dynamic>.from(map['data'] as Map)
+        : map;
+    final raw = data['remark'] ?? map['remark'];
+    return SalesVisitRemark.fromJson(
+      raw is Map ? Map<String, dynamic>.from(raw) : data,
+    );
+  }
+
+  /// Back-compat alias used by the existing check-in flow.
+  Future<SalesVisit> checkInVisit(Map<String, dynamic> payload) =>
+      createVisit(payload);
 
   Future<InventoryCustomer?> matchCustomer({
     String? phone,

@@ -161,6 +161,10 @@ class ApiEndpoints {
   static const String allocateDirectStock = 'inventory/direct-stock/allocate';
   // Documents
   static const String documents = 'documents';
+
+  /// Generic file upload (`POST /api/upload`, multipart field name `file`).
+  /// Returns `{ filePath, filename }`.
+  static const String upload = 'upload';
   static const String inventoryStockOutPayments = 'accounts/payments-received';
 
   // Remaining endpoints in Inventory_Complete_Mobile_APIs.md (sections 19–22)
@@ -240,6 +244,9 @@ class ApiEndpoints {
   static const String salesQuotes = 'sales/quotes';
   static const String salesVisits = 'sales/visits'; // done
   static const String salesTeam = 'sales/team'; //done
+  static String salesVisitById(String id) => 'sales/visits/$id'; // done
+  static String salesVisitRemarks(String id) =>
+      'sales/visits/$id/remarks'; // done
   static const String salesReportsSummary = 'sales/reports/summary';
   static const String salesCustomersMatch =
       'sales/customers/match'; // it is used to verify lead if it is created by same phon number/email

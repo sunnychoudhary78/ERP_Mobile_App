@@ -20,4 +20,15 @@ class ApiConstants {
   static String get imageBaseUrl => '$baseUrl/uploads/';
   static String get selfieBaseUrl => '$baseUrl/uploads/attendance/';
   static String get companyLogoBaseUrl => '$baseUrl/uploads/company/';
+
+  /// Absolute URL for a server-relative path returned by the upload APIs
+  /// (e.g. `/api/uploads/employee_docs/123-photo.jpg` from `POST /api/upload`).
+  /// The upload path already includes the `/api` prefix, so the origin is
+  /// used as-is when the path starts with `/api/`.
+  static String fileUrl(String filePath) {
+    final origin = baseUrl.replaceFirst(RegExp(r'/api$'), '');
+    final path = filePath.startsWith('/') ? filePath : '/$filePath';
+    if (path.startsWith('/api/')) return '$origin$path';
+    return '$origin/api/$path';
+  }
 }

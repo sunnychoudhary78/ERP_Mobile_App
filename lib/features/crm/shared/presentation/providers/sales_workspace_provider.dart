@@ -8,6 +8,7 @@ import '../../data/models/inventory_customer_model.dart';
 import '../../data/models/sales_contact_model.dart';
 import '../../data/models/sales_lead_model.dart';
 import '../../data/models/sales_quote_model.dart';
+import '../../data/models/sales_visit_model.dart';
 import '../../data/models/sales_workspace_model.dart';
 import '../../data/sales_crm_api_service.dart';
 
@@ -141,8 +142,11 @@ class SalesWorkspaceNotifier extends AsyncNotifier<SalesWorkspace> {
   Future<void> rejectWon(String leadId, String reason) =>
       _mutate(() => _api.rejectWon(leadId, reason));
 
-  Future<void> checkInVisit(Map<String, dynamic> payload) =>
-      _mutate(() => _api.checkInVisit(payload));
+  Future<SalesVisit> checkInVisit(Map<String, dynamic> payload) async {
+    final visit = await _mutate(() => _api.createVisit(payload));
+    ref.invalidate(myVisitsProvider);
+    return visit;
+  }
 
   Future<void> linkCustomer(String leadId, String customerId) =>
       _mutate(() => _api.linkCustomer(leadId, customerId));
@@ -666,3 +670,55 @@ final crmChartsDataProvider = Provider.autoDispose<AsyncValue<CrmChartsData>>((
     );
   });
 });
+
+// ─── Smart Visit Management (doc 02) ───────────────────────────────────
+
+/// "My visits" — `GET /api/sales/visits` scoped to the logged-in user so a
+/// manager does not see the whole team on this screen.
+final myVisitsProvider =
+    AsyncNotifierProvider.autoDispose<MyVisitsNotifier, List<SalesVisit>>(
+      MyVisitsNotifier.new,
+    );
+
+class MyVisitsNotifier extends AsyncNotifier<List<SalesVisit>> {
+  DateTime? _from;
+  DateTime? _to;
+
+  @override
+  Future<List<SalesVisit>> build() async {
+    ref.watch(authProvider);
+    return _load();
+  }
+
+  Future<List<SalesVisit>> _load() {
+    final userId = ref.read(authProvider).authUser?.id;
+    return ref.read(salesCrmApiProvider).fetchVisits(
+      from: _from,
+      to: _to,
+      userId: userId,
+      limit: 200,
+    );
+  }
+
+  /// `from`/`to` filter the server query (today / this week chips).
+  Future<void> setRange({DateTime? from, DateTime? to}) async {
+    _from = from;
+    _to = to;
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(_load);
+  }
+
+  Future<void> refresh() async {
+    state = await AsyncValue.guard(_load);
+  }
+}
+
+/// Visit detail + remark thread — `GET /api/sales/visits/:id`.
+final visitDetailProvider =
+    FutureProvider.autoDispose.family<SalesVisitDetail, String>((
+      ref,
+      id,
+    ) async {
+      ref.watch(authProvider);
+      return ref.read(salesCrmApiProvider).fetchVisitDetail(id);
+    });

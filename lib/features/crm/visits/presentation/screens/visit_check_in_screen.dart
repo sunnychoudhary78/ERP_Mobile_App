@@ -1,13 +1,20 @@
 import 'dart:io';
+
 import 'package:erp_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../shared/presentation/providers/sales_workspace_provider.dart';
-import '../../../shared/presentation/widgets/crm_async_body.dart';
+import 'package:intl/intl.dart';
 
+import '../../../shared/data/models/sales_lead_model.dart';
+import '../../../shared/presentation/providers/sales_workspace_provider.dart';
+
+/// Add visit — `POST /api/sales/visits` (JSON, with `photoUrl`).
+///
+/// Doc 02 flow: capture client + GPS + photo + purpose, upload the photo via
+/// `POST /api/upload`, then send the returned `filePath` as `photoUrl`.
 class VisitCheckInScreen extends ConsumerStatefulWidget {
   const VisitCheckInScreen({super.key});
 
@@ -16,25 +23,42 @@ class VisitCheckInScreen extends ConsumerStatefulWidget {
 }
 
 class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
+  static const _visitTypes = [
+    'check-in',
+    'follow-up',
+    'meeting',
+    'delivery',
+  ];
+
   final _clientController = TextEditingController();
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
+  final _purposeController = TextEditingController();
+  final _contactController = TextEditingController();
 
   bool _submitting = false;
   bool _fetchingLocation = false;
   String? _message;
+  bool _isError = false;
 
-  // GPS Data
+  // GPS data
   double? _latitude;
   double? _longitude;
+  double? _accuracy;
 
-  // Photo Attachment
+  // Photo
   File? _selectedPhoto;
   final ImagePicker _picker = ImagePicker();
 
-  // Set when opened from a lead ("Log visit") so the check-in is attached to
-  // that lead (doc 03: "Log visit from lead carries leadId").
+  // Visit meta
+  String _visitType = 'check-in';
+  bool _isNewVisit = true;
+  DateTime? _followUpAt;
+
+  // Optional CRM lead link
   String? _leadId;
+  String? _leadName;
+
   bool _prefilledFromLead = false;
 
   @override
@@ -56,7 +80,10 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
     if (leadId != null && leadId.isNotEmpty) _leadId = leadId;
     if (clientName != null && clientName.isNotEmpty) {
       _clientController.text = clientName;
+      _leadName = clientName;
     }
+    // Best-effort GPS prefill on open.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _getCurrentLocation());
   }
 
   @override
@@ -64,37 +91,36 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
     _clientController.dispose();
     _locationController.dispose();
     _notesController.dispose();
+    _purposeController.dispose();
+    _contactController.dispose();
     super.dispose();
   }
 
-  /// Pull-to-Refresh Handler using Riverpod
-  Future<void> _handleRefresh() async {
-    // Refresh Riverpod provider data
-    ref.read(salesWorkspaceProvider.notifier).refresh();
-    // Refresh the CRM visits provider
-    ref.refresh(crmVisitsProvider);
+  void _snack(String text, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: error ? AppColors.danger : AppColors.success,
+      ),
+    );
   }
 
-  /// Fetch GPS Location (Latitude, Longitude) & Reverse Geocode
   Future<void> _getCurrentLocation() async {
     setState(() => _fetchingLocation = true);
-
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw Exception('Location services are disabled. Please enable GPS.');
       }
 
-      LocationPermission permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions are denied.');
-        }
       }
-
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied.');
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw Exception('Location permission denied.');
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -103,61 +129,46 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
 
       _latitude = position.latitude;
       _longitude = position.longitude;
+      _accuracy = position.accuracy;
+
+      if (_accuracy != null && _accuracy! > 80) {
+        _snack('GPS accuracy is low (~${_accuracy!.round()} m)', error: true);
+      }
 
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-        final formattedAddress = [
+        _locationController.text = [
           place.street,
           place.subLocality,
           place.locality,
           place.administrativeArea,
         ].where((e) => e != null && e.isNotEmpty).join(', ');
-
-        _locationController.text = formattedAddress;
       } else {
         _locationController.text =
             '${position.latitude}, ${position.longitude}';
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
+      _snack(e.toString().replaceFirst('Exception: ', ''), error: true);
     } finally {
       if (mounted) setState(() => _fetchingLocation = false);
     }
   }
 
-  /// Image Selection
   Future<void> _pickPhoto(ImageSource source) async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(
+      final picked = await _picker.pickImage(
         source: source,
         imageQuality: 80,
       );
-      if (pickedFile != null) {
-        setState(() {
-          _selectedPhoto = File(pickedFile.path);
-        });
+      if (picked != null) {
+        setState(() => _selectedPhoto = File(picked.path));
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to capture photo: $e'),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
+      _snack('Failed to capture photo: $e', error: true);
     }
   }
 
@@ -179,10 +190,7 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
               },
             ),
             ListTile(
-              leading: Icon(
-                Icons.photo_library,
-                color: AppColors.primary,
-              ),
+              leading: Icon(Icons.photo_library, color: AppColors.primary),
               title: const Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -195,17 +203,86 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
     );
   }
 
-  /// Form Submission
-  Future<void> _checkIn() async {
+  Future<void> _pickFollowUpDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _followUpAt ?? now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 2),
+    );
+    if (picked != null) setState(() => _followUpAt = picked);
+  }
+
+  Future<void> _pickLead() async {
+    final leads = ref.read(crmLeadsProvider).value ?? const <SalesLead>[];
+    if (leads.isEmpty) {
+      _snack('No leads available', error: true);
+      return;
+    }
+
+    final selected = await showModalBottomSheet<SalesLead>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(
+              title: Text(
+                'Link to a lead',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ...leads.map(
+              (l) => ListTile(
+                leading: Icon(Icons.business_outlined, color: AppColors.primary),
+                title: Text(
+                  l.companyName.isNotEmpty ? l.companyName : l.contactName,
+                ),
+                subtitle: l.contactName.isNotEmpty
+                    ? Text(l.contactName)
+                    : null,
+                onTap: () => Navigator.pop(ctx, l),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _leadId = selected.dbId ?? selected.id;
+        _leadName =
+            selected.companyName.isNotEmpty ? selected.companyName : selected.contactName;
+        if (_clientController.text.trim().isEmpty) {
+          _clientController.text = _leadName!;
+        }
+      });
+    }
+  }
+
+  Future<void> _submit() async {
     final clientName = _clientController.text.trim();
     if (clientName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please enter a client or site name'),
-          backgroundColor: AppColors.danger,
-        ),
-      );
+      _snack('Please enter a client or site name', error: true);
       return;
+    }
+    // Doc: the UI must require a photo; ERP accepts a URL.
+    if (_selectedPhoto == null) {
+      _snack('Please attach a photo of the visit', error: true);
+      return;
+    }
+    if (_latitude == null || _longitude == null) {
+      _snack('Capturing GPS…', error: true);
+      await _getCurrentLocation();
+      if (_latitude == null || _longitude == null) {
+        _snack('Unable to capture GPS location', error: true);
+        return;
+      }
     }
 
     setState(() {
@@ -214,32 +291,44 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
     });
 
     try {
-      final payload = {
+      // 1. Upload the photo, then send the returned path as photoUrl.
+      final photoUrl = await ref
+          .read(salesCrmApiProvider)
+          .uploadVisitPhoto(_selectedPhoto!);
+
+      final location = _locationController.text.trim();
+      final payload = <String, dynamic>{
         'clientName': clientName,
-        if (_leadId != null) 'leadId': _leadId,
-        'location': _locationController.text.trim(),
+        'type': _visitType,
+        'location': location,
+        'address': location,
+        'visitedAt': DateTime.now().toUtc().toIso8601String(),
         'notes': _notesController.text.trim(),
-        'visitType': 'Field',
-        'lat': _latitude,
-        'lng': _longitude,
-        'photoPath': _selectedPhoto?.path,
+        'latitude': _latitude,
+        'longitude': _longitude,
+        if (_contactController.text.trim().isNotEmpty)
+          'contact': _contactController.text.trim(),
+        if (_purposeController.text.trim().isNotEmpty)
+          'purpose': _purposeController.text.trim(),
+        'photoUrl': photoUrl,
+        if (_followUpAt != null)
+          'followUpAt': DateFormat('yyyy-MM-dd').format(_followUpAt!),
+        'isNewVisit': _isNewVisit,
+        if (_leadId != null && _leadId!.isNotEmpty) 'leadId': _leadId,
       };
 
+      // 2. Create the visit.
       await ref.read(salesWorkspaceProvider.notifier).checkInVisit(payload);
-      setState(() => _message = 'Visit checked in successfully');
 
-      _clientController.clear();
-      _locationController.clear();
-      _notesController.clear();
-      setState(() {
-        _selectedPhoto = null;
-        _latitude = null;
-        _longitude = null;
-      });
+      if (!mounted) return;
+      _snack('Visit logged successfully');
+      Navigator.of(context).maybePop(true);
     } catch (e) {
       setState(() {
+        _isError = true;
         _message = e.toString().replaceFirst('Exception: ', '');
       });
+      _snack(_message!, error: true);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -247,8 +336,6 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(crmVisitsProvider);
-
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -256,461 +343,356 @@ class _VisitCheckInScreenState extends ConsumerState<VisitCheckInScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text('Visit Check-in'),
+        title: const Text('Log visit'),
       ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: AppColors.primary,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            children: [
-              // Dynamic Stat Cards bound directly to provider state
-              async.when(
-                data: (visits) {
-                  final now = DateTime.now();
-
-                  // Count visits that occurred today
-                  final todayVisitsCount = visits.where((v) {
-                    if (v.at == null) return false;
-                    final parsedDate = DateTime.tryParse(v.at!);
-                    if (parsedDate == null) return false;
-                    return parsedDate.year == now.year &&
-                        parsedDate.month == now.month &&
-                        parsedDate.day == now.day;
-                  }).length;
-
-                  // Unique sales reps active in current visits list
-                  final activeRepsCount = visits
-                      .map((v) => v.repName)
-                      .where((rep) => rep != null && rep.isNotEmpty)
-                      .toSet()
-                      .length;
-
-                  // List built dynamically based on your CRM data
-                  final dynamicStats = [
-                    {
-                      'title': 'TODAY',
-                      'value': todayVisitsCount.toString(),
-                      'color': Colors.orange,
-                    },
-                    {
-                      'title': 'TOTAL VISITS',
-                      'value': visits.length.toString(),
-                      'color': Colors.indigo,
-                    },
-                    {
-                      'title': 'ACTIVE REPS',
-                      'value': activeRepsCount.toString(),
-                      'color': Colors.teal,
-                    },
-                  ];
-
-                  return _buildDynamicStatCards(dynamicStats);
-                },
-                loading: () => _buildDynamicStatCards([
-                  {'title': 'TODAY', 'value': '...', 'color': Colors.orange},
-                  {
-                    'title': 'TOTAL VISITS',
-                    'value': '...',
-                    'color': Colors.indigo,
-                  },
-                  {'title': 'ACTIVE REPS', 'value': '...', 'color': Colors.teal},
-                ]),
-                error: (_, __) => _buildDynamicStatCards([
-                  {'title': 'TODAY', 'value': '0', 'color': Colors.orange},
-                  {'title': 'TOTAL VISITS', 'value': '0', 'color': Colors.indigo},
-                  {'title': 'ACTIVE REPS', 'value': '0', 'color': Colors.teal},
-                ]),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Record Check-in Form Card
-              Card(
-                elevation: 0,
-                color: AppColors.card,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: AppColors.border),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Card(
+          elevation: 0,
+          color: AppColors.card,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.border),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.location_on, size: 18, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Captures GPS',
+                      style: TextStyle(color: AppColors.muted, fontSize: 13),
+                    ),
+                    const Spacer(),
+                    if (_accuracy != null)
+                      Text(
+                        '±${_accuracy!.round()} m',
+                        style: TextStyle(
+                          color: _accuracy! > 80
+                              ? AppColors.danger
+                              : AppColors.muted,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Divider(height: 24, color: AppColors.border),
+
+                if (_leadId != null) ...[
+                  Row(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Check-in at client',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.text,
-                                ),
-                          ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: AppColors.muted,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Captures GPS',
-                                style: TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Divider(height: 24, color: AppColors.border),
-
-                      if (_leadId != null) ...[
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.link,
-                              size: 16,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                'Linked to lead $_leadId',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-
-                      // Manual Client Input (Text Field)
-                      RichText(
-                        text: TextSpan(
-                          text: 'Client / site ',
+                      Icon(Icons.link, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Linked to lead ${_leadName ?? _leadId}',
                           style: TextStyle(
-                            color: AppColors.text,
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                            fontSize: 13,
                           ),
-                          children: [
-                            TextSpan(
-                              text: '*',
-                              style: TextStyle(color: AppColors.danger),
-                            ),
-                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _clientController,
-                        decoration: const InputDecoration(
-                          hintText: 'Enter client or site name...',
-                        ),
+                      TextButton(
+                        onPressed: () => setState(() {
+                          _leadId = null;
+                          _leadName = null;
+                        }),
+                        child: const Text('Clear'),
                       ),
-                      const SizedBox(height: 16),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
 
-                      // Location Input
-                      Text(
-                        'Location',
-                        style: TextStyle(
-                          color: AppColors.text,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                _label('Client / site', required: true),
+                TextField(
+                  controller: _clientController,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter client or site name...',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _pickLead,
+                    icon: const Icon(Icons.link, size: 18),
+                    label: const Text('Link a lead (optional)'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                _label('Visit type'),
+                DropdownButtonFormField<String>(
+                  initialValue: _visitType,
+                  items: _visitTypes
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(t),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) =>
+                      setState(() => _visitType = v ?? 'check-in'),
+                ),
+                const SizedBox(height: 16),
+
+                _label('Location'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _locationController,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(
+                            Icons.location_on_outlined,
+                            color: AppColors.muted,
+                          ),
+                          hintText: 'City or address',
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _locationController,
-                              decoration: InputDecoration(
-                                prefixIcon: Icon(
-                                  Icons.location_on_outlined,
-                                  color: AppColors.muted,
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: _fetchingLocation ? null : _getCurrentLocation,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        height: 52,
+                        width: 52,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: _fetchingLocation
+                            ? const Padding(
+                                padding: EdgeInsets.all(14),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                                hintText: 'City or address',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            onTap: _fetchingLocation ? null : _getCurrentLocation,
-                            borderRadius: BorderRadius.circular(14),
-                            child: Container(
-                              height: 52,
-                              width: 52,
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                border: Border.all(color: AppColors.border),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: _fetchingLocation
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(14),
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.my_location,
-                                      color: AppColors.primary,
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Notes Input
-                      Text(
-                        'Notes',
-                        style: TextStyle(
-                          color: AppColors.text,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _notesController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          hintText: 'Enter visit details...',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Photo Attachment Field
-                      InkWell(
-                        onTap: _showPhotoOptions,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.camera_alt_outlined,
+                              )
+                            : Icon(
+                                Icons.my_location,
                                 color: AppColors.primary,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _selectedPhoto != null
-                                      ? 'Photo Attached: ${_selectedPhoto!.path.split('/').last}'
-                                      : 'Attach Photo / Proof of Visit',
-                                  style: TextStyle(
-                                    color: AppColors.text,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (_selectedPhoto != null)
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.close,
-                                    size: 18,
-                                    color: AppColors.danger,
-                                  ),
-                                  onPressed: () =>
-                                      setState(() => _selectedPhoto = null),
-                                ),
-                            ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _label('Purpose'),
+                TextField(
+                  controller: _purposeController,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. Order follow-up',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                _label('Contact'),
+                TextField(
+                  controller: _contactController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    hintText: 'Name / phone',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                _label('Notes'),
+                TextField(
+                  controller: _notesController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter visit details...',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // New vs follow-up + follow-up date
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _isNewVisit,
+                  onChanged: (v) => setState(() => _isNewVisit = v),
+                  title: Text(
+                    _isNewVisit ? 'New visit' : 'Follow-up visit',
+                    style: TextStyle(
+                      color: AppColors.text,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: _pickFollowUpDate,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.event_outlined,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _followUpAt == null
+                                ? 'Set follow-up date (optional)'
+                                : 'Follow-up: ${DateFormat('dd MMM yyyy').format(_followUpAt!)}',
+                            style: TextStyle(color: AppColors.text, fontSize: 14),
                           ),
                         ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Submit Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        if (_followUpAt != null)
+                          IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: AppColors.danger,
                             ),
+                            onPressed: () =>
+                                setState(() => _followUpAt = null),
                           ),
-                          onPressed: _submitting ? null : _checkIn,
-                          child: _submitting
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'Record check-in',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                        ),
-                      ),
-
-                      if (_message != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          _message!,
-                          style: TextStyle(
-                            color: AppColors.success,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
 
-              const SizedBox(height: 16),
-
-              // History Section
-              Card(
-                elevation: 0,
-                color: AppColors.card,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: AppColors.border),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Recent Visits',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.text,
+                // Photo (required)
+                _label('Photo of visit', required: true),
+                InkWell(
+                  onTap: _showPhotoOptions,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.camera_alt_outlined,
+                          color: AppColors.primary,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      CrmAsyncBody(
-                        async: async,
-                        onRetry: () =>
-                            ref.read(salesWorkspaceProvider.notifier).refresh(),
-                        builder: (visits) => Column(
-                          children: [
-                            ...visits.map(
-                              (v) => Column(
-                                children: [
-                                  Divider(color: AppColors.border),
-                                  ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: Text(
-                                      v.clientName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      '${v.at ?? '—'} · ${v.location}',
-                                      style: TextStyle(
-                                        color: AppColors.muted,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _selectedPhoto != null
+                                ? 'Photo attached: ${_selectedPhoto!.path.split(Platform.pathSeparator).last}'
+                                : 'Attach photo / proof of visit',
+                            style: TextStyle(
+                              color: AppColors.text,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
+                        if (_selectedPhoto != null)
+                          IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: AppColors.danger,
+                            ),
+                            onPressed: () =>
+                                setState(() => _selectedPhoto = null),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _submitting ? null : _submit,
+                    child: _submitting
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Log visit',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+
+                if (_message != null && _isError) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _message!,
+                    style: TextStyle(
+                      color: AppColors.danger,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// Horizontally scrollable row that renders dynamic stats lists
-  Widget _buildDynamicStatCards(List<Map<String, dynamic>> statsList) {
-    if (statsList.isEmpty) return const SizedBox.shrink();
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: statsList.map((stat) {
-          final topColor = (stat['color'] as Color?) ?? AppColors.primary;
-
-          return Container(
-            width: 140,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: topColor.withOpacity(0.3)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(height: 4, color: topColor),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 12,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          stat['title'].toString().toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: topColor,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          stat['value'].toString(),
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.text,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+  Widget _label(String text, {bool required = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: RichText(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(
+            color: AppColors.text,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          children: [
+            if (required)
+              TextSpan(
+                text: ' *',
+                style: TextStyle(color: AppColors.danger),
               ),
-            ),
-          );
-        }).toList(),
+          ],
+        ),
       ),
     );
   }

@@ -2201,7 +2201,7 @@ class _LeadDetailScreenState extends ConsumerState<LeadDetailScreen> {
                 : () {
                     Navigator.pushNamed(
                       context,
-                      '/crm/visits',
+                      '/crm/visits/add',
                       arguments: {
                         'leadId': lead.id,
                         'clientName': _leadDisplayName(lead),

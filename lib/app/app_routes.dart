@@ -50,7 +50,9 @@ import '../features/crm/quotes/presentation/screens/quote_detail_screen.dart';
 import '../features/crm/quotes/presentation/screens/quote_form_screen.dart';
 import '../features/crm/quotes/presentation/screens/quotes_list_screen.dart';
 import '../features/crm/visits/presentation/screens/visit_check_in_screen.dart';
+import '../features/crm/visits/presentation/screens/visit_detail_screen.dart';
 import '../features/crm/visits/presentation/screens/visit_tracking_screen.dart';
+import '../features/crm/visits/presentation/screens/visits_list_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../core/theme/theme_controller.dart';
 
@@ -121,7 +123,11 @@ class AppRoutes {
     '/crm/quotes/form': (_) =>
         _gate(AppPermissions.crmLeadsManage, const QuoteFormScreen()),
     '/crm/visits': (_) =>
+        _salesGate(salesCanVisit, const VisitsListScreen()),
+    '/crm/visits/add': (_) =>
         _salesGate(salesCanVisit, const VisitCheckInScreen()),
+    '/crm/visits/detail': (_) =>
+        _salesGate(salesCanVisit, const VisitDetailScreen()),
     '/crm/tracking': (_) =>
         _salesGate(salesCanVisit, const VisitTrackingScreen()),
     '/crm/crm_sales_screen': (_) =>
