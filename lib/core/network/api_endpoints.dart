@@ -14,8 +14,13 @@ class ApiEndpoints {
   static const String employeeLeaveBalance = 'employees/leave-balance';
   static const String employeePhoto = 'employee-photo/photo'; // done
 
-  // ───────── SALES TRACKING (doc 05) ─────────
+  // ───────── SALES TRACKING / CLAIMS (doc 04 / 05) ─────────
   static const String salesClaimsMyPreview = 'sales/claims/my/preview'; // done
+  static const String salesClaimsMySubmit = 'sales/claims/my/submit';
+  static const String salesClaims = 'sales/claims';
+  static const String salesTrackingMyHistory = 'sales/tracking/my-history';
+
+  static String salesClaimReview(String id) => 'sales/claims/$id/review';
 
   // ───────── ATTENDANCE ─────────
   static const String attendance = 'attendance';

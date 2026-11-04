@@ -26,6 +26,10 @@ import 'package:erp_app/features/profile/presentations/screen/change_password_sc
 import 'package:erp_app/features/profile/presentations/screen/my_team_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
 import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
+import 'package:erp_app/features/tracking/presentation/screens/day_wise_km_screen.dart';
+import 'package:erp_app/features/tracking/presentation/screens/my_claim_history_screen.dart';
+import 'package:erp_app/features/tracking/presentation/screens/my_claim_screen.dart';
+import 'package:erp_app/features/tracking/presentation/screens/team_claim_requests_screen.dart';
 import 'package:erp_app/features/tracking/presentation/tracking_screen.dart';
 import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
@@ -215,6 +219,15 @@ class AppRoutes {
         _salesGate(salesCanTrack, const TrackingScreen()),
     '/claim_reward_screen': (_) =>
         _salesGate(salesCanClaim, const ClaimRewardScreen()),
+
+    // Claims (doc 04 — Expense & Claim)
+    '/claims': (_) => _salesGate(salesCanClaim, const MyClaimScreen()),
+    '/claims/history': (_) =>
+        _salesGate(salesCanClaim, const MyClaimHistoryScreen()),
+    '/claims/day-wise': (_) =>
+        _salesGate(salesCanClaim, const DayWiseKmScreen()),
+    '/claims/team': (_) =>
+        _salesGate(salesCanReviewClaims, const TeamClaimRequestsScreen()),
 
     // profile
     '/profile': (_) => const ProfileScreen(),

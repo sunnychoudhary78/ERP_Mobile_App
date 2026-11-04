@@ -122,6 +122,44 @@ class HomeScreen extends ConsumerWidget {
         entitlement: salesCanVisit,
       ),
     ], anyOf: AppPermissions.crmModule),
+    LinkSection(
+      'Claims',
+      [
+        QuickLink(
+          'My claim',
+          '/claims',
+          Icons.receipt_long_outlined,
+          anyOf: [AppPermissions.salesDistanceClaimsView],
+          entitlement: salesCanClaim,
+        ),
+        QuickLink(
+          'Claim history',
+          '/claims/history',
+          Icons.history_rounded,
+          anyOf: [AppPermissions.salesDistanceClaimsView],
+          entitlement: salesCanClaim,
+        ),
+        QuickLink(
+          'Day-wise KM',
+          '/claims/day-wise',
+          Icons.route_outlined,
+          anyOf: [AppPermissions.salesDistanceClaimsView],
+          entitlement: salesCanClaim,
+        ),
+        QuickLink(
+          'Team requests',
+          '/claims/team',
+          Icons.fact_check_outlined,
+          anyOf: [AppPermissions.salesDistanceClaimsReview],
+          entitlement: salesCanReviewClaims,
+        ),
+      ],
+      anyOf: [
+        AppPermissions.salesDistanceClaimsView,
+        AppPermissions.salesDistanceClaimsReview,
+      ],
+      entitlement: salesCanClaimSurface,
+    ),
     LinkSection('Inventory', [
       QuickLink(
         'Dashboard',

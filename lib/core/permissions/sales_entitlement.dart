@@ -31,3 +31,11 @@ extension SalesEntitlement on AuthState {
 bool salesCanTrack(AuthState auth) => auth.canTrack;
 bool salesCanVisit(AuthState auth) => auth.canVisit;
 bool salesCanClaim(AuthState auth) => auth.canClaim;
+bool salesCanReviewClaims(AuthState auth) => auth.canReviewClaims;
+
+/// Whole Claims section gate (doc 04): hidden when the tracking feature is
+/// off. A manager may hold only `review` (not `view`), so accept either.
+bool salesCanClaimSurface(AuthState auth) =>
+    auth.entitlements.featureTracking &&
+    (auth.can(AppPermissions.salesDistanceClaimsView) ||
+        auth.canReviewClaims);
