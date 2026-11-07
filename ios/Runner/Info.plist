@@ -28,6 +28,14 @@
 	<string>Photo library access is required to select product images.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Location access is required for attendance and visit check-ins.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Background location is required to keep field tracking active during the work day.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Background location is required to keep field tracking active during the work day.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

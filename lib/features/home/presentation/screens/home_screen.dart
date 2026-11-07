@@ -123,6 +123,27 @@ class HomeScreen extends ConsumerWidget {
       ),
     ], anyOf: AppPermissions.crmModule),
     LinkSection(
+      'Field Tracking',
+      [
+        QuickLink(
+          'Tracking home',
+          '/sales/tracking',
+          Icons.my_location_rounded,
+          anyOf: [AppPermissions.salesTrackingSync],
+          entitlement: salesCanTrack,
+        ),
+        QuickLink(
+          'My sessions',
+          '/sales/tracking/sessions',
+          Icons.route_outlined,
+          anyOf: [AppPermissions.salesTrackingSync],
+          entitlement: salesCanTrack,
+        ),
+      ],
+      anyOf: [AppPermissions.salesTrackingSync],
+      entitlement: salesCanTrack,
+    ),
+    LinkSection(
       'Claims',
       [
         QuickLink(

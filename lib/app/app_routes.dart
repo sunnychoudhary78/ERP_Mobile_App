@@ -25,11 +25,15 @@ import 'package:erp_app/features/profile/presentations/screen/appearance_screen.
 import 'package:erp_app/features/profile/presentations/screen/change_password_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/my_team_screen.dart';
 import 'package:erp_app/features/profile/presentations/screen/profile_screen.dart';
+import 'package:erp_app/features/tracking/data/models/tracking_model.dart';
 import 'package:erp_app/features/tracking/presentation/claim_reward_screen.dart';
 import 'package:erp_app/features/tracking/presentation/screens/day_wise_km_screen.dart';
 import 'package:erp_app/features/tracking/presentation/screens/my_claim_history_screen.dart';
 import 'package:erp_app/features/tracking/presentation/screens/my_claim_screen.dart';
+import 'package:erp_app/features/tracking/presentation/screens/my_sessions_screen.dart';
+import 'package:erp_app/features/tracking/presentation/screens/session_detail_screen.dart';
 import 'package:erp_app/features/tracking/presentation/screens/team_claim_requests_screen.dart';
+import 'package:erp_app/features/tracking/presentation/screens/tracking_home_screen.dart';
 import 'package:erp_app/features/tracking/presentation/tracking_screen.dart';
 import 'package:erp_app/shared/widgets/permission_gate.dart';
 import 'package:flutter/material.dart';
@@ -219,6 +223,19 @@ class AppRoutes {
         _salesGate(salesCanTrack, const TrackingScreen()),
     '/claim_reward_screen': (_) =>
         _salesGate(salesCanClaim, const ClaimRewardScreen()),
+
+    // GPS field tracking (doc 01)
+    '/sales/tracking': (_) =>
+        _salesGate(salesCanTrack, const TrackingHomeScreen()),
+    '/sales/tracking/sessions': (_) =>
+        _salesGate(salesCanTrack, const MySessionsScreen()),
+    '/sales/tracking/session': (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is TrackingSession) {
+        return _salesGate(salesCanTrack, SessionDetailScreen(session: args));
+      }
+      return _salesGate(salesCanTrack, const MySessionsScreen());
+    },
 
     // Claims (doc 04 — Expense & Claim)
     '/claims': (_) => _salesGate(salesCanClaim, const MyClaimScreen()),

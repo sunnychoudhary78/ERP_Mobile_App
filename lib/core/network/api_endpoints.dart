@@ -22,6 +22,27 @@ class ApiEndpoints {
 
   static String salesClaimReview(String id) => 'sales/claims/$id/review';
 
+  // ───────── GPS FIELD TRACKING (doc 01) ─────────
+  // Base: /api/sales/tracking — permission `sales_tracking.sync`.
+  static const String salesTrackingCheckIn =
+      'sales/tracking/sessions/check-in';
+  static const String salesTrackingCheckOut =
+      'sales/tracking/sessions/check-out';
+  static const String salesTrackingHeartbeat =
+      'sales/tracking/sessions/heartbeat';
+  static const String salesTrackingLocationOff =
+      'sales/tracking/sessions/location-off';
+  static const String salesTrackingPointsBatch = 'sales/tracking/points/batch';
+  static const String salesTrackingDashboard = 'sales/tracking/dashboard';
+
+  /// Own session polyline — `sales_visits.view` (or map_preview / tracking.view).
+  static String salesTrackingSessionPoints(String id) =>
+      'sales/tracking/sessions/$id/points';
+
+  /// Visits captured between a session's check-in and check-out.
+  static String salesTrackingSessionVisits(String id) =>
+      'sales/tracking/sessions/$id/visits';
+
   // ───────── ATTENDANCE ─────────
   static const String attendance = 'attendance';
   static const String checkIn = 'attendance/checkin';

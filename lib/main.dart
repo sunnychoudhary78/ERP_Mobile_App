@@ -7,12 +7,16 @@ import 'app/app_root.dart';
 import 'app/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'features/tracking/presentation/widgets/active_tracking_bar.dart';
+import 'features/tracking/services/tracking_foreground_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  initTrackingForegroundTask();
 
   final prefs = await SharedPreferences.getInstance();
   final settings = ThemeController.readFrom(prefs);
@@ -117,6 +121,8 @@ class _ErpAppState extends ConsumerState<ErpApp> with WidgetsBindingObserver {
       darkTheme: AppTheme.dark(settings.seedColor),
       themeMode: settings.mode,
       navigatorKey: navigatorKey,
+      builder: (context, child) =>
+          ActiveTrackingOverlay(child: child ?? const SizedBox.shrink()),
       home: ThemeRebuilder(childBuilder: (_) => const AppRoot()),
       routes: AppRoutes.routes,
     );
